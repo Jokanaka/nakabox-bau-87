@@ -1,0 +1,5 @@
+.vercel
+_provas
+node_modules
+.env
+.env.*

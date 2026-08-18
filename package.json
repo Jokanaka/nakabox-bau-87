@@ -1,0 +1,16 @@
+{
+  "name": "nakabox-sorteio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Site de sorteio da NAKABOX para feiras e eventos (front estatico + funcoes serverless no Vercel + Postgres via DATABASE_URL).",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "pg": "^8.23.0"
+  }
+}

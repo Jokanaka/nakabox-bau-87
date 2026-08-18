@@ -2,183 +2,1646 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Baú de Moto 87 Litros — Nakabox | Entregas e Delivery</title>
-<meta name="description" content="Baú para moto de 87 litros em plástico rígido, com suporte de fixação incluso. Ideal para motoboys, entregas e delivery. Disponível em preto e branco.">
-<meta property="og:title" content="Baú de Moto 87 Litros — Nakabox">
-<meta property="og:description" content="Baú para moto de 87 litros em plástico rígido, com suporte de fixação incluso. Preto ou branco.">
-<meta property="og:image" content="https://jokanaka.github.io/nakabox-bau-87/img/logo-nakabox-1200.png">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sorteio NAKABOX — iPhone 15</title>
+<meta name="description" content="Participe do sorteio da NAKABOX nas feiras e eventos. Preencha seus dados e concorra a um iPhone 15.">
+<meta name="theme-color" content="#14161A">
+<meta name="robots" content="noindex">
+<link rel="icon" href="img/logo-nakabox-1200.png">
 <style>
   :root{
-    --laranja:#FF7A00;
-    --escuro:#1a1a1a;
-    --cinza:#555;
-    --claro:#f7f7f7;
+    --asfalto:#14161A;
+    --superficie:#1E2127;
+    --borda:#2E333C;
+    --ambar:#F5B301;
+    --texto:#EDEDE8;
+    --cinza:#8A8F99;
+    --fonte:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
   }
+
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;color:var(--escuro);background:#fff;line-height:1.6}
-  .wrap{max-width:1000px;margin:0 auto;padding:0 20px}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:var(--fonte);
+    background:var(--asfalto);
+    color:var(--texto);
+    line-height:1.5;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+  }
 
-  header{background:var(--escuro);color:#fff;padding:14px 0}
-  header .wrap{display:flex;justify-content:space-between;align-items:center}
-  .logo{font-weight:800;font-size:1.2rem;letter-spacing:.5px}
-  .logo span{color:var(--laranja)}
-  .zap-top{background:#25D366;color:#fff;text-decoration:none;padding:8px 16px;border-radius:999px;font-weight:700;font-size:.9rem}
+  /* faixa de sinalizacao: o zebrado do para-choque */
+  .zebrado{
+    height:10px;
+    background:repeating-linear-gradient(45deg,var(--ambar) 0 14px,var(--asfalto) 14px 28px);
+    flex:none;
+  }
 
-  .hero{background:linear-gradient(180deg,#fff 0%,var(--claro) 100%);padding:40px 0 30px;text-align:center}
-  .hero img{max-width:min(420px,85%);height:auto;border-radius:12px}
-  .hero h1{font-size:clamp(1.6rem,5vw,2.4rem);margin:18px 0 6px;font-weight:800}
-  .hero h1 em{color:var(--laranja);font-style:normal}
-  .hero p.sub{color:var(--cinza);font-size:1.05rem;margin-bottom:22px}
-  .cta{display:inline-block;background:#25D366;color:#fff;text-decoration:none;font-weight:800;font-size:1.1rem;padding:15px 34px;border-radius:999px;box-shadow:0 4px 14px rgba(37,211,102,.4)}
-  .cta:hover{filter:brightness(1.05)}
-  .cta small{display:block;font-weight:400;font-size:.75rem;opacity:.9}
+  .marca{
+    display:flex;align-items:center;gap:12px;
+    padding:16px 20px;
+    border-bottom:2px solid var(--borda);
+    background:var(--superficie);
+  }
+  .marca .nome{font-weight:900;font-size:1.15rem;letter-spacing:.16em;text-transform:uppercase}
+  .marca .nome span{color:var(--ambar)}
+  .marca .etiqueta{
+    margin-left:auto;font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--cinza);border:1px solid var(--borda);padding:4px 9px;
+  }
 
-  .badges{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:24px}
-  .badge{background:#fff;border:1px solid #e5e5e5;border-radius:999px;padding:7px 16px;font-size:.85rem;font-weight:600;color:var(--escuro)}
-  .badge b{color:var(--laranja)}
+  main{flex:1 0 auto;width:100%;max-width:760px;margin:0 auto;padding:24px 18px 40px}
+  .painel-largo{max-width:1080px}
 
-  section{padding:44px 0}
-  section h2{font-size:1.5rem;font-weight:800;text-align:center;margin-bottom:26px}
-  section h2 span{color:var(--laranja)}
+  .tela[hidden]{display:none}
 
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
-  .card{background:var(--claro);border-radius:12px;padding:20px}
-  .card h3{font-size:1rem;margin-bottom:6px}
-  .card h3::before{content:"✓ ";color:var(--laranja);font-weight:800}
-  .card p{font-size:.9rem;color:var(--cinza)}
+  h1{
+    font-size:clamp(1.6rem,7vw,2.5rem);font-weight:900;line-height:1.05;
+    text-transform:uppercase;letter-spacing:.02em;
+  }
+  h1 em{font-style:normal;color:var(--ambar)}
+  h2{font-size:1rem;font-weight:800;text-transform:uppercase;letter-spacing:.14em;color:var(--cinza)}
+  .subtitulo{color:var(--cinza);margin-top:10px;font-size:1rem}
 
-  .medidas{background:var(--escuro);color:#fff}
-  .medidas h2{color:#fff}
-  .med-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;text-align:center}
-  .med{background:rgba(255,255,255,.07);border-radius:12px;padding:18px 10px}
-  .med .num{font-size:1.7rem;font-weight:800;color:var(--laranja)}
-  .med .lbl{font-size:.8rem;opacity:.85}
-  .fonte{text-align:center;font-size:.75rem;opacity:.6;margin-top:16px}
+  /* placa de sinalizacao */
+  .placa{
+    border:2px solid var(--borda);
+    background:var(--superficie);
+    padding:20px;
+    margin-top:22px;
+  }
+  .placa + .placa{margin-top:16px}
+  .placa-ambar{border-color:var(--ambar)}
 
-  .tabs{display:flex;justify-content:center;gap:10px;margin-bottom:22px}
-  .tab{border:2px solid var(--escuro);background:#fff;color:var(--escuro);font-weight:700;padding:9px 26px;border-radius:999px;cursor:pointer;font-size:.95rem}
-  .tab.on{background:var(--escuro);color:#fff}
-  .galeria{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
-  .galeria img{width:100%;height:auto;border-radius:10px;border:1px solid #eee;background:#fff}
-  .oculto{display:none}
+  label{display:block;font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:var(--cinza);margin-bottom:7px}
+  .campo{margin-bottom:20px}
+  input[type=text],input[type=tel],input[type=password],input[type=search]{
+    width:100%;
+    font:inherit;font-size:1rem;
+    color:var(--texto);
+    background:var(--asfalto);
+    border:2px solid var(--borda);
+    padding:14px 14px;
+    border-radius:0;
+    -webkit-appearance:none;
+  }
+  input::placeholder{color:#5A606B}
+  input:focus{outline:none;border-color:var(--ambar)}
+  input[aria-invalid="true"]{border-color:#C05B2B}
+  .erro{display:none;margin-top:7px;font-size:.86rem;color:var(--ambar);font-weight:700}
+  .erro.visivel{display:block}
 
-  .nota{text-align:center;font-size:.8rem;color:var(--cinza);margin-top:14px}
+  .caixa-autorizacao{display:flex;gap:12px;align-items:flex-start;border:2px solid var(--borda);padding:14px;background:var(--asfalto)}
+  .caixa-autorizacao input{width:26px;height:26px;flex:none;accent-color:var(--ambar);margin-top:1px}
+  .caixa-autorizacao label{text-transform:none;letter-spacing:0;font-size:.9rem;font-weight:500;color:var(--texto);margin:0;line-height:1.4}
 
-  .final{background:linear-gradient(135deg,var(--laranja),#ff9a3d);color:#fff;text-align:center}
-  .final h2{color:#fff}
-  .final p{margin-bottom:22px}
-  .final .cta{background:#fff;color:var(--escuro);box-shadow:0 4px 14px rgba(0,0,0,.2)}
+  /* grupos de escolha (radio) com a mesma cara das placas */
+  .rotulo-grupo{display:block;font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:var(--cinza);margin-bottom:7px}
+  .escolhas{display:flex;gap:10px;flex-wrap:wrap}
+  .escolhas.invalida .escolha{border-color:#C05B2B}
+  .escolha{
+    display:flex;align-items:center;gap:11px;flex:1 1 150px;
+    margin:0;padding:14px;cursor:pointer;
+    border:2px solid var(--borda);background:var(--asfalto);
+    text-transform:none;letter-spacing:0;font-size:.95rem;font-weight:600;color:var(--texto);
+  }
+  .escolha input{width:24px;height:24px;flex:none;accent-color:var(--ambar)}
+  .escolha:hover{border-color:var(--ambar)}
+  .escolha:has(input:checked){border-color:var(--ambar);color:var(--ambar)}
+  .escolha:has(input:focus-visible){outline:3px solid var(--ambar);outline-offset:2px}
+  .sub-campo{margin-top:12px}
 
-  footer{background:var(--escuro);color:#aaa;text-align:center;padding:22px 0;font-size:.8rem}
-  footer b{color:#fff}
+  button{font:inherit;cursor:pointer;border-radius:0}
+  .botao{
+    display:block;width:100%;
+    background:var(--ambar);color:#14161A;
+    border:2px solid var(--ambar);
+    font-weight:900;text-transform:uppercase;letter-spacing:.12em;
+    padding:17px 20px;font-size:1rem;
+  }
+  .botao:hover{filter:brightness(1.08)}
+  .botao:disabled{opacity:.5;cursor:not-allowed;filter:none}
+  .botao-vazado{background:transparent;color:var(--texto);border-color:var(--borda)}
+  .botao-vazado:hover{border-color:var(--ambar);color:var(--ambar);filter:none}
+  .botao-pequeno{padding:11px 14px;font-size:.8rem;letter-spacing:.1em;width:auto}
+  .botao-gigante{padding:26px 20px;font-size:1.35rem;letter-spacing:.14em}
+  a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid var(--ambar);outline-offset:2px}
+  [tabindex="-1"]:focus{outline:none}
+
+  .rodape{
+    flex:none;text-align:center;padding:22px 18px 30px;
+    color:#5A606B;font-size:.78rem;border-top:2px solid var(--borda);
+  }
+  .rodape a{color:#5A606B;text-decoration:none;border-bottom:1px dotted #3A404A}
+  .rodape a:hover{color:var(--ambar);border-color:var(--ambar)}
+
+  /* confirmacao */
+  .ficha{
+    text-align:center;padding:32px 18px;
+    border:2px solid var(--ambar);background:var(--superficie);
+  }
+  .ficha .rotulo{font-size:.75rem;text-transform:uppercase;letter-spacing:.2em;color:var(--cinza)}
+  .ficha .numero{
+    font-size:clamp(2.6rem,15vw,4.4rem);font-weight:900;color:var(--ambar);
+    letter-spacing:.02em;line-height:1.05;margin:8px 0;font-variant-numeric:tabular-nums;
+  }
+  .ficha .pessoa{font-size:1.1rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+  .aviso{margin-top:18px;color:var(--cinza);font-size:.92rem;text-align:center}
+
+  /* painel */
+  .barra-painel{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  .barra-painel h1{font-size:1.4rem}
+  .barra-painel .direita{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+
+  .numeros{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:18px}
+  .numero-caixa{border:2px solid var(--borda);background:var(--superficie);padding:16px 12px;text-align:center}
+  .numero-caixa .valor{font-size:2rem;font-weight:900;color:var(--ambar);font-variant-numeric:tabular-nums;line-height:1}
+  .numero-caixa .rotulo{font-size:.68rem;text-transform:uppercase;letter-spacing:.14em;color:var(--cinza);margin-top:6px}
+
+  .palco{
+    border:2px solid var(--borda);background:var(--superficie);
+    margin-top:16px;padding:22px 18px;text-align:center;
+  }
+  .palco .status{font-size:.72rem;text-transform:uppercase;letter-spacing:.2em;color:var(--cinza)}
+  .palco .nome-sorteado{
+    font-size:clamp(1.6rem,8vw,3rem);font-weight:900;text-transform:uppercase;
+    letter-spacing:.02em;line-height:1.1;margin:12px 0;min-height:1.2em;word-break:break-word;
+  }
+  .palco.revelado{border-color:var(--ambar)}
+  .palco.revelado .nome-sorteado{color:var(--ambar)}
+  .palco .detalhe{color:var(--cinza);font-size:.95rem;min-height:1.4em}
+  .palco.embaralhando .nome-sorteado{opacity:.75}
+  @keyframes pisca{0%,100%{border-color:var(--ambar)}50%{border-color:var(--borda)}}
+  .palco.piscando{animation:pisca .5s steps(1) 4}
+
+  .opcao-sorteio{display:flex;gap:10px;align-items:center;justify-content:center;margin-top:16px;color:var(--cinza);font-size:.9rem}
+  .opcao-sorteio input{width:22px;height:22px;accent-color:var(--ambar)}
+  .opcao-sorteio label{text-transform:none;letter-spacing:0;font-size:.9rem;font-weight:500;color:var(--texto);margin:0}
+
+  .qr-area{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+  .qr-moldura{background:#fff;padding:10px;line-height:0;flex:none}
+  .qr-moldura canvas{display:block;width:180px;height:180px;image-rendering:pixelated}
+  .qr-texto{flex:1 1 220px;min-width:200px}
+  .qr-texto .url{font-size:.85rem;color:var(--ambar);word-break:break-all;margin:8px 0 14px}
+
+  .ferramentas{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .ferramentas input[type=search]{flex:1 1 220px}
+  .contagem{font-size:.78rem;color:var(--cinza);text-transform:uppercase;letter-spacing:.12em}
+
+  .rolagem{overflow-x:auto;-webkit-overflow-scrolling:touch;border:2px solid var(--borda)}
+  table{width:100%;border-collapse:collapse;font-size:.9rem;min-width:1080px}
+  th{
+    text-align:left;font-size:.68rem;text-transform:uppercase;letter-spacing:.14em;color:var(--cinza);
+    padding:12px 12px;background:var(--superficie);border-bottom:2px solid var(--borda);white-space:nowrap;
+  }
+  td{padding:12px 12px;border-bottom:1px solid var(--borda);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  td.ficha-col{font-weight:800;color:var(--ambar);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .marca-ganhador{display:inline-block;font-size:.68rem;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:#14161A;background:var(--ambar);padding:3px 8px}
+  .vazio{padding:26px 14px;text-align:center;color:var(--cinza)}
+
+  .zona-risco{border-color:#4A3A18}
+  .zona-risco .aviso-risco{color:var(--cinza);font-size:.88rem;margin:10px 0 16px}
+  .linha-botoes{display:flex;gap:10px;flex-wrap:wrap}
+
+  /* janela de confirmacao */
+  .cortina{position:fixed;inset:0;background:rgba(8,9,11,.82);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}
+  .cortina[hidden]{display:none}
+  .janela{background:var(--superficie);border:2px solid var(--ambar);padding:22px;max-width:420px;width:100%}
+  .janela h3{font-size:1.05rem;text-transform:uppercase;letter-spacing:.1em;font-weight:900;margin-bottom:10px}
+  .janela p{color:var(--cinza);font-size:.95rem;margin-bottom:16px}
+  .janela .linha-botoes{margin-top:16px}
+  .janela .linha-botoes .botao{flex:1 1 130px;width:auto}
+
+  .recado{margin-top:14px;font-size:.9rem;font-weight:700;color:var(--ambar);min-height:1.2em}
+  .recado.silencioso{color:var(--cinza);font-weight:500}
+
+  .visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  .link-discreto{background:none;border:none;color:inherit;font:inherit;text-decoration:none;border-bottom:1px dotted #3A404A;padding:0;cursor:pointer}
+
+  @media (max-width:520px){
+    .numeros{grid-template-columns:1fr 1fr}
+    .numero-caixa:first-child{grid-column:1 / -1}
+    .barra-painel .direita{width:100%}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important}
+  }
 </style>
 </head>
 <body>
 
-<header>
-  <div class="wrap">
-    <div class="logo">NAKA<span>BOX</span></div>
-    <a class="zap-top" href="https://wa.me/5511971110016?text=Ol%C3%A1!%20Tenho%20interesse%20no%20ba%C3%BA%20de%20moto%2087%20litros." target="_blank" rel="noopener">WhatsApp</a>
-  </div>
-</header>
+<div class="zebrado" aria-hidden="true"></div>
 
-<div class="hero">
-  <div class="wrap">
-    <img src="img/preto/01-capa-frente.jpg" alt="Baú de moto 87 litros preto Nakabox" width="1200" height="1200">
-    <h1>Baú de Moto <em>87 Litros</em></h1>
-    <p class="sub">Ideal para entregas e delivery • Suporte de fixação incluso • Preto ou Branco</p>
-    <a class="cta" href="https://wa.me/5511971110016?text=Ol%C3%A1!%20Tenho%20interesse%20no%20ba%C3%BA%20de%20moto%2087%20litros." target="_blank" rel="noopener">Pedir pelo WhatsApp<small>resposta rápida • consulte preço e entrega</small></a>
-    <div class="badges">
-      <div class="badge"><b>87 L</b> de capacidade</div>
-      <div class="badge">Plástico <b>rígido</b></div>
-      <div class="badge">Suporte <b>incluso</b></div>
-      <div class="badge"><b>2 cores</b>: preto e branco</div>
+<div class="marca">
+  <div class="nome">NAKA<span>BOX</span></div>
+  <div class="etiqueta">Sorteio</div>
+</div>
+
+<main id="conteudo">
+
+  <!-- ============================ TELA 1: INSCRICAO ============================ -->
+  <section class="tela" id="tela-inscricao" aria-labelledby="titulo-inscricao">
+    <h1 id="titulo-inscricao" tabindex="-1">Concorra a um <em>iPhone 15</em></h1>
+    <p class="subtitulo">Preencha os dados e sua ficha entra no sorteio do evento. Leva menos de um minuto.</p>
+
+    <form class="placa" id="formulario" novalidate>
+      <div class="campo">
+        <label for="nome">Nome completo</label>
+        <input type="text" id="nome" name="nome" autocomplete="name" enterkeyhint="next"
+               placeholder="Ex.: João da Silva" maxlength="80" aria-describedby="erro-nome">
+        <p class="erro" id="erro-nome" role="alert"></p>
+      </div>
+
+      <div class="campo">
+        <label for="fone">WhatsApp com DDD</label>
+        <input type="tel" id="fone" name="fone" autocomplete="tel-national" inputmode="numeric" enterkeyhint="next"
+               placeholder="(11) 91234-5678" maxlength="16" aria-describedby="erro-fone">
+        <p class="erro" id="erro-fone" role="alert"></p>
+      </div>
+
+      <div class="campo">
+        <label for="cidade">Cidade <span style="color:#5A606B">(opcional)</span></label>
+        <input type="text" id="cidade" name="cidade" autocomplete="address-level2" enterkeyhint="next"
+               placeholder="Ex.: São Paulo" maxlength="60" aria-describedby="erro-cidade">
+        <p class="erro" id="erro-cidade" role="alert"></p>
+      </div>
+
+      <div class="campo">
+        <label for="revenda">Nome da revenda</label>
+        <input type="text" id="revenda" name="revenda" autocomplete="organization" enterkeyhint="next"
+               placeholder="Ex.: Moto Peças Central" maxlength="80" aria-describedby="erro-revenda">
+        <p class="erro" id="erro-revenda" role="alert"></p>
+      </div>
+
+      <div class="campo">
+        <span class="rotulo-grupo" id="rotulo-frota">Tem frota de moto?</span>
+        <div class="escolhas" id="escolhas-frota" role="radiogroup" aria-labelledby="rotulo-frota" aria-describedby="erro-frota">
+          <label class="escolha"><input type="radio" name="frota" value="propria"><span>Própria</span></label>
+          <label class="escolha"><input type="radio" name="frota" value="terceirizada"><span>Terceirizada</span></label>
+        </div>
+        <p class="erro" id="erro-frota" role="alert"></p>
+      </div>
+
+      <div class="campo">
+        <span class="rotulo-grupo" id="rotulo-motos">Quantas motos você tem?</span>
+        <div class="escolhas" id="escolhas-motos" role="radiogroup" aria-labelledby="rotulo-motos" aria-describedby="erro-motos">
+          <label class="escolha"><input type="radio" name="motos" value="1-10"><span>1 a 10</span></label>
+          <label class="escolha"><input type="radio" name="motos" value="10-50"><span>10 a 50</span></label>
+          <label class="escolha"><input type="radio" name="motos" value="50-100"><span>50 a 100</span></label>
+          <label class="escolha"><input type="radio" name="motos" value="100-mais"><span>100+</span></label>
+        </div>
+        <p class="erro" id="erro-motos" role="alert"></p>
+      </div>
+
+      <div class="campo">
+        <label for="comprador">Qual o nome do comprador?</label>
+        <input type="text" id="comprador" name="comprador" autocomplete="off" enterkeyhint="next"
+               placeholder="Ex.: Maria Souza" maxlength="80" aria-describedby="erro-comprador">
+        <p class="erro" id="erro-comprador" role="alert"></p>
+      </div>
+
+      <div class="campo">
+        <span class="rotulo-grupo" id="rotulo-marca">Qual a marca do baú homologado pela Ambev?</span>
+        <div class="escolhas" id="escolhas-marca" role="radiogroup" aria-labelledby="rotulo-marca" aria-describedby="erro-marca">
+          <label class="escolha"><input type="radio" name="marca" value="nakabox_mn3"><span>Nakabox/MN3</span></label>
+          <label class="escolha"><input type="radio" name="marca" value="outros"><span>Outros</span></label>
+        </div>
+        <p class="erro" id="erro-marca" role="alert"></p>
+
+        <div class="sub-campo" id="caixa-marca-outra" hidden>
+          <label for="marca-outra">Qual?</label>
+          <input type="text" id="marca-outra" name="marca-outra" autocomplete="off" enterkeyhint="done"
+                 placeholder="Escreva o nome da marca" maxlength="60" aria-describedby="erro-marca-outra">
+          <p class="erro" id="erro-marca-outra" role="alert"></p>
+        </div>
+      </div>
+
+      <div class="campo">
+        <div class="caixa-autorizacao">
+          <input type="checkbox" id="autorizo" aria-describedby="erro-autorizo">
+          <label for="autorizo">Autorizo a NAKABOX a entrar em contato comigo pelo WhatsApp sobre o sorteio e seus produtos.</label>
+        </div>
+        <p class="erro" id="erro-autorizo" role="alert"></p>
+      </div>
+
+      <button type="submit" class="botao" id="botao-enviar">Quero participar</button>
+      <p class="recado" id="recado-inscricao" role="status"></p>
+    </form>
+  </section>
+
+  <!-- ============================ TELA 2: CONFIRMACAO ============================ -->
+  <section class="tela" id="tela-confirmacao" hidden aria-labelledby="titulo-confirmacao">
+    <h1 id="titulo-confirmacao" tabindex="-1">Inscrição <em>confirmada</em></h1>
+    <p class="subtitulo" id="recado-confirmacao">Guarde o número da sua ficha. Você está concorrendo a um iPhone 15.</p>
+
+    <div class="ficha" style="margin-top:22px">
+      <div class="rotulo">Sua ficha</div>
+      <div class="numero" id="ficha-numero">NB-0000</div>
+      <div class="pessoa" id="ficha-nome"></div>
+    </div>
+
+    <p class="aviso" id="aviso-confirmacao">Fique de olho no palco: o sorteio acontece aqui no evento.</p>
+
+    <button type="button" class="botao botao-vazado" id="botao-nova-inscricao" style="margin-top:22px">Inscrever outra pessoa</button>
+  </section>
+
+  <!-- ============================ TELA 3: PIN ============================ -->
+  <section class="tela" id="tela-pin" hidden aria-labelledby="titulo-pin">
+    <h1 id="titulo-pin" tabindex="-1">Área do <em>organizador</em></h1>
+    <p class="subtitulo">Digite o PIN do evento para abrir o painel do sorteio do iPhone 15.</p>
+
+    <form class="placa" id="formulario-pin" novalidate>
+      <div class="campo">
+        <label for="pin">PIN</label>
+        <input type="password" id="pin" inputmode="numeric" autocomplete="off" placeholder="••••••" aria-describedby="erro-pin">
+        <p class="erro" id="erro-pin" role="alert"></p>
+      </div>
+      <button type="submit" class="botao" id="botao-pin">Entrar</button>
+    </form>
+
+    <button type="button" class="botao botao-vazado" id="botao-voltar-inscricao" style="margin-top:16px">Voltar para a inscrição</button>
+  </section>
+
+  <!-- ============================ TELA 4: PAINEL ============================ -->
+  <section class="tela" id="tela-painel" hidden aria-labelledby="titulo-painel">
+    <div class="barra-painel">
+      <h1 id="titulo-painel" tabindex="-1">Painel do <em>sorteio</em></h1>
+      <div class="direita">
+        <button type="button" class="botao botao-vazado botao-pequeno" id="botao-atualizar">Atualizar</button>
+        <button type="button" class="botao botao-vazado botao-pequeno" id="botao-sair">Sair</button>
+      </div>
+    </div>
+
+    <div class="numeros">
+      <div class="numero-caixa"><div class="valor" id="total-inscritos">0</div><div class="rotulo">Inscritos</div></div>
+      <div class="numero-caixa"><div class="valor" id="total-sorteados">0</div><div class="rotulo">Sorteados</div></div>
+      <div class="numero-caixa"><div class="valor" id="total-restantes">0</div><div class="rotulo">Na disputa</div></div>
+    </div>
+
+    <div class="palco" id="palco">
+      <div class="status" id="palco-status">Pronto para sortear</div>
+      <div class="nome-sorteado" id="palco-nome">—</div>
+      <div class="detalhe" id="palco-detalhe"></div>
+    </div>
+
+    <div class="opcao-sorteio">
+      <input type="checkbox" id="nao-repetir" checked>
+      <label for="nao-repetir">Não repetir quem já ganhou</label>
+    </div>
+
+    <button type="button" class="botao botao-gigante" id="botao-sortear" style="margin-top:14px">Sortear agora</button>
+    <p class="recado" id="recado-painel" role="status"></p>
+
+    <div class="placa">
+      <h2>QR code do estande</h2>
+      <div class="qr-area" style="margin-top:14px">
+        <div class="qr-moldura"><canvas id="qr" width="180" height="180" role="img" aria-label="QR code com o endereço deste site"></canvas></div>
+        <div class="qr-texto">
+          <p style="font-size:.9rem;color:var(--cinza)">Aponte a câmera do celular para este código para abrir a tela de inscrição.</p>
+          <p class="url" id="qr-url"></p>
+          <button type="button" class="botao botao-vazado botao-pequeno" id="botao-baixar-qr">Baixar PNG para imprimir</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="placa">
+      <h2>Participantes</h2>
+      <div class="ferramentas" style="margin-top:14px">
+        <input type="search" id="busca" placeholder="Buscar por nome, ficha, WhatsApp, cidade, revenda ou comprador" aria-label="Buscar participante">
+        <button type="button" class="botao botao-vazado botao-pequeno" id="botao-csv">Exportar CSV</button>
+      </div>
+      <p class="contagem" id="contagem-lista">0 participantes</p>
+      <div class="rolagem" style="margin-top:10px">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Ficha</th>
+              <th scope="col">Nome</th>
+              <th scope="col">WhatsApp</th>
+              <th scope="col">Cidade</th>
+              <th scope="col">Revenda</th>
+              <th scope="col">Frota</th>
+              <th scope="col">Motos</th>
+              <th scope="col">Comprador</th>
+              <th scope="col">Marca do baú</th>
+              <th scope="col">Situação</th>
+              <th scope="col"><span class="visually-hidden">Ação</span></th>
+            </tr>
+          </thead>
+          <tbody id="corpo-tabela"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="placa zona-risco">
+      <h2>Zona de risco</h2>
+      <p class="aviso-risco">Estas ações não têm volta. As duas pedem confirmação.</p>
+      <div class="linha-botoes">
+        <button type="button" class="botao botao-vazado botao-pequeno" id="botao-zerar-ganhadores">Zerar sorteados</button>
+        <button type="button" class="botao botao-vazado botao-pequeno" id="botao-apagar-tudo">Apagar tudo</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="rodape">
+  <div>NAKABOX — Baús para moto</div>
+  <div style="margin-top:8px"><button type="button" class="link-discreto" id="link-organizador">organizador</button></div>
+</footer>
+
+<!-- janela de confirmacao -->
+<div class="cortina" id="cortina" hidden role="dialog" aria-modal="true" aria-labelledby="janela-titulo">
+  <div class="janela">
+    <h3 id="janela-titulo">Confirmar</h3>
+    <p id="janela-texto"></p>
+    <div id="janela-campo" hidden>
+      <label for="janela-entrada">Digite APAGAR para confirmar</label>
+      <input type="text" id="janela-entrada" autocomplete="off" placeholder="APAGAR">
+    </div>
+    <div class="linha-botoes">
+      <button type="button" class="botao botao-vazado" id="janela-cancelar">Cancelar</button>
+      <button type="button" class="botao" id="janela-confirmar">Confirmar</button>
     </div>
   </div>
 </div>
 
-<section>
-  <div class="wrap">
-    <h2>Feito para o <span>corre do dia a dia</span></h2>
-    <div class="grid">
-      <div class="card"><h3>Corpo em plástico rígido</h3><p>Estrutura resistente que aguenta o uso diário de entregas.</p></div>
-      <div class="card"><h3>Tampa abre por completo</h3><p>Tampa articulada de abertura total — carrega e descarrega fácil.</p></div>
-      <div class="card"><h3>Travas na tampa</h3><p>Presilhas laterais + fecho frontal mantêm tudo fechado no trajeto.</p></div>
-      <div class="card"><h3>Interior amplo, sem divisórias</h3><p>Cabe mochila térmica, marmitas e pacotes grandes.</p></div>
-      <div class="card"><h3>Tapete interno texturizado</h3><p>Protege o fundo do baú e os itens transportados.</p></div>
-      <div class="card"><h3>Instalação fácil</h3><p>Fixa no bagageiro da moto com o suporte que já vem junto.</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="medidas">
-  <div class="wrap">
-    <h2>Medidas</h2>
-    <div class="med-grid">
-      <div class="med"><div class="num">87 L</div><div class="lbl">Capacidade</div></div>
-      <div class="med"><div class="num">47,3 cm</div><div class="lbl">Largura</div></div>
-      <div class="med"><div class="num">46,2 cm</div><div class="lbl">Altura</div></div>
-      <div class="med"><div class="num">52,9 cm</div><div class="lbl">Profundidade</div></div>
-    </div>
-    <p class="fonte">Medidas do relatório de ensaios Falcão Bauer nº BDC/ID.352.075/1/22.</p>
-  </div>
-</section>
-
-<section>
-  <div class="wrap">
-    <h2>Fotos do <span>produto</span></h2>
-    <div class="tabs">
-      <button class="tab on" data-cor="preto" type="button">Preto</button>
-      <button class="tab" data-cor="branco" type="button">Branco</button>
-    </div>
-    <div class="galeria" id="gal-preto">
-      <img src="img/preto/01-capa-frente.jpg" alt="Baú preto — frente" loading="lazy">
-      <img src="img/preto/02-ambiente.jpg" alt="Baú preto — ambiente" loading="lazy">
-      <img src="img/preto/04-frente.jpg" alt="Baú preto — frente fechado" loading="lazy">
-      <img src="img/preto/05-interior.jpg" alt="Baú preto — interior" loading="lazy">
-      <img src="img/preto/06-moto.jpg" alt="Baú preto montado na moto (imagem ilustrativa)" loading="lazy">
-      <img src="img/preto/07-suporte.jpg" alt="Suporte de fixação incluso" loading="lazy">
-      <img src="img/preto/08-traseira.jpg" alt="Baú preto — traseira" loading="lazy">
-      <img src="img/preto/11-aberto-interior.jpg" alt="Baú preto aberto" loading="lazy">
-      <img src="img/preto/12-interior-tapete.jpg" alt="Tapete interno texturizado" loading="lazy">
-    </div>
-    <div class="galeria oculto" id="gal-branco">
-      <img src="img/branco/01-capa-frente.jpg" alt="Baú branco — frente" loading="lazy">
-      <img src="img/branco/02-ambiente.jpg" alt="Baú branco — ambiente" loading="lazy">
-      <img src="img/branco/04-moto.jpg" alt="Baú branco montado na moto (imagem ilustrativa)" loading="lazy">
-      <img src="img/branco/05-close-trava.jpg" alt="Baú branco — close da trava" loading="lazy">
-      <img src="img/branco/06-traseira-suporte.jpg" alt="Baú branco — traseira e suporte" loading="lazy">
-    </div>
-    <p class="nota">*Nas fotos com moto, a imagem da moto é ilustrativa — moto não inclusa.</p>
-  </div>
-</section>
-
-<section class="final">
-  <div class="wrap">
-    <h2>Quer o seu?</h2>
-    <p>Chama a gente no WhatsApp — respondemos rápido com preço, cor disponível e prazo de entrega.</p>
-    <a class="cta" href="https://wa.me/5511971110016?text=Ol%C3%A1!%20Tenho%20interesse%20no%20ba%C3%BA%20de%20moto%2087%20litros." target="_blank" rel="noopener">Chamar no WhatsApp</a>
-  </div>
-</section>
-
-<footer>
-  <div class="wrap">
-    <img src="img/logo-nakabox-1200.png" alt="Logo NAKABOX" width="72" height="72" style="border-radius:12px;margin-bottom:8px">
-    <div><b>NAKABOX</b> — Baús para moto • Entregas e delivery</div>
-  </div>
-</footer>
-
 <script>
-  document.querySelectorAll('.tab').forEach(function(t){
-    t.addEventListener('click',function(){
-      document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on')});
-      t.classList.add('on');
-      document.getElementById('gal-preto').classList.toggle('oculto', t.dataset.cor!=='preto');
-      document.getElementById('gal-branco').classList.toggle('oculto', t.dataset.cor!=='branco');
+
+// ---------------------------------------------------------------------
+// QR code em JavaScript puro (modo byte, correcao M, versoes 1 a 10).
+// Suficiente para qualquer URL de site. Sem biblioteca nenhuma.
+// ---------------------------------------------------------------------
+const QR = (() => {
+  // [total de codewords, codewords de correcao por bloco, numero de blocos]
+  const VERSOES = {
+    1: [26, 10, 1], 2: [44, 16, 1], 3: [70, 26, 1], 4: [100, 18, 2], 5: [134, 24, 2],
+    6: [172, 16, 4], 7: [196, 18, 4], 8: [242, 22, 4], 9: [292, 22, 5], 10: [346, 26, 5],
+  };
+  const ALINHAMENTO = {
+    1: [], 2: [6, 18], 3: [6, 22], 4: [6, 26], 5: [6, 30],
+    6: [6, 34], 7: [6, 22, 38], 8: [6, 24, 42], 9: [6, 26, 46], 10: [6, 28, 50],
+  };
+  const FORMATO_M = 0; // nivel de correcao M
+
+  // --- campo de Galois GF(256) ---
+  const EXP = new Uint8Array(512);
+  const LOG = new Uint8Array(256);
+  (() => {
+    let x = 1;
+    for (let i = 0; i < 255; i++) { EXP[i] = x; LOG[x] = i; x <<= 1; if (x & 0x100) x ^= 0x11d; }
+    for (let i = 255; i < 512; i++) EXP[i] = EXP[i - 255];
+  })();
+  const mul = (a, b) => (a === 0 || b === 0 ? 0 : EXP[LOG[a] + LOG[b]]);
+
+  function gerador(grau) {
+    let p = [1];
+    for (let i = 0; i < grau; i++) {
+      const novo = new Array(p.length + 1).fill(0);
+      for (let j = 0; j < p.length; j++) {
+        novo[j] ^= p[j];
+        novo[j + 1] ^= mul(p[j], EXP[i]);
+      }
+      p = novo;
+    }
+    return p;
+  }
+
+  function correcao(dados, grau) {
+    const gen = gerador(grau);
+    const resto = new Array(grau).fill(0);
+    for (const byte of dados) {
+      const fator = byte ^ resto.shift();
+      resto.push(0);
+      for (let i = 0; i < grau; i++) resto[i] ^= mul(gen[i + 1], fator);
+    }
+    return resto;
+  }
+
+  const bit = (valor, i) => ((valor >>> i) & 1) !== 0;
+
+  function escolherVersao(tamanho) {
+    for (let v = 1; v <= 10; v++) {
+      const [total, ec, blocos] = VERSOES[v];
+      const dados = total - ec * blocos;
+      const bitsContagem = v <= 9 ? 8 : 16;
+      if (tamanho <= Math.floor((dados * 8 - 4 - bitsContagem) / 8)) return v;
+    }
+    return null;
+  }
+
+  function codificar(bytes, versao) {
+    const [total, ec, blocos] = VERSOES[versao];
+    const totalDados = total - ec * blocos;
+    const bits = [];
+    const push = (valor, n) => { for (let i = n - 1; i >= 0; i--) bits.push(bit(valor, i) ? 1 : 0); };
+
+    push(0b0100, 4);                       // modo byte
+    push(bytes.length, versao <= 9 ? 8 : 16);
+    for (const b of bytes) push(b, 8);
+    push(0, Math.min(4, totalDados * 8 - bits.length));   // terminador
+    while (bits.length % 8 !== 0) bits.push(0);
+    const preenchimento = [0xec, 0x11];
+    for (let i = 0; bits.length < totalDados * 8; i++) push(preenchimento[i % 2], 8);
+
+    const codewords = [];
+    for (let i = 0; i < bits.length; i += 8) {
+      let b = 0;
+      for (let j = 0; j < 8; j++) b = (b << 1) | bits[i + j];
+      codewords.push(b);
+    }
+
+    // divide em blocos: os maiores ficam no fim
+    const curto = Math.floor(totalDados / blocos);
+    const longos = totalDados % blocos;
+    const blocosDados = [];
+    const blocosEc = [];
+    let pos = 0;
+    for (let i = 0; i < blocos; i++) {
+      const tam = curto + (i >= blocos - longos ? 1 : 0);
+      const pedaco = codewords.slice(pos, pos + tam);
+      pos += tam;
+      blocosDados.push(pedaco);
+      blocosEc.push(correcao(pedaco, ec));
+    }
+
+    // intercala
+    const saida = [];
+    const maiorDado = curto + (longos > 0 ? 1 : 0);
+    for (let i = 0; i < maiorDado; i++) {
+      for (const b of blocosDados) if (i < b.length) saida.push(b[i]);
+    }
+    for (let i = 0; i < ec; i++) {
+      for (const b of blocosEc) saida.push(b[i]);
+    }
+    return saida;
+  }
+
+  function bitsFormato(mascara) {
+    const dados = (FORMATO_M << 3) | mascara;
+    let resto = dados;
+    for (let i = 0; i < 10; i++) resto = (resto << 1) ^ ((resto >>> 9) * 0x537);
+    return ((dados << 10) | resto) ^ 0x5412;
+  }
+
+  function bitsVersao(versao) {
+    let resto = versao;
+    for (let i = 0; i < 12; i++) resto = (resto << 1) ^ ((resto >>> 11) * 0x1f25);
+    return (versao << 12) | resto;
+  }
+
+  const MASCARAS = [
+    (x, y) => (x + y) % 2 === 0,
+    (x, y) => y % 2 === 0,
+    (x) => x % 3 === 0,
+    (x, y) => (x + y) % 3 === 0,
+    (x, y) => (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0,
+    (x, y) => ((x * y) % 2) + ((x * y) % 3) === 0,
+    (x, y) => (((x * y) % 2) + ((x * y) % 3)) % 2 === 0,
+    (x, y) => (((x + y) % 2) + ((x * y) % 3)) % 2 === 0,
+  ];
+
+  function montar(texto) {
+    const bytes = new TextEncoder().encode(texto);
+    const versao = escolherVersao(bytes.length);
+    if (!versao) throw new Error('Texto grande demais para o QR code.');
+
+    const tamanho = versao * 4 + 17;
+    const m = Array.from({ length: tamanho }, () => new Array(tamanho).fill(false));
+    const fixo = Array.from({ length: tamanho }, () => new Array(tamanho).fill(false));
+    const porFuncao = (x, y, escuro) => {
+      if (x < 0 || y < 0 || x >= tamanho || y >= tamanho) return;
+      m[y][x] = escuro;
+      fixo[y][x] = true;
+    };
+
+    // sincronismo
+    for (let i = 0; i < tamanho; i++) { porFuncao(6, i, i % 2 === 0); porFuncao(i, 6, i % 2 === 0); }
+    // localizadores + separadores (desenhados depois, cobrem parte do sincronismo)
+    for (const [cx, cy] of [[3, 3], [tamanho - 4, 3], [3, tamanho - 4]]) {
+      for (let dy = -4; dy <= 4; dy++) {
+        for (let dx = -4; dx <= 4; dx++) {
+          const dist = Math.max(Math.abs(dx), Math.abs(dy));
+          porFuncao(cx + dx, cy + dy, dist !== 2 && dist !== 4);
+        }
+      }
+    }
+    // alinhamento
+    const centros = ALINHAMENTO[versao];
+    for (let i = 0; i < centros.length; i++) {
+      for (let j = 0; j < centros.length; j++) {
+        if ((i === 0 && j === 0) || (i === 0 && j === centros.length - 1) || (i === centros.length - 1 && j === 0)) continue;
+        for (let dy = -2; dy <= 2; dy++) {
+          for (let dx = -2; dx <= 2; dx++) {
+            porFuncao(centros[i] + dx, centros[j] + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+          }
+        }
+      }
+    }
+
+    function desenharFormato(mascara) {
+      const b = bitsFormato(mascara);
+      for (let i = 0; i <= 5; i++) porFuncao(8, i, bit(b, i));
+      porFuncao(8, 7, bit(b, 6));
+      porFuncao(8, 8, bit(b, 7));
+      porFuncao(7, 8, bit(b, 8));
+      for (let i = 9; i < 15; i++) porFuncao(14 - i, 8, bit(b, i));
+      for (let i = 0; i < 8; i++) porFuncao(tamanho - 1 - i, 8, bit(b, i));
+      for (let i = 8; i < 15; i++) porFuncao(8, tamanho - 15 + i, bit(b, i));
+      porFuncao(8, tamanho - 8, true); // modulo sempre escuro
+    }
+    desenharFormato(0); // reserva a area; o valor certo entra depois da mascara
+
+    if (versao >= 7) {
+      const b = bitsVersao(versao);
+      for (let i = 0; i < 18; i++) {
+        const a = tamanho - 11 + (i % 3);
+        const c = Math.floor(i / 3);
+        porFuncao(a, c, bit(b, i));
+        porFuncao(c, a, bit(b, i));
+      }
+    }
+
+    // dados em zigue-zague
+    const codewords = codificar(bytes, versao);
+    let i = 0;
+    for (let direita = tamanho - 1; direita >= 1; direita -= 2) {
+      if (direita === 6) direita = 5;
+      for (let vertical = 0; vertical < tamanho; vertical++) {
+        for (let j = 0; j < 2; j++) {
+          const x = direita - j;
+          const subindo = ((direita + 1) & 2) === 0;
+          const y = subindo ? tamanho - 1 - vertical : vertical;
+          if (!fixo[y][x] && i < codewords.length * 8) {
+            m[y][x] = bit(codewords[i >>> 3], 7 - (i & 7));
+            i++;
+          }
+        }
+      }
+    }
+
+    // escolhe a mascara de menor penalidade
+    let melhor = 0;
+    let melhorNota = Infinity;
+    for (let mascara = 0; mascara < 8; mascara++) {
+      aplicarMascara(m, fixo, tamanho, mascara);
+      desenharFormato(mascara);
+      const nota = penalidade(m, tamanho);
+      if (nota < melhorNota) { melhorNota = nota; melhor = mascara; }
+      aplicarMascara(m, fixo, tamanho, mascara); // desfaz (XOR e reversivel)
+    }
+    aplicarMascara(m, fixo, tamanho, melhor);
+    desenharFormato(melhor);
+
+    return { tamanho, modulos: m, versao, mascara: melhor };
+  }
+
+  function aplicarMascara(m, fixo, tamanho, mascara) {
+    const f = MASCARAS[mascara];
+    for (let y = 0; y < tamanho; y++) {
+      for (let x = 0; x < tamanho; x++) {
+        if (!fixo[y][x] && f(x, y)) m[y][x] = !m[y][x];
+      }
+    }
+  }
+
+  function contarLocalizadores(hist) {
+    const n = hist[1];
+    const nucleo = n > 0 && hist[2] === n && hist[3] === n * 3 && hist[4] === n && hist[5] === n;
+    return (nucleo && hist[0] >= n * 4 && hist[6] >= n ? 1 : 0) + (nucleo && hist[6] >= n * 4 && hist[0] >= n ? 1 : 0);
+  }
+  function guardarCorrida(tam, hist, tamanho) {
+    if (hist[0] === 0) tam += tamanho;
+    hist.pop();
+    hist.unshift(tam);
+  }
+  function fecharCorrida(cor, tam, hist, tamanho) {
+    if (cor) { guardarCorrida(tam, hist, tamanho); tam = 0; }
+    guardarCorrida(tam + tamanho, hist, tamanho);
+    return contarLocalizadores(hist);
+  }
+
+  function penalidade(m, tamanho) {
+    const N1 = 3, N2 = 3, N3 = 40, N4 = 10;
+    let nota = 0;
+
+    for (let y = 0; y < tamanho; y++) {
+      let cor = false, corrida = 0;
+      const hist = new Array(7).fill(0);
+      for (let x = 0; x < tamanho; x++) {
+        if (m[y][x] === cor) { corrida++; if (corrida === 5) nota += N1; else if (corrida > 5) nota++; }
+        else { guardarCorrida(corrida, hist, tamanho); if (!cor) nota += contarLocalizadores(hist) * N3; cor = m[y][x]; corrida = 1; }
+      }
+      nota += fecharCorrida(cor, corrida, hist, tamanho) * N3;
+    }
+    for (let x = 0; x < tamanho; x++) {
+      let cor = false, corrida = 0;
+      const hist = new Array(7).fill(0);
+      for (let y = 0; y < tamanho; y++) {
+        if (m[y][x] === cor) { corrida++; if (corrida === 5) nota += N1; else if (corrida > 5) nota++; }
+        else { guardarCorrida(corrida, hist, tamanho); if (!cor) nota += contarLocalizadores(hist) * N3; cor = m[y][x]; corrida = 1; }
+      }
+      nota += fecharCorrida(cor, corrida, hist, tamanho) * N3;
+    }
+    for (let y = 0; y < tamanho - 1; y++) {
+      for (let x = 0; x < tamanho - 1; x++) {
+        const c = m[y][x];
+        if (c === m[y][x + 1] && c === m[y + 1][x] && c === m[y + 1][x + 1]) nota += N2;
+      }
+    }
+    let escuros = 0;
+    for (const linha of m) for (const c of linha) if (c) escuros++;
+    const total = tamanho * tamanho;
+    nota += (Math.ceil(Math.abs(escuros * 20 - total * 10) / total) - 1) * N4;
+    return nota;
+  }
+
+  return { montar };
+})();
+
+// =====================================================================
+// Aplicação: quatro telas no mesmo arquivo, alternadas por JavaScript.
+// =====================================================================
+(() => {
+  'use strict';
+
+  const $ = (id) => document.getElementById(id);
+  const CHAVE_PIN = 'nakabox_pin';
+  const TEMPO_EMBARALHO = 2500; // a animação segura a revelação por 2,5 s
+
+  let participantes = [];
+  let sorteioEmAndamento = false;
+  let palcoTravado = false; // segura a revelação recente para a atualização automática não trocar o rótulo
+  let relogioAtualizacao = null;
+  let relogioVolta = null;
+
+  const reduzirMovimento = () =>
+    window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // -------------------------------------------------------------------
+  // Conversa com as funções em /api
+  // -------------------------------------------------------------------
+  class ErroApp extends Error {
+    constructor(mensagem, status, campo) {
+      super(mensagem);
+      this.status = status;
+      this.campo = campo;
+    }
+  }
+
+  async function api(rota, dados = {}) {
+    let resposta;
+    try {
+      resposta = await fetch('/api/' + rota, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dados),
+      });
+    } catch {
+      throw new ErroApp('Sem conexão com a internet. Confira o sinal e tente de novo.', 0);
+    }
+
+    let corpo = null;
+    try { corpo = await resposta.json(); } catch { corpo = null; }
+
+    if (!resposta.ok) {
+      let mensagem = corpo && corpo.erro;
+      if (!mensagem) {
+        mensagem = resposta.status === 404
+          ? 'A função /api/' + rota + ' não respondeu. O site precisa estar publicado no Vercel.'
+          : 'O servidor falhou (código ' + resposta.status + '). Tente de novo.';
+      }
+      throw new ErroApp(mensagem, resposta.status, corpo && corpo.campo);
+    }
+    return corpo || {};
+  }
+
+  /** Chamadas do painel: mandam o PIN guardado e caem fora se ele não valer mais. */
+  async function apiComPin(rota, dados = {}) {
+    const pin = sessionStorage.getItem(CHAVE_PIN) || '';
+    try {
+      return await api(rota, { ...dados, pin });
+    } catch (e) {
+      if (e instanceof ErroApp && e.status === 401) {
+        sair('O PIN não vale mais. Entre de novo.');
+      }
+      throw e;
+    }
+  }
+
+  // -------------------------------------------------------------------
+  // Telas
+  // -------------------------------------------------------------------
+  function mostrarTela(id) {
+    document.querySelectorAll('.tela').forEach((tela) => { tela.hidden = tela.id !== id; });
+    $('conteudo').classList.toggle('painel-largo', id === 'tela-painel');
+    const titulo = document.querySelector('#' + id + ' h1');
+    if (titulo) titulo.focus({ preventScroll: true });
+    window.scrollTo(0, 0);
+  }
+
+  function recado(elemento, texto, silencioso = false) {
+    elemento.textContent = texto || '';
+    elemento.classList.toggle('silencioso', Boolean(silencioso));
+  }
+
+  // -------------------------------------------------------------------
+  // Formatação
+  // -------------------------------------------------------------------
+  function mascararFone(valor) {
+    const d = String(valor || '').replace(/\D/g, '').slice(0, 11);
+    if (!d.length) return '';
+    if (d.length <= 2) return '(' + d;
+    if (d.length <= 6) return '(' + d.slice(0, 2) + ') ' + d.slice(2);
+    if (d.length <= 10) return '(' + d.slice(0, 2) + ') ' + d.slice(2, 6) + '-' + d.slice(6);
+    return '(' + d.slice(0, 2) + ') ' + d.slice(2, 7) + '-' + d.slice(7);
+  }
+
+  function dataHora(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  // -------------------------------------------------------------------
+  // TELA 1 — inscrição
+  // -------------------------------------------------------------------
+  const LETRAS = /^[A-Za-zÀ-ÖØ-öø-ÿ'’.\- ]+$/;
+  const DDDS = new Set([
+    11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 24, 27, 28, 31, 32, 33, 34, 35, 37, 38,
+    41, 42, 43, 44, 45, 46, 47, 48, 49, 51, 53, 54, 55, 61, 62, 63, 64, 65, 66, 67, 68, 69,
+    71, 73, 74, 75, 77, 79, 81, 82, 83, 84, 85, 86, 87, 88, 89, 91, 92, 93, 94, 95, 96, 97, 98, 99,
+  ]);
+
+  function limparEspacos(valor) {
+    return String(valor || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function conferirNome(valor) {
+    const nome = limparEspacos(valor);
+    if (!nome) return 'Preencha o nome completo.';
+    if (nome.length < 5) return 'O nome está curto demais. Escreva nome e sobrenome.';
+    if (!LETRAS.test(nome)) return 'O nome deve ter apenas letras. Tire números e símbolos.';
+    const partes = nome.split(' ').filter((p) => p.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ]/g, '').length >= 2);
+    if (partes.length < 2) return 'Digite o nome completo: nome e sobrenome.';
+    return null;
+  }
+
+  function conferirFone(valor) {
+    const d = String(valor || '').replace(/\D/g, '');
+    if (!d) return 'Preencha o WhatsApp com DDD.';
+    if (d.length < 10) return 'O WhatsApp está incompleto. Use DDD + número, com 11 dígitos.';
+    if (d.length > 11) return 'O WhatsApp tem dígitos demais. Use DDD + número, com 11 dígitos.';
+    if (!DDDS.has(Number(d.slice(0, 2)))) return 'O DDD ' + d.slice(0, 2) + ' não existe. Confira os dois primeiros dígitos.';
+    const numero = d.slice(2);
+    if (numero.length === 9 && numero[0] !== '9') return 'Celular com 9 dígitos precisa começar com 9 depois do DDD.';
+    if (numero.length === 8 && !/^[6-9]/.test(numero)) return 'Esse não parece um número de celular. Confira o WhatsApp.';
+    if (/^(\d)\1+$/.test(numero)) return 'Esse número não parece válido. Confira o WhatsApp.';
+    return null;
+  }
+
+  function conferirCidade(valor) {
+    const cidade = limparEspacos(valor);
+    if (!cidade) return null; // cidade é opcional
+    if (cidade.length < 2) return 'O nome da cidade está curto demais.';
+    if (!LETRAS.test(cidade)) return 'A cidade deve ter apenas letras.';
+    return null;
+  }
+
+  // Texto livre: aceita letras, números e a pontuação comum de nome de empresa.
+  const TEXTO_LIVRE = /^[A-Za-zÀ-ÖØ-öø-ÿ0-9'’.,\-&/ ]+$/;
+
+  function conferirRevenda(valor) {
+    const revenda = limparEspacos(valor);
+    if (!revenda) return 'Preencha o nome da revenda.';
+    if (revenda.length < 2) return 'O nome da revenda está curto demais.';
+    if (revenda.length > 80) return 'O nome da revenda pode ter no máximo 80 letras.';
+    if (!TEXTO_LIVRE.test(revenda)) return 'O nome da revenda tem símbolos que não valem aqui.';
+    return null;
+  }
+
+  function conferirComprador(valor) {
+    const comprador = limparEspacos(valor);
+    if (!comprador) return 'Preencha o nome do comprador.';
+    if (comprador.length < 3) return 'O nome do comprador está curto demais.';
+    if (comprador.length > 80) return 'O nome do comprador pode ter no máximo 80 letras.';
+    if (!LETRAS.test(comprador)) return 'O nome do comprador deve ter apenas letras.';
+    return null;
+  }
+
+  function conferirMarcaOutra(valor) {
+    const marca = limparEspacos(valor);
+    if (!marca) return 'Escreva qual é a marca do baú.';
+    if (marca.length < 2) return 'O nome da marca está curto demais.';
+    if (marca.length > 60) return 'O nome da marca pode ter no máximo 60 letras.';
+    if (!TEXTO_LIVRE.test(marca)) return 'O nome da marca tem símbolos que não valem aqui.';
+    return null;
+  }
+
+  function escolhido(nomeDoGrupo) {
+    const marcado = document.querySelector('input[name="' + nomeDoGrupo + '"]:checked');
+    return marcado ? marcado.value : '';
+  }
+
+  // Alguns campos são grupos de radio: não existe um <input id="frota">.
+  const GRUPOS = { frota: 'escolhas-frota', motos: 'escolhas-motos', marca: 'escolhas-marca' };
+  // Nakabox e MN3 sao marcas diferentes; o servidor confere esta mesma lista.
+  const MARCAS_VALIDAS = ['nakabox_mn3', 'outros'];
+
+  function marcarErro(campo, mensagem) {
+    const entrada = $(campo);
+    const grupo = GRUPOS[campo] ? $(GRUPOS[campo]) : null;
+    const caixa = $('erro-' + campo);
+    if (!caixa) return;
+    if (mensagem) {
+      caixa.textContent = mensagem;
+      caixa.classList.add('visivel');
+      if (entrada) entrada.setAttribute('aria-invalid', 'true');
+      if (grupo) grupo.classList.add('invalida');
+    } else {
+      caixa.textContent = '';
+      caixa.classList.remove('visivel');
+      if (entrada) entrada.removeAttribute('aria-invalid');
+      if (grupo) grupo.classList.remove('invalida');
+    }
+  }
+
+  // Foca o campo certo, seja um input comum ou o primeiro radio do grupo.
+  function focarCampo(campo) {
+    if (GRUPOS[campo]) {
+      const grupo = $(GRUPOS[campo]);
+      const primeiro = grupo && grupo.querySelector('input[type=radio]');
+      if (primeiro) primeiro.focus();
+      return;
+    }
+    const alvo = $(campo);
+    if (alvo) alvo.focus();
+  }
+
+  const CAMPOS_INSCRICAO = ['nome', 'fone', 'cidade', 'revenda', 'frota', 'motos', 'comprador', 'marca', 'marca-outra', 'autorizo'];
+
+  function limparErros() {
+    CAMPOS_INSCRICAO.forEach((c) => marcarErro(c, null));
+    recado($('recado-inscricao'), '');
+  }
+
+  $('fone').addEventListener('input', (e) => {
+    const posicaoFinal = e.target.selectionStart === e.target.value.length;
+    e.target.value = mascararFone(e.target.value);
+    if (posicaoFinal) e.target.setSelectionRange(e.target.value.length, e.target.value.length);
+  });
+
+  ['nome', 'fone', 'cidade', 'revenda', 'comprador', 'marca-outra'].forEach((campo) => {
+    $(campo).addEventListener('input', () => marcarErro(campo, null));
+  });
+  $('autorizo').addEventListener('change', () => marcarErro('autorizo', null));
+
+  // "Outra" abre o campinho do "qual?"; qualquer outra escolha esconde e limpa.
+  function sincronizarMarcaOutra() {
+    const outra = escolhido('marca') === 'outros';
+    $('caixa-marca-outra').hidden = !outra;
+    if (!outra) {
+      $('marca-outra').value = '';
+      marcarErro('marca-outra', null);
+    }
+  }
+
+  document.querySelectorAll('input[name="frota"]').forEach((entrada) => {
+    entrada.addEventListener('change', () => marcarErro('frota', null));
+  });
+
+  document.querySelectorAll('input[name="motos"]').forEach((entrada) => {
+    entrada.addEventListener('change', () => marcarErro('motos', null));
+  });
+
+  document.querySelectorAll('input[name="marca"]').forEach((entrada) => {
+    entrada.addEventListener('change', () => {
+      marcarErro('marca', null);
+      sincronizarMarcaOutra();
+      if (escolhido('marca') === 'outros') $('marca-outra').focus({ preventScroll: true });
     });
   });
-</script>
 
+  $('formulario').addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+    limparErros();
+
+    const nome = limparEspacos($('nome').value);
+    const foneDigitos = $('fone').value.replace(/\D/g, '');
+    const cidade = limparEspacos($('cidade').value);
+    const revenda = limparEspacos($('revenda').value);
+    const frota = escolhido('frota');
+    const motos = escolhido('motos');
+    const comprador = limparEspacos($('comprador').value);
+    const marca = escolhido('marca');
+    const marcaOutra = limparEspacos($('marca-outra').value);
+
+    const problemas = [
+      ['nome', conferirNome(nome)],
+      ['fone', conferirFone(foneDigitos)],
+      ['cidade', conferirCidade(cidade)],
+      ['revenda', conferirRevenda(revenda)],
+      ['frota', frota ? null : 'Escolha se a frota é própria ou terceirizada.'],
+      ['motos', motos ? null : 'Escolha quantas motos você tem.'],
+      ['comprador', conferirComprador(comprador)],
+      ['marca', MARCAS_VALIDAS.includes(marca) ? null : 'Escolha a marca do baú homologado pela Ambev.'],
+      ['marca-outra', marca === 'outros' ? conferirMarcaOutra(marcaOutra) : null],
+      ['autorizo', $('autorizo').checked ? null : 'Marque a autorização de contato para participar.'],
+    ].filter(([, mensagem]) => mensagem);
+
+    if (problemas.length) {
+      problemas.forEach(([campo, mensagem]) => marcarErro(campo, mensagem));
+      focarCampo(problemas[0][0]);
+      return;
+    }
+
+    const botao = $('botao-enviar');
+    botao.disabled = true;
+    const rotulo = botao.textContent;
+    botao.textContent = 'Enviando...';
+
+    try {
+      const resposta = await api('inscrever', {
+        nome, fone: foneDigitos, cidade,
+        revenda, frota, motos, comprador, marca,
+        marcaOutra: marca === 'outros' ? marcaOutra : '',
+        autorizo: true,
+      });
+      mostrarConfirmacao(resposta);
+      $('formulario').reset();
+      sincronizarMarcaOutra();
+    } catch (e) {
+      // 409 = esse WhatsApp já está no sorteio. A inscrição é recusada e a
+      // pessoa PRECISA ver o porquê: a mensagem aparece embaixo do campo do
+      // WhatsApp e também no recado do fim do formulário, nunca em silêncio.
+      if (e.status === 409) {
+        marcarErro('fone', e.message);
+        recado($('recado-inscricao'), e.message);
+        focarCampo('fone');
+      } else if (e.campo) {
+        marcarErro(e.campo, e.message);
+        focarCampo(e.campo);
+      } else {
+        recado($('recado-inscricao'), e.message);
+      }
+    } finally {
+      botao.disabled = false;
+      botao.textContent = rotulo;
+    }
+  });
+
+  // -------------------------------------------------------------------
+  // TELA 2 — confirmação
+  // -------------------------------------------------------------------
+  function mostrarConfirmacao(dados) {
+    $('ficha-numero').textContent = dados.ficha;
+    $('ficha-nome').textContent = dados.nome || '';
+    // Esta tela só aparece quando a inscrição foi mesmo criada. WhatsApp
+    // repetido não chega aqui: é recusado ainda no formulário.
+    $('recado-confirmacao').textContent =
+      'Guarde o número da sua ficha. Você está concorrendo a um iPhone 15.';
+    mostrarTela('tela-confirmacao');
+    agendarVolta(30);
+  }
+
+  function agendarVolta(segundos) {
+    cancelarVolta();
+    let restante = segundos;
+    const pintar = () => {
+      $('aviso-confirmacao').textContent =
+        'Voltando para a tela de inscrição em ' + restante + 's — pode passar o celular para a próxima pessoa.';
+    };
+    pintar();
+    relogioVolta = setInterval(() => {
+      restante -= 1;
+      if (restante <= 0) {
+        cancelarVolta();
+        voltarParaInscricao();
+        return;
+      }
+      pintar();
+    }, 1000);
+  }
+
+  function cancelarVolta() {
+    if (relogioVolta) clearInterval(relogioVolta);
+    relogioVolta = null;
+  }
+
+  function voltarParaInscricao() {
+    cancelarVolta();
+    $('formulario').reset();
+    sincronizarMarcaOutra();
+    limparErros();
+    mostrarTela('tela-inscricao');
+    $('nome').focus({ preventScroll: true });
+  }
+
+  $('botao-nova-inscricao').addEventListener('click', voltarParaInscricao);
+
+  // -------------------------------------------------------------------
+  // TELA 3 — PIN (a conferência é sempre no servidor)
+  // -------------------------------------------------------------------
+  $('link-organizador').addEventListener('click', async () => {
+    cancelarVolta();
+    const guardado = sessionStorage.getItem(CHAVE_PIN);
+    if (guardado) {
+      try {
+        const resposta = await api('participantes', { pin: guardado });
+        abrirPainel(resposta);
+        return;
+      } catch {
+        sessionStorage.removeItem(CHAVE_PIN);
+      }
+    }
+    marcarErroPin(null);
+    $('pin').value = '';
+    mostrarTela('tela-pin');
+  });
+
+  $('botao-voltar-inscricao').addEventListener('click', voltarParaInscricao);
+
+  function marcarErroPin(mensagem) {
+    const caixa = $('erro-pin');
+    caixa.textContent = mensagem || '';
+    caixa.classList.toggle('visivel', Boolean(mensagem));
+    $('pin').setAttribute('aria-invalid', mensagem ? 'true' : 'false');
+  }
+
+  $('formulario-pin').addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+    const pin = $('pin').value.trim();
+    marcarErroPin(null);
+    if (!pin) {
+      marcarErroPin('Digite o PIN do organizador.');
+      $('pin').focus();
+      return;
+    }
+
+    const botao = $('botao-pin');
+    botao.disabled = true;
+    botao.textContent = 'Conferindo...';
+    try {
+      const resposta = await api('participantes', { pin });
+      sessionStorage.setItem(CHAVE_PIN, pin);
+      $('pin').value = '';
+      abrirPainel(resposta);
+    } catch (e) {
+      marcarErroPin(e.message);
+      $('pin').focus();
+    } finally {
+      botao.disabled = false;
+      botao.textContent = 'Entrar';
+    }
+  });
+
+  // -------------------------------------------------------------------
+  // TELA 4 — painel
+  // -------------------------------------------------------------------
+  function abrirPainel(resposta) {
+    palcoTravado = false;
+    mostrarTela('tela-painel');
+    desenharQr();
+    aplicarDados(resposta);
+    ligarAtualizacaoAutomatica();
+  }
+
+  function sair(mensagem) {
+    sessionStorage.removeItem(CHAVE_PIN);
+    desligarAtualizacaoAutomatica();
+    participantes = [];
+    mostrarTela('tela-pin');
+    marcarErroPin(mensagem || null);
+  }
+
+  $('botao-sair').addEventListener('click', () => sair(null));
+
+  function ligarAtualizacaoAutomatica() {
+    desligarAtualizacaoAutomatica();
+    relogioAtualizacao = setInterval(() => {
+      if (sorteioEmAndamento) return;
+      if ($('tela-painel').hidden) return;
+      if (!$('cortina').hidden) return;
+      carregar(true);
+    }, 20000);
+  }
+
+  function desligarAtualizacaoAutomatica() {
+    if (relogioAtualizacao) clearInterval(relogioAtualizacao);
+    relogioAtualizacao = null;
+  }
+
+  async function carregar(silencioso) {
+    try {
+      const resposta = await apiComPin('participantes');
+      aplicarDados(resposta);
+      if (!silencioso) recado($('recado-painel'), 'Lista atualizada.', true);
+    } catch (e) {
+      if (!silencioso) recado($('recado-painel'), e.message);
+    }
+  }
+
+  function aplicarDados(resposta) {
+    participantes = Array.isArray(resposta.participantes) ? resposta.participantes : [];
+    aplicarTotais(resposta.totais);
+    desenharTabela();
+    if (!sorteioEmAndamento && !palcoTravado) {
+      if (resposta.ultimoGanhador) mostrarGanhador(resposta.ultimoGanhador, true);
+      else limparPalco();
+    }
+  }
+
+  function aplicarTotais(totais) {
+    if (!totais) return;
+    $('total-inscritos').textContent = totais.inscritos;
+    $('total-sorteados').textContent = totais.sorteados;
+    $('total-restantes').textContent = totais.restantes;
+  }
+
+  $('botao-atualizar').addEventListener('click', () => carregar(false));
+
+  // --- tabela ---
+  function listaFiltrada() {
+    const busca = $('busca').value.trim().toLowerCase();
+    if (!busca) return participantes;
+    const digitos = busca.replace(/\D/g, '');
+    return participantes.filter((p) => {
+      const alvo = [p.nome, p.ficha, p.cidade, p.revenda, p.comprador, p.marcaBau]
+        .filter(Boolean).join(' ').toLowerCase();
+      return alvo.includes(busca) || (digitos.length >= 3 && p.fone.includes(digitos));
+    });
+  }
+
+  // "Outra" só faz sentido junto com o que a pessoa escreveu.
+  function marcaCompleta(p) {
+    if (!p.marcaBau) return '';
+    if (p.marcaOutra) return p.marcaBau + ': ' + p.marcaOutra;
+    return p.marcaBau;
+  }
+
+  function desenharTabela() {
+    const lista = listaFiltrada();
+    const corpo = $('corpo-tabela');
+    corpo.textContent = '';
+
+    $('contagem-lista').textContent = lista.length === participantes.length
+      ? participantes.length + (participantes.length === 1 ? ' participante' : ' participantes')
+      : lista.length + ' de ' + participantes.length + ' participantes';
+
+    if (!lista.length) {
+      const linha = document.createElement('tr');
+      const celula = document.createElement('td');
+      celula.colSpan = 10;
+      celula.className = 'vazio';
+      celula.textContent = participantes.length
+        ? 'Ninguém encontrado com essa busca.'
+        : 'Ninguém se inscreveu ainda. Deixe o QR code à vista no estande.';
+      linha.appendChild(celula);
+      corpo.appendChild(linha);
+      return;
+    }
+
+    for (const p of lista) {
+      const linha = document.createElement('tr');
+
+      const ficha = document.createElement('td');
+      ficha.className = 'ficha-col';
+      ficha.textContent = p.ficha;
+
+      const nome = document.createElement('td');
+      nome.textContent = p.nome;
+
+      const fone = document.createElement('td');
+      fone.textContent = mascararFone(p.fone);
+
+      const cidade = document.createElement('td');
+      cidade.textContent = p.cidade || '—';
+
+      const revenda = document.createElement('td');
+      revenda.textContent = p.revenda || '—';
+
+      const frota = document.createElement('td');
+      frota.textContent = p.frota || '—';
+
+      const motos = document.createElement('td');
+      motos.textContent = p.qtdMotos || '—';
+
+      const comprador = document.createElement('td');
+      comprador.textContent = p.comprador || '—';
+
+      const marca = document.createElement('td');
+      marca.textContent = marcaCompleta(p) || '—';
+
+      const situacao = document.createElement('td');
+      if (p.ganhador) {
+        const marca = document.createElement('span');
+        marca.className = 'marca-ganhador';
+        marca.textContent = 'Ganhou';
+        situacao.appendChild(marca);
+      } else {
+        situacao.textContent = 'Na disputa';
+      }
+
+      const acao = document.createElement('td');
+      const botao = document.createElement('button');
+      botao.type = 'button';
+      botao.className = 'botao botao-vazado botao-pequeno';
+      botao.textContent = 'Remover';
+      botao.dataset.id = p.id;
+      botao.setAttribute('aria-label', 'Remover ' + p.nome);
+      acao.appendChild(botao);
+
+      linha.append(ficha, nome, fone, cidade, revenda, frota, motos, comprador, marca, situacao, acao);
+      corpo.appendChild(linha);
+    }
+  }
+
+  $('busca').addEventListener('input', desenharTabela);
+
+  $('corpo-tabela').addEventListener('click', async (evento) => {
+    const botao = evento.target.closest('button[data-id]');
+    if (!botao) return;
+    const id = Number(botao.dataset.id);
+    const pessoa = participantes.find((p) => p.id === id);
+    if (!pessoa) return;
+
+    const confirmado = await confirmar({
+      titulo: 'Remover inscrito',
+      texto: 'Remover ' + pessoa.nome + ' (' + pessoa.ficha + ') da lista? Não dá para desfazer.',
+      rotulo: 'Remover',
+    });
+    if (!confirmado) return;
+
+    botao.disabled = true;
+    try {
+      await apiComPin('remover', { id });
+      recado($('recado-painel'), pessoa.nome + ' foi removido da lista.', true);
+      await carregar(true);
+    } catch (e) {
+      botao.disabled = false;
+      recado($('recado-painel'), e.message);
+    }
+  });
+
+  // --- sorteio ---
+  function limparPalco() {
+    palcoTravado = false;
+    const palco = $('palco');
+    palco.classList.remove('revelado', 'piscando', 'embaralhando');
+    $('palco-status').textContent = 'Pronto para sortear';
+    $('palco-nome').textContent = '—';
+    $('palco-detalhe').textContent = '';
+  }
+
+  function mostrarGanhador(ganhador, deOutroMomento) {
+    const palco = $('palco');
+    palco.classList.remove('embaralhando');
+    palco.classList.add('revelado');
+    if (!deOutroMomento && !reduzirMovimento()) {
+      palco.classList.add('piscando');
+      setTimeout(() => palco.classList.remove('piscando'), 2200);
+    }
+    $('palco-status').textContent = deOutroMomento ? 'Último ganhador' : 'Ganhador!';
+    $('palco-nome').textContent = ganhador.nome;
+    $('palco-detalhe').textContent = [ganhador.ficha, ganhador.cidade, dataHora(ganhador.ganhouEm)]
+      .filter(Boolean).join(' • ');
+  }
+
+  function iniciarEmbaralho(nomes) {
+    const palco = $('palco');
+    const alvo = $('palco-nome');
+    palco.classList.remove('revelado', 'piscando');
+    palco.classList.add('embaralhando');
+    $('palco-status').textContent = 'Sorteando...';
+    $('palco-detalhe').textContent = '';
+
+    if (!nomes.length || reduzirMovimento()) {
+      alvo.textContent = 'Sorteando...';
+      return () => palco.classList.remove('embaralhando');
+    }
+
+    alvo.textContent = nomes[0];
+    const relogio = setInterval(() => {
+      alvo.textContent = nomes[Math.floor(Math.random() * nomes.length)];
+    }, 70);
+    return () => {
+      clearInterval(relogio);
+      palco.classList.remove('embaralhando');
+    };
+  }
+
+  $('botao-sortear').addEventListener('click', async () => {
+    if (sorteioEmAndamento) return;
+    sorteioEmAndamento = true;
+
+    const botao = $('botao-sortear');
+    botao.disabled = true;
+    recado($('recado-painel'), '');
+
+    const naoRepetir = $('nao-repetir').checked;
+    const nomes = participantes.filter((p) => !naoRepetir || !p.ganhador).map((p) => p.nome);
+    const pararEmbaralho = iniciarEmbaralho(nomes);
+
+    // O sorteio em si acontece no servidor; aqui só seguramos a revelação.
+    const pedido = apiComPin('sortear', { naoRepetir });
+    const espera = new Promise((r) => setTimeout(r, TEMPO_EMBARALHO));
+
+    try {
+      const [resposta] = await Promise.all([pedido, espera]);
+      pararEmbaralho();
+      palcoTravado = true;
+      mostrarGanhador(resposta.ganhador, false);
+      aplicarTotais(resposta.totais);
+      carregar(true);
+    } catch (e) {
+      pararEmbaralho();
+      limparPalco();
+      $('palco-status').textContent = 'Não deu para sortear';
+      recado($('recado-painel'), e.message);
+    } finally {
+      sorteioEmAndamento = false;
+      botao.disabled = false;
+    }
+  });
+
+  // --- CSV para o Excel brasileiro (separador ";" e BOM UTF-8) ---
+  function celulaCsv(valor) {
+    const texto = String(valor == null ? '' : valor);
+    return /[";\r\n]/.test(texto) ? '"' + texto.replace(/"/g, '""') + '"' : texto;
+  }
+
+  $('botao-csv').addEventListener('click', () => {
+    if (!participantes.length) {
+      recado($('recado-painel'), 'Não há ninguém na lista para exportar.');
+      return;
+    }
+    const linhas = [[
+      'Ficha', 'Nome', 'WhatsApp', 'Cidade', 'Revenda', 'Frota', 'Motos', 'Comprador', 'Marca do baú',
+      'Ganhador', 'Ganhou em', 'Inscrito em',
+    ]];
+    for (const p of participantes) {
+      linhas.push([
+        p.ficha, p.nome, mascararFone(p.fone), p.cidade,
+        p.revenda, p.frota, p.qtdMotos, p.comprador, marcaCompleta(p),
+        p.ganhador ? 'Sim' : 'Não', dataHora(p.ganhouEm), dataHora(p.criadoEm),
+      ]);
+    }
+    const csv = linhas.map((l) => l.map(celulaCsv).join(';')).join('\r\n');
+    const conteudo = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' }); // BOM: o Excel brasileiro abre certo
+    const hoje = new Date().toISOString().slice(0, 10);
+    baixar(conteudo, 'nakabox-sorteio-' + hoje + '.csv');
+    recado($('recado-painel'), 'CSV gerado com ' + participantes.length + ' participante(s).', true);
+  });
+
+  function baixar(conteudo, nomeArquivo) {
+    const endereco = URL.createObjectURL(conteudo);
+    const link = document.createElement('a');
+    link.href = endereco;
+    link.download = nomeArquivo;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(endereco), 1000);
+  }
+
+  // --- QR code do próprio site ---
+  function enderecoDoSite() {
+    return location.origin + location.pathname.replace(/index\.html$/, '');
+  }
+
+  function pintarQr(canvas, escala) {
+    const { tamanho, modulos } = QR.montar(enderecoDoSite());
+    const borda = 4; // zona de silêncio exigida pelo padrão
+    const lado = (tamanho + borda * 2) * escala;
+    canvas.width = lado;
+    canvas.height = lado;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, lado, lado);
+    ctx.fillStyle = '#000000';
+    for (let y = 0; y < tamanho; y++) {
+      for (let x = 0; x < tamanho; x++) {
+        if (modulos[y][x]) ctx.fillRect((x + borda) * escala, (y + borda) * escala, escala, escala);
+      }
+    }
+  }
+
+  function desenharQr() {
+    $('qr-url').textContent = enderecoDoSite();
+    try {
+      pintarQr($('qr'), 8);
+    } catch {
+      $('qr-url').textContent = 'Não consegui gerar o QR code para este endereço.';
+    }
+  }
+
+  $('botao-baixar-qr').addEventListener('click', () => {
+    try {
+      const grande = document.createElement('canvas');
+      pintarQr(grande, 24); // ~1000 px de lado, bom para imprimir em A4
+      grande.toBlob((imagem) => baixar(imagem, 'qrcode-sorteio-nakabox.png'), 'image/png');
+    } catch {
+      recado($('recado-painel'), 'Não consegui gerar o arquivo do QR code.');
+    }
+  });
+
+  // --- zona de risco ---
+  $('botao-zerar-ganhadores').addEventListener('click', async () => {
+    const confirmado = await confirmar({
+      titulo: 'Zerar sorteados',
+      texto: 'Todo mundo volta para a disputa e a marcação de ganhador é apagada. Os inscritos continuam na lista.',
+      rotulo: 'Zerar sorteados',
+    });
+    if (!confirmado) return;
+    try {
+      const resposta = await apiComPin('zerar', { tipo: 'ganhadores' });
+      recado($('recado-painel'), resposta.mensagem, true);
+      limparPalco();
+      await carregar(true);
+    } catch (e) {
+      recado($('recado-painel'), e.message);
+    }
+  });
+
+  $('botao-apagar-tudo').addEventListener('click', async () => {
+    const confirmado = await confirmar({
+      titulo: 'Apagar tudo',
+      texto: 'Isso apaga TODOS os inscritos do banco. Não tem como voltar atrás — exporte o CSV antes se quiser guardar.',
+      rotulo: 'Apagar tudo',
+      exigirTexto: 'APAGAR',
+    });
+    if (!confirmado) return;
+    try {
+      const resposta = await apiComPin('zerar', { tipo: 'tudo', confirmacao: 'APAGAR' });
+      recado($('recado-painel'), resposta.mensagem, true);
+      limparPalco();
+      await carregar(true);
+    } catch (e) {
+      recado($('recado-painel'), e.message);
+    }
+  });
+
+  // -------------------------------------------------------------------
+  // Janela de confirmação (confirmação dupla das ações destrutivas)
+  // -------------------------------------------------------------------
+  function confirmar({ titulo, texto, rotulo = 'Confirmar', exigirTexto = null }) {
+    return new Promise((resolver) => {
+      const cortina = $('cortina');
+      const entrada = $('janela-entrada');
+      const botaoOk = $('janela-confirmar');
+      const botaoCancelar = $('janela-cancelar');
+      const focoAnterior = document.activeElement;
+
+      $('janela-titulo').textContent = titulo;
+      $('janela-texto').textContent = texto;
+      botaoOk.textContent = rotulo;
+      $('janela-campo').hidden = !exigirTexto;
+      entrada.value = '';
+      botaoOk.disabled = Boolean(exigirTexto);
+      cortina.hidden = false;
+      (exigirTexto ? entrada : botaoOk).focus();
+
+      const conferirTexto = () => {
+        botaoOk.disabled = entrada.value.trim().toUpperCase() !== exigirTexto;
+      };
+      const fechar = (resultado) => {
+        cortina.hidden = true;
+        entrada.removeEventListener('input', conferirTexto);
+        botaoOk.removeEventListener('click', aoConfirmar);
+        botaoCancelar.removeEventListener('click', aoCancelar);
+        document.removeEventListener('keydown', aoTeclar);
+        if (focoAnterior && focoAnterior.focus) focoAnterior.focus();
+        resolver(resultado);
+      };
+      const aoConfirmar = () => {
+        if (exigirTexto && entrada.value.trim().toUpperCase() !== exigirTexto) return;
+        fechar(true);
+      };
+      const aoCancelar = () => fechar(false);
+      const aoTeclar = (evento) => {
+        if (evento.key === 'Escape') fechar(false);
+        if (evento.key === 'Enter' && exigirTexto && document.activeElement === entrada) {
+          evento.preventDefault();
+          aoConfirmar();
+        }
+      };
+
+      if (exigirTexto) entrada.addEventListener('input', conferirTexto);
+      botaoOk.addEventListener('click', aoConfirmar);
+      botaoCancelar.addEventListener('click', aoCancelar);
+      document.addEventListener('keydown', aoTeclar);
+    });
+  }
+
+  // -------------------------------------------------------------------
+  // Início: a tela de inscrição é a padrão.
+  // -------------------------------------------------------------------
+  mostrarTela('tela-inscricao');
+})();
+</script>
 </body>
 </html>
