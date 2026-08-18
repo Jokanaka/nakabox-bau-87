@@ -306,9 +306,8 @@
       <div class="campo">
         <span class="rotulo-grupo" id="rotulo-marca">Qual a marca do baú homologado pela Ambev?</span>
         <div class="escolhas" id="escolhas-marca" role="radiogroup" aria-labelledby="rotulo-marca" aria-describedby="erro-marca">
-          <label class="escolha"><input type="radio" name="marca" value="nakabox"><span>Nakabox</span></label>
-          <label class="escolha"><input type="radio" name="marca" value="mn3"><span>MN3</span></label>
-          <label class="escolha"><input type="radio" name="marca" value="outra"><span>Outros</span></label>
+          <label class="escolha"><input type="radio" name="marca" value="nakabox_mn3"><span>Nakabox/MN3</span></label>
+          <label class="escolha"><input type="radio" name="marca" value="outros"><span>Outros</span></label>
         </div>
         <p class="erro" id="erro-marca" role="alert"></p>
 
@@ -951,7 +950,7 @@ const QR = (() => {
   // Alguns campos são grupos de radio: não existe um <input id="frota">.
   const GRUPOS = { frota: 'escolhas-frota', motos: 'escolhas-motos', marca: 'escolhas-marca' };
   // Nakabox e MN3 sao marcas diferentes; o servidor confere esta mesma lista.
-  const MARCAS_VALIDAS = ['nakabox', 'mn3', 'outra'];
+  const MARCAS_VALIDAS = ['nakabox_mn3', 'outros'];
 
   function marcarErro(campo, mensagem) {
     const entrada = $(campo);
@@ -1003,7 +1002,7 @@ const QR = (() => {
 
   // "Outra" abre o campinho do "qual?"; qualquer outra escolha esconde e limpa.
   function sincronizarMarcaOutra() {
-    const outra = escolhido('marca') === 'outra';
+    const outra = escolhido('marca') === 'outros';
     $('caixa-marca-outra').hidden = !outra;
     if (!outra) {
       $('marca-outra').value = '';
@@ -1023,7 +1022,7 @@ const QR = (() => {
     entrada.addEventListener('change', () => {
       marcarErro('marca', null);
       sincronizarMarcaOutra();
-      if (escolhido('marca') === 'outra') $('marca-outra').focus({ preventScroll: true });
+      if (escolhido('marca') === 'outros') $('marca-outra').focus({ preventScroll: true });
     });
   });
 
@@ -1050,7 +1049,7 @@ const QR = (() => {
       ['motos', motos ? null : 'Escolha quantas motos você tem.'],
       ['comprador', conferirComprador(comprador)],
       ['marca', MARCAS_VALIDAS.includes(marca) ? null : 'Escolha a marca do baú homologado pela Ambev.'],
-      ['marca-outra', marca === 'outra' ? conferirMarcaOutra(marcaOutra) : null],
+      ['marca-outra', marca === 'outros' ? conferirMarcaOutra(marcaOutra) : null],
       ['autorizo', $('autorizo').checked ? null : 'Marque a autorização de contato para participar.'],
     ].filter(([, mensagem]) => mensagem);
 
@@ -1069,7 +1068,7 @@ const QR = (() => {
       const resposta = await api('inscrever', {
         nome, fone: foneDigitos, cidade,
         revenda, frota, motos, comprador, marca,
-        marcaOutra: marca === 'outra' ? marcaOutra : '',
+        marcaOutra: marca === 'outros' ? marcaOutra : '',
         autorizo: true,
       });
       mostrarConfirmacao(resposta);

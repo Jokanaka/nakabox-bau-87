@@ -27,7 +27,7 @@ const TEXTO_LIVRE = /^[A-Za-zÀ-ÖØ-öø-ÿ0-9'’.,\-&/ ]+$/;
 const FROTAS = new Map([['propria', 'Própria'], ['terceirizada', 'Terceirizada']]);
 // Nakabox e MN3 sao marcas DIFERENTES: cada uma tem a sua opcao. Fichas antigas
 // gravadas como "Nakabox/MN3" continuam no banco com o rotulo que ja tinham.
-const MARCAS = new Map([['nakabox', 'Nakabox'], ['mn3', 'MN3'], ['outra', 'Outros']]);
+const MARCAS = new Map([['nakabox_mn3', 'Nakabox/MN3'], ['outros', 'Outros']]);
 const MOTOS = new Map([
   ['1-10', '1 a 10'],
   ['10-50', '10 a 50'],
@@ -119,7 +119,7 @@ function validarMarca(brutoMarca, brutoOutra) {
   const chave = limpar(brutoMarca).toLowerCase();
   const rotulo = MARCAS.get(chave);
   if (!rotulo) throw new ErroApi(400, 'Escolha a marca do baú homologado pela Ambev.', { campo: 'marca' });
-  if (chave !== 'outra') return [rotulo, null];
+  if (chave !== 'outros') return [rotulo, null];
 
   const outra = limpar(brutoOutra);
   if (!outra) throw new ErroApi(400, 'Escreva qual é a marca do baú.', { campo: 'marca-outra' });
