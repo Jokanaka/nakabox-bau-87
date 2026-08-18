@@ -25,36 +25,49 @@ seguintes.
 2. Projeto pronto → **SQL Editor** → **New query** → cole todo o `schema.sql` → **Run**.
 3. **Project Settings** → **API** → copie **Project URL** e a chave **service_role**.
 
-**2. Vercel (≈4 min)**
+**2. Vercel — JÁ ESTÁ PUBLICADO (18/08/2026)**
 
-1. <https://vercel.com> → **Add New** → **Project** → importe este repositório.
-2. **Framework Preset: Other.** Não mexa em build — não existe build.
-3. Em **Environment Variables**, cadastre as três (Production, Preview e Development):
+O projeto já existe no Vercel, no time `nakabox`, e o site está no ar:
 
-   ```
-   SUPABASE_URL          = a Project URL do Supabase
-   SUPABASE_SERVICE_KEY  = a chave service_role
-   ORG_PIN               = o PIN que você vai digitar no evento
-   ```
+**<https://nakabox-bau-87.vercel.app>**
 
-4. **Deploy.**
+Ele foi publicado pelo **Vercel CLI**, e não pelo botão *Import Git Repository*.
+Motivo: a conta do Vercel (`jokanaka08-6107`) **não tem conexão de login com o
+GitHub**, então a tela de importar repositório do GitHub não enxerga este repo —
+é por isso que o deploy pelo site não saía. O CLI publica direto da pasta e não
+precisa dessa conexão.
 
-**3. Publicar a branch certa (≈1 min)**
+Para publicar de novo depois de mexer no código (a partir da pasta do projeto):
 
-O sorteio está na branch `claude/nakabox-raffle-site-bmwrqd`. Para o endereço
-público servir ele **sem mexer no `main`**:
+```bash
+npx vercel --prod --yes
+```
 
-- Vercel → **Settings** → **Git** → **Production Branch** → troque para
-  `claude/nakabox-raffle-site-bmwrqd` → **Save**.
-- **Deployments** → no último → **⋯** → **Redeploy**.
+**3. Falta só cadastrar as variáveis (≈4 min) — sem isso o /api dá erro 500**
 
-> Use o endereço de produção (`...vercel.app`), não o link de *preview*: em
-> projetos novos o preview costuma vir com proteção de login ligada, e o pessoal
-> do evento bateria numa tela de senha.
->
-> A alternativa é dar merge no PR e deixar a produção no `main` — só lembre que
-> isso troca o endereço da página do produto no GitHub Pages, que passa a ser
-> `/bau-87.html`.
+Vercel → projeto **nakabox-bau-87** → **Settings** → **Environment Variables**
+→ cadastre as três em **Production, Preview e Development**:
+
+```
+SUPABASE_URL          = a Project URL do Supabase
+SUPABASE_SERVICE_KEY  = a chave service_role
+ORG_PIN               = o PIN que você vai digitar no evento
+```
+
+Ou pelo terminal, uma por vez (ele pergunta o valor e não mostra na tela):
+
+```bash
+npx vercel env add SUPABASE_URL production
+npx vercel env add SUPABASE_SERVICE_KEY production
+npx vercel env add ORG_PIN production
+npx vercel --prod --yes      # variável nova só vale depois de um novo deploy
+```
+
+> Quer ligar o deploy automático a cada `git push`? Primeiro conecte o GitHub à
+> conta do Vercel (**Account Settings** → **Authentication** → *Connect* GitHub),
+> depois **Settings** → **Git** → *Connect Git Repository*, e ponha a
+> **Production Branch** em `claude/nakabox-raffle-site-bmwrqd` (é onde o sorteio
+> mora; o `main` só tem a página antiga do produto).
 
 **4. Conferir (≈1 min)**
 
@@ -84,13 +97,17 @@ para zerar antes do evento. Baixe o QR pelo botão **Baixar PNG para imprimir**.
 
 ## 2. Publicar no Vercel
 
-1. Suba este repositório para o GitHub (se ainda não estiver lá).
-2. Acesse <https://vercel.com>, entre com a conta do GitHub e clique em
-   **Add New** → **Project**.
-3. Escolha o repositório e clique em **Import**.
-4. Em **Framework Preset**, deixe **Other**. Não precisa configurar build:
-   não existe build step.
-5. Antes de clicar em Deploy, abra **Environment Variables** e cadastre as três:
+Já publicado em <https://nakabox-bau-87.vercel.app> (time `nakabox`, projeto
+`nakabox-bau-87`). Se um dia precisar refazer do zero:
+
+1. Instale o CLI (`npm i -g vercel`) e faça `vercel login`.
+2. Na pasta do projeto, rode `vercel --prod --yes`. Não existe build step —
+   o **Framework Preset** é **Other**, o `index.html` é servido estático e cada
+   arquivo de `/api` vira uma função.
+3. O caminho pelo site (**Add New** → **Project** → **Import**) só funciona se a
+   conta do Vercel estiver conectada ao GitHub; hoje ela não está, e por isso o
+   repositório não aparece na lista de importação.
+4. Cadastre as três variáveis em **Settings** → **Environment Variables**:
 
    | Nome                   | Valor                                              |
    |------------------------|----------------------------------------------------|
@@ -99,8 +116,8 @@ para zerar antes do evento. Baixe o QR pelo botão **Baixar PNG para imprimir**.
    | `ORG_PIN`              | o PIN que você vai digitar no evento (ex.: `740193`) |
 
    Marque as três para **Production**, **Preview** e **Development**.
-6. Clique em **Deploy** e espere. No fim, o Vercel mostra o endereço do site,
-   algo como `https://nakabox-sorteio.vercel.app`.
+5. Rode `vercel --prod --yes` de novo: as funções só enxergam variável nova
+   depois de um deploy novo.
 
 > Mudou alguma variável depois? Vá em **Settings** → **Environment Variables**,
 > edite e depois em **Deployments** → **⋯** → **Redeploy**. As funções só leem os
