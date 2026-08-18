@@ -27,7 +27,7 @@ const TEXTO_LIVRE = /^[A-Za-zÀ-ÖØ-öø-ÿ0-9'’.,\-&/ ]+$/;
 const FROTAS = new Map([['propria', 'Própria'], ['terceirizada', 'Terceirizada']]);
 // Nakabox e MN3 sao marcas DIFERENTES: cada uma tem a sua opcao. Fichas antigas
 // gravadas como "Nakabox/MN3" continuam no banco com o rotulo que ja tinham.
-const MARCAS = new Map([['nakabox', 'Nakabox'], ['mn3', 'MN3'], ['outra', 'Outra']]);
+const MARCAS = new Map([['nakabox', 'Nakabox'], ['mn3', 'MN3'], ['outra', 'Outros']]);
 const MOTOS = new Map([
   ['1-10', '1 a 10'],
   ['10-50', '10 a 50'],
