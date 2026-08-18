@@ -2,7 +2,7 @@
 // POST /api/remover  —  protegido por PIN. Apaga um inscrito pelo id.
 // =====================================================================
 
-import { rota, corpo, responder, conferirPin, apagar, totais, ficha, ErroApi } from './_db.js';
+import { rota, corpo, responder, conferirPin, removerPorId, totais, ficha, ErroApi } from './_db.js';
 
 export default rota(async (req, res) => {
   const dados = await corpo(req);
@@ -13,7 +13,7 @@ export default rota(async (req, res) => {
     throw new ErroApi(400, 'Não entendi qual inscrito remover. Atualize a lista e tente de novo.');
   }
 
-  const removidos = await apagar(`id=eq.${id}`);
+  const removidos = await removerPorId(id);
   if (!removidos.length) {
     throw new ErroApi(404, 'Esse inscrito já não está mais na lista.');
   }

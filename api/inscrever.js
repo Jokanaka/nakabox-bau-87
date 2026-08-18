@@ -3,7 +3,7 @@
 // Recebe { nome, fone, cidade, autorizo } e devolve o numero da ficha.
 // =====================================================================
 
-import { rota, corpo, responder, selecionar, inserir, ficha, ErroApi } from './_db.js';
+import { rota, corpo, responder, porFone, inserir, ficha, ErroApi } from './_db.js';
 
 // DDDs que existem de verdade no Brasil.
 const DDDS = new Set([
@@ -89,12 +89,12 @@ export default rota(async (req, res) => {
   } catch (e) {
     // Telefone repetido: em vez de barrar a pessoa, devolvemos a ficha que ela ja tem.
     if (e instanceof ErroApi && e.status === 409) {
-      const existentes = await selecionar(`select=id,nome&fone=eq.${encodeURIComponent(fone)}&limit=1`);
-      if (existentes.length) {
+      const existente = await porFone(fone);
+      if (existente) {
         responder(res, 200, {
           ok: true,
-          ficha: ficha(existentes[0].id),
-          nome: existentes[0].nome,
+          ficha: ficha(existente.id),
+          nome: existente.nome,
           jaInscrito: true,
         });
         return;

@@ -4,7 +4,7 @@
 // tipo = "tudo"        -> apaga a lista inteira (a tela pede confirmacao dupla)
 // =====================================================================
 
-import { rota, corpo, responder, conferirPin, atualizar, apagar, totais, ErroApi } from './_db.js';
+import { rota, corpo, responder, conferirPin, zerarGanhadores, apagarTudo, totais, ErroApi } from './_db.js';
 
 export default rota(async (req, res) => {
   const dados = await corpo(req);
@@ -13,7 +13,7 @@ export default rota(async (req, res) => {
   const tipo = String(dados.tipo || '').trim();
 
   if (tipo === 'ganhadores') {
-    const alterados = await atualizar('ganhador=eq.true', { ganhador: false, ganhou_em: null });
+    const alterados = await zerarGanhadores();
     responder(res, 200, {
       ok: true,
       tipo,
@@ -30,7 +30,7 @@ export default rota(async (req, res) => {
     if (dados.confirmacao !== 'APAGAR') {
       throw new ErroApi(400, 'Confirmação inválida. Digite APAGAR para limpar a lista inteira.');
     }
-    const removidos = await apagar('id=gt.0');
+    const removidos = await apagarTudo();
     responder(res, 200, {
       ok: true,
       tipo,

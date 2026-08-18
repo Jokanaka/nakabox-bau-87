@@ -5,129 +5,112 @@ preenche nome, WhatsApp e cidade, e recebe um número de ficha. No dia, você ab
 o painel com um PIN e clica em **SORTEAR AGORA**.
 
 - Front-end estático: um único `index.html` (HTML, CSS e JavaScript puro).
-- Back-end: funções serverless do Vercel em `/api`, Node ESM, **zero dependências npm**.
-- Banco: Supabase, acessado só pelas funções, via REST.
+- Back-end: funções serverless do Vercel em `/api`, Node ESM, uma única
+  dependência npm (`pg`, o driver de Postgres).
+- Banco: **Postgres**, acessado só pelas funções, pela variável `DATABASE_URL`.
 
-O navegador **nunca** fala com o banco: ele só conversa com `/api`. A chave de
-serviço do Supabase fica apenas nas variáveis de ambiente do Vercel.
+O navegador **nunca** fala com o banco: ele só conversa com `/api`. A string de
+conexão do Postgres fica apenas nas variáveis de ambiente do Vercel.
 
 ---
 
-## Deploy em 10 minutos (caminho curto)
-
-Se está em cima da hora, siga só isto. O detalhe de cada passo está nas seções
-seguintes.
-
-**1. Supabase (≈4 min)**
-
-1. <https://supabase.com> → **New project**. Nome `nakabox-sorteio`, região
-   **South America (São Paulo)**. Enquanto ele sobe, siga para o passo 2 em outra aba.
-2. Projeto pronto → **SQL Editor** → **New query** → cole todo o `schema.sql` → **Run**.
-3. **Project Settings** → **API** → copie **Project URL** e a chave **service_role**.
-
-**2. Vercel — JÁ ESTÁ PUBLICADO (18/08/2026)**
-
-O projeto já existe no Vercel, no time `nakabox`, e o site está no ar:
+## JÁ ESTÁ NO AR (18/08/2026)
 
 **<https://nakabox-bau-87.vercel.app>**
 
-Ele foi publicado pelo **Vercel CLI**, e não pelo botão *Import Git Repository*.
-Motivo: a conta do Vercel (`jokanaka08-6107`) **não tem conexão de login com o
-GitHub**, então a tela de importar repositório do GitHub não enxerga este repo —
-é por isso que o deploy pelo site não saía. O CLI publica direto da pasta e não
-precisa dessa conexão.
+Está publicado **e configurado** — banco, tabela e PIN já existem. Não precisa
+criar conta em lugar nenhum nem cadastrar variável: é só abrir e usar.
 
-Para publicar de novo depois de mexer no código (a partir da pasta do projeto):
+O que ficou montado:
+
+| Peça | Onde está |
+|------|-----------|
+| Projeto Vercel | time `nakabox`, projeto `nakabox-bau-87` |
+| Banco | o **mesmo Postgres que a Nakabox já usa** (pooler do Supabase, região São Paulo) |
+| Tabela | `public.bau87_participantes` — criada só para o sorteio |
+| Variáveis | `DATABASE_URL` e `ORG_PIN`, nas três faixas (Production, Preview, Development) |
+
+> O prefixo `bau87_` na tabela é de propósito: o sorteio divide o banco com os
+> outros sistemas da Nakabox e **não encosta em nenhuma tabela deles**.
+
+**O PIN do organizador** foi entregue à parte (não fica escrito neste arquivo,
+que é público no GitHub). Perdeu? Troque por um novo — instruções na seção 2.
+
+Para publicar de novo depois de mexer no código, de dentro da pasta do projeto:
 
 ```bash
 npx vercel --prod --yes
 ```
 
-**3. Falta só cadastrar as variáveis (≈4 min) — sem isso o /api dá erro 500**
+> **Por que o deploy pelo site do Vercel não funcionava:** a conta
+> (`jokanaka08-6107`) não tem *Login Connection* com o GitHub, então a tela
+> **Add New → Project → Import Git Repository** não enxerga este repositório.
+> O CLI publica direto da pasta e não precisa dessa conexão.
+>
+> Quer deploy automático a cada `git push`? Conecte o GitHub primeiro
+> (**Account Settings** → **Authentication** → *Connect* GitHub), depois
+> **Settings** → **Git** → *Connect Git Repository*, e ponha a **Production
+> Branch** em `claude/nakabox-raffle-site-bmwrqd` (é onde o sorteio mora; o
+> `main` só tem a página antiga do produto).
 
-Vercel → projeto **nakabox-bau-87** → **Settings** → **Environment Variables**
-→ cadastre as três em **Production, Preview e Development**:
+---
 
-```
-SUPABASE_URL          = a Project URL do Supabase
-SUPABASE_SERVICE_KEY  = a chave service_role
-ORG_PIN               = o PIN que você vai digitar no evento
-```
+## 1. O banco
 
-Ou pelo terminal, uma por vez (ele pergunta o valor e não mostra na tela):
+O sorteio guarda tudo numa tabela só, `public.bau87_participantes`, num Postgres
+que a Nakabox já tinha. Não há Supabase-SDK, não há chave `service_role`, não há
+REST: as funções abrem conexão direta com o Postgres usando o driver `pg`.
+
+Se um dia precisar recriar a tabela (banco novo, restauração, outro ambiente):
 
 ```bash
-npx vercel env add SUPABASE_URL production
-npx vercel env add SUPABASE_SERVICE_KEY production
-npx vercel env add ORG_PIN production
-npx vercel --prod --yes      # variável nova só vale depois de um novo deploy
+psql "$DATABASE_URL" -f schema.sql
 ```
 
-> Quer ligar o deploy automático a cada `git push`? Primeiro conecte o GitHub à
-> conta do Vercel (**Account Settings** → **Authentication** → *Connect* GitHub),
-> depois **Settings** → **Git** → *Connect Git Repository*, e ponha a
-> **Production Branch** em `claude/nakabox-raffle-site-bmwrqd` (é onde o sorteio
-> mora; o `main` só tem a página antiga do produto).
+ou cole o conteúdo de `schema.sql` no SQL Editor do Supabase e clique em **Run**.
+O arquivo é seguro de rodar duas vezes (`create table if not exists`) e não toca
+em nada fora do prefixo `bau87_`.
 
-**4. Conferir (≈1 min)**
+E para apontar o site para **outro** banco, basta trocar a variável:
 
-Abra o site no celular, faça uma inscrição de teste, entre no painel pelo link
-**organizador** do rodapé, clique em **SORTEAR AGORA** e depois em **Apagar tudo**
-para zerar antes do evento. Baixe o QR pelo botão **Baixar PNG para imprimir**.
+```bash
+npx vercel env add DATABASE_URL production   # cola a nova string de conexão
+npx vercel --prod --yes                      # variável nova só vale após novo deploy
+```
 
----
+Formato da string: `postgresql://usuario:senha@host:porta/banco`.
 
-## 1. Criar o banco no Supabase
-
-1. Acesse <https://supabase.com>, crie uma conta e clique em **New project**.
-2. Dê um nome (ex.: `nakabox-sorteio`), escolha uma senha para o banco e a região
-   **South America (São Paulo)**. Espere uns 2 minutos até o projeto subir.
-3. No menu lateral, vá em **SQL Editor** → **New query**.
-4. Abra o arquivo `schema.sql` deste repositório, copie todo o conteúdo, cole no
-   editor e clique em **Run**. Deve aparecer *Success. No rows returned*.
-5. Ainda no Supabase, vá em **Project Settings** → **API** e anote:
-   - **Project URL** — algo como `https://abcdefghij.supabase.co`
-   - **service_role secret** — a chave longa marcada como `service_role`
-
-> A chave `service_role` dá acesso total ao banco. Ela vai **só** para as
-> variáveis de ambiente do Vercel. Nunca coloque no HTML, nunca mande por
-> WhatsApp, nunca comite no Git.
+> A `DATABASE_URL` dá acesso total ao banco. Ela vive **só** nas variáveis de
+> ambiente do Vercel. Nunca no HTML, nunca por WhatsApp, nunca comitada no Git.
 
 ---
 
-## 2. Publicar no Vercel
+## 2. As variáveis de ambiente
 
-Já publicado em <https://nakabox-bau-87.vercel.app> (time `nakabox`, projeto
-`nakabox-bau-87`). Se um dia precisar refazer do zero:
+São só duas:
 
-1. Instale o CLI (`npm i -g vercel`) e faça `vercel login`.
-2. Na pasta do projeto, rode `vercel --prod --yes`. Não existe build step —
-   o **Framework Preset** é **Other**, o `index.html` é servido estático e cada
-   arquivo de `/api` vira uma função.
-3. O caminho pelo site (**Add New** → **Project** → **Import**) só funciona se a
-   conta do Vercel estiver conectada ao GitHub; hoje ela não está, e por isso o
-   repositório não aparece na lista de importação.
-4. Cadastre as três variáveis em **Settings** → **Environment Variables**:
+| Nome           | Para que serve                                              |
+|----------------|-------------------------------------------------------------|
+| `DATABASE_URL` | string de conexão do Postgres                               |
+| `ORG_PIN`      | o PIN que você digita no painel do evento                   |
 
-   | Nome                   | Valor                                              |
-   |------------------------|----------------------------------------------------|
-   | `SUPABASE_URL`         | a *Project URL* do passo 1                          |
-   | `SUPABASE_SERVICE_KEY` | a chave *service_role* do passo 1                   |
-   | `ORG_PIN`              | o PIN que você vai digitar no evento (ex.: `740193`) |
+Se alguma faltar, o `/api` responde com a mensagem
+*"Configuração incompleta no Vercel: falta ..."* dizendo exatamente qual.
 
-   Marque as três para **Production**, **Preview** e **Development**.
-5. Rode `vercel --prod --yes` de novo: as funções só enxergam variável nova
-   depois de um deploy novo.
+**Trocar o PIN** (durante ou depois do evento):
 
-> Mudou alguma variável depois? Vá em **Settings** → **Environment Variables**,
-> edite e depois em **Deployments** → **⋯** → **Redeploy**. As funções só leem os
-> valores novos depois de um novo deploy.
+```bash
+npx vercel env add ORG_PIN production   # ele pergunta o valor e não mostra na tela
+npx vercel --prod --yes                 # as funções só leem o valor novo após deploy
+```
 
-**Escolha um PIN com pelo menos 8 caracteres**, misturando letras e números
-(ex.: `feira7k2v`), e nada de `123456` ou a data do evento. Quem tem o PIN
-sorteia, remove pessoas e apaga a lista. Cada tentativa errada leva meio segundo
-a mais para responder, o que atrapalha quem tentar adivinhar por força bruta —
-mas um PIN curto ainda é um PIN fraco.
+Quem já estava no painel vai precisar digitar o PIN novo na próxima ação.
+
+**Escolha um PIN com pelo menos 8 caracteres**, misturando letras e números, e
+nada de `123456` ou a data do evento. Quem tem o PIN sorteia, remove pessoas e
+apaga a lista. Cada tentativa errada leva meio segundo a mais para responder, o
+que atrapalha quem tentar adivinhar por força bruta — mas um PIN curto ainda é
+um PIN fraco.
 
 ---
 
@@ -176,14 +159,14 @@ mas um PIN curto ainda é um PIN fraco.
 
 ```
 index.html             site inteiro: inscrição, confirmação, PIN e painel
-api/_db.js             acesso ao Supabase e conferência do PIN
+api/_db.js             conexão com o Postgres e conferência do PIN
 api/inscrever.js       POST público — cria a inscrição
 api/participantes.js   POST com PIN — lista todo mundo
 api/sortear.js         POST com PIN — sorteia e marca o ganhador
 api/remover.js         POST com PIN — apaga um inscrito
 api/zerar.js           POST com PIN — zera ganhadores ou apaga tudo
-schema.sql             tabela do Supabase
-package.json           só marca o projeto como Node ESM
+schema.sql             a tabela bau87_participantes
+package.json           Node ESM + a dependência pg
 bau-87.html            página antiga do produto (baú 87 L), preservada
 ```
 
@@ -208,12 +191,13 @@ do Node) e gravado no banco na mesma requisição. A animação da tela é só v
 ela não influencia nada, e a página respeita `prefers-reduced-motion`.
 
 **Alguém consegue ler a lista sem o PIN?**
-Não. Todas as rotas de leitura exigem o PIN, conferido no servidor. A tabela está
-com RLS ligado e sem policies, então nem a chave pública do Supabase lê nada.
+Não. Todas as rotas de leitura exigem o PIN, conferido no servidor. Toda consulta
+usa parâmetros (`$1`, `$2`), então texto digitado por visitante nunca vira comando
+SQL. A tabela também está com RLS ligado e sem policies.
 
-**Como troco o PIN no meio do evento?**
-Altere `ORG_PIN` no Vercel e faça um *redeploy*. Quem já estava no painel vai
-precisar digitar o PIN novo na próxima ação.
+**O sorteio pode bagunçar os outros sistemas que usam o mesmo banco?**
+Não. Ele só conhece a tabela `bau87_participantes` — nenhuma consulta do código
+cita qualquer outra tabela.
 
 ---
 
@@ -222,10 +206,10 @@ precisar digitar o PIN novo na próxima ação.
 Precisa do [Vercel CLI](https://vercel.com/docs/cli):
 
 ```bash
-npm i -g vercel
-vercel link
-vercel env pull .env.local   # baixa SUPABASE_URL, SUPABASE_SERVICE_KEY e ORG_PIN
-vercel dev
+npm install                  # instala o pg
+npx vercel link
+npx vercel env pull .env.local   # baixa DATABASE_URL e ORG_PIN
+npx vercel dev
 ```
 
 Abrir o `index.html` direto no navegador (sem `vercel dev`) mostra o formulário,

@@ -5,7 +5,7 @@
 // =====================================================================
 
 import { randomInt } from 'node:crypto';
-import { rota, corpo, responder, conferirPin, selecionar, atualizar, totais, ficha, ErroApi } from './_db.js';
+import { rota, corpo, responder, conferirPin, candidatos, marcarGanhador, totais, ficha, ErroApi } from './_db.js';
 
 const TENTATIVAS = 8; // protege contra dois organizadores clicando ao mesmo tempo
 
@@ -15,12 +15,11 @@ export default rota(async (req, res) => {
 
   // Por padrao nao repete quem ja ganhou.
   const naoRepetir = dados.naoRepetir !== false;
-  const filtro = naoRepetir ? '&ganhador=eq.false' : '';
 
   for (let tentativa = 0; tentativa < TENTATIVAS; tentativa++) {
-    const candidatos = await selecionar(`select=id,nome,cidade,ganhador${filtro}&order=id.asc`);
+    const lista = await candidatos(naoRepetir);
 
-    if (!candidatos.length) {
+    if (!lista.length) {
       // Lista vazia e "todo mundo ja ganhou" sao situacoes diferentes: a mensagem tem que dizer qual e.
       const listaVazia = !naoRepetir || (await totais()).inscritos === 0;
       throw new ErroApi(409, listaVazia
@@ -28,15 +27,12 @@ export default rota(async (req, res) => {
         : 'Todo mundo que estava na lista já foi sorteado. Desmarque "não repetir" ou zere os sorteados.');
     }
 
-    const escolhido = candidatos[randomInt(0, candidatos.length)];
+    const escolhido = lista[randomInt(0, lista.length)];
 
-    // A condicao ganhador=eq.false no PATCH e o desempate: se alguem sorteou a
-    // mesma pessoa um instante antes, a atualizacao volta vazia e sorteamos de novo.
-    const condicao = naoRepetir ? `id=eq.${escolhido.id}&ganhador=eq.false` : `id=eq.${escolhido.id}`;
-    const atualizados = await atualizar(condicao, {
-      ganhador: true,
-      ganhou_em: new Date().toISOString(),
-    });
+    // A condicao "ganhador = false" dentro do UPDATE e o desempate: se alguem
+    // sorteou a mesma pessoa um instante antes, a atualizacao volta vazia e
+    // sorteamos de novo.
+    const atualizados = await marcarGanhador(escolhido.id, naoRepetir);
 
     if (!atualizados.length) continue; // alguem chegou primeiro, sorteia outra vez
 

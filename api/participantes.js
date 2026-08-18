@@ -3,13 +3,13 @@
 // Devolve a lista completa de inscritos e os totais do painel.
 // =====================================================================
 
-import { rota, corpo, responder, conferirPin, selecionar, ficha } from './_db.js';
+import { rota, corpo, responder, conferirPin, listar, ficha } from './_db.js';
 
 export default rota(async (req, res) => {
   const dados = await corpo(req);
   await conferirPin(dados);
 
-  const linhas = await selecionar('select=id,nome,fone,cidade,ganhador,ganhou_em,criado_em&order=id.asc');
+  const linhas = await listar();
 
   const participantes = linhas.map((l) => ({
     id: l.id,
