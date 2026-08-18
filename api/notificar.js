@@ -90,5 +90,25 @@ export default rota(async (req, res) => {
     return;
   }
 
+  // Reabrir o comprovante SO da linha do dono, para provar o caminho inteiro
+  // (site -> watcher -> WhatsApp) sem incomodar ninguem. A lista abaixo e fixa:
+  // nenhum outro telefone do banco pode ser reaberto por esta rota, entao ela
+  // nao serve para reenviar mensagem para cliente nenhum.
+  if (acao === 'teste-dono') {
+    const PERMITIDOS = ['11973242008'];
+    const fone = String(dados.fone || '').replace(/\D/g, '').replace(/^55/, '');
+    if (!PERMITIDOS.includes(fone)) {
+      throw new ErroApi(403, 'Esta ação só vale para o número do dono.');
+    }
+    const linhas = await consultar(
+      `update ${TABELA}
+       set notificado_whatsapp = false, notificado_erro = null
+       where fone = $1 returning id`,
+      [fone]
+    );
+    responder(res, 200, { ok: true, reabertos: linhas.length });
+    return;
+  }
+
   throw new ErroApi(400, 'Ação desconhecida.');
 });
