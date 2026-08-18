@@ -10,14 +10,28 @@
 -- =====================================================================
 
 create table if not exists public.bau87_participantes (
-  id         bigserial     primary key,
-  nome       text          not null,
-  fone       text          not null unique,
-  cidade     text,
-  ganhador   boolean       not null default false,
-  ganhou_em  timestamptz,
-  criado_em  timestamptz   not null default now()
+  id           bigserial     primary key,
+  nome         text          not null,
+  fone         text          not null unique,
+  cidade       text,
+  revenda      text,
+  frota        text,
+  comprador    text,
+  marca_bau    text,
+  marca_outra  text,
+  ganhador     boolean       not null default false,
+  ganhou_em    timestamptz,
+  criado_em    timestamptz   not null default now()
 );
+
+-- Campos da ficha da revenda, acrescentados depois do evento piloto.
+-- ADD COLUMN IF NOT EXISTS: quem ja tem a tabela antiga so ganha as colunas
+-- novas (vazias nos registros ja gravados), sem perder nada.
+alter table public.bau87_participantes add column if not exists revenda     text;
+alter table public.bau87_participantes add column if not exists frota       text;
+alter table public.bau87_participantes add column if not exists comprador   text;
+alter table public.bau87_participantes add column if not exists marca_bau   text;
+alter table public.bau87_participantes add column if not exists marca_outra text;
 
 -- Consultas do painel: lista por ordem de inscricao e filtro de ganhadores.
 create index if not exists bau87_participantes_ganhador_idx on public.bau87_participantes (ganhador);

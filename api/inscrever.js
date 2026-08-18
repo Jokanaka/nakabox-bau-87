@@ -19,6 +19,13 @@ const DDDS = new Set([
 ]);
 
 const LETRAS = /^[A-Za-zÀ-ÖØ-öø-ÿ'’.\- ]+$/;
+// Nome de empresa/marca aceita numero (ex.: "MN3", "Moto Center 2000").
+const TEXTO_LIVRE = /^[A-Za-zÀ-ÖØ-öø-ÿ0-9'’.,\-&/ ]+$/;
+
+// As escolhas viajam como chave curta e sao gravadas com o rotulo que o
+// organizador le no painel. Nada que venha de fora entra no banco cru.
+const FROTAS = new Map([['propria', 'Própria'], ['terceirizada', 'Terceirizada']]);
+const MARCAS = new Map([['nakabox', 'Nakabox/MN3'], ['outra', 'Outra']]);
 
 function limpar(valor) {
   return String(valor ?? '').replace(/\s+/g, ' ').trim();
@@ -67,19 +74,63 @@ function validarCidade(bruto) {
   return cidade;
 }
 
+function validarRevenda(bruto) {
+  const revenda = limpar(bruto);
+  if (!revenda) throw new ErroApi(400, 'Preencha o nome da revenda.', { campo: 'revenda' });
+  if (revenda.length < 2) throw new ErroApi(400, 'O nome da revenda está curto demais.', { campo: 'revenda' });
+  if (revenda.length > 80) throw new ErroApi(400, 'O nome da revenda pode ter no máximo 80 letras.', { campo: 'revenda' });
+  if (!TEXTO_LIVRE.test(revenda)) throw new ErroApi(400, 'O nome da revenda tem símbolos que não valem aqui.', { campo: 'revenda' });
+  return revenda;
+}
+
+function validarComprador(bruto) {
+  const comprador = limpar(bruto);
+  if (!comprador) throw new ErroApi(400, 'Preencha o nome do comprador.', { campo: 'comprador' });
+  if (comprador.length < 3) throw new ErroApi(400, 'O nome do comprador está curto demais.', { campo: 'comprador' });
+  if (comprador.length > 80) throw new ErroApi(400, 'O nome do comprador pode ter no máximo 80 letras.', { campo: 'comprador' });
+  if (!LETRAS.test(comprador)) throw new ErroApi(400, 'O nome do comprador deve ter apenas letras.', { campo: 'comprador' });
+  return comprador;
+}
+
+function validarFrota(bruto) {
+  const chave = limpar(bruto).toLowerCase();
+  const rotulo = FROTAS.get(chave);
+  if (!rotulo) throw new ErroApi(400, 'Escolha se a frota é própria ou terceirizada.', { campo: 'frota' });
+  return rotulo;
+}
+
+/** Devolve [marcaBau, marcaOutra]; o "qual?" so e exigido quando a escolha e "Outra". */
+function validarMarca(brutoMarca, brutoOutra) {
+  const chave = limpar(brutoMarca).toLowerCase();
+  const rotulo = MARCAS.get(chave);
+  if (!rotulo) throw new ErroApi(400, 'Escolha a marca do baú homologado pela Ambev.', { campo: 'marca' });
+  if (chave !== 'outra') return [rotulo, null];
+
+  const outra = limpar(brutoOutra);
+  if (!outra) throw new ErroApi(400, 'Escreva qual é a marca do baú.', { campo: 'marca-outra' });
+  if (outra.length < 2) throw new ErroApi(400, 'O nome da marca está curto demais.', { campo: 'marca-outra' });
+  if (outra.length > 60) throw new ErroApi(400, 'O nome da marca pode ter no máximo 60 letras.', { campo: 'marca-outra' });
+  if (!TEXTO_LIVRE.test(outra)) throw new ErroApi(400, 'O nome da marca tem símbolos que não valem aqui.', { campo: 'marca-outra' });
+  return [rotulo, outra];
+}
+
 export default rota(async (req, res) => {
   const dados = await corpo(req);
 
   const nome = validarNome(dados.nome);
   const fone = validarFone(dados.fone);
   const cidade = validarCidade(dados.cidade);
+  const revenda = validarRevenda(dados.revenda);
+  const frota = validarFrota(dados.frota);
+  const comprador = validarComprador(dados.comprador);
+  const [marcaBau, marcaOutra] = validarMarca(dados.marca, dados.marcaOutra);
 
   if (dados.autorizo !== true) {
     throw new ErroApi(400, 'Marque a autorização de contato para participar.', { campo: 'autorizo' });
   }
 
   try {
-    const registro = await inserir({ nome, fone, cidade });
+    const registro = await inserir({ nome, fone, cidade, revenda, frota, comprador, marcaBau, marcaOutra });
     responder(res, 201, {
       ok: true,
       ficha: ficha(registro.id),

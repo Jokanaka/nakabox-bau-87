@@ -96,6 +96,22 @@
   .caixa-autorizacao input{width:26px;height:26px;flex:none;accent-color:var(--ambar);margin-top:1px}
   .caixa-autorizacao label{text-transform:none;letter-spacing:0;font-size:.9rem;font-weight:500;color:var(--texto);margin:0;line-height:1.4}
 
+  /* grupos de escolha (radio) com a mesma cara das placas */
+  .rotulo-grupo{display:block;font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:var(--cinza);margin-bottom:7px}
+  .escolhas{display:flex;gap:10px;flex-wrap:wrap}
+  .escolhas.invalida .escolha{border-color:#C05B2B}
+  .escolha{
+    display:flex;align-items:center;gap:11px;flex:1 1 150px;
+    margin:0;padding:14px;cursor:pointer;
+    border:2px solid var(--borda);background:var(--asfalto);
+    text-transform:none;letter-spacing:0;font-size:.95rem;font-weight:600;color:var(--texto);
+  }
+  .escolha input{width:24px;height:24px;flex:none;accent-color:var(--ambar)}
+  .escolha:hover{border-color:var(--ambar)}
+  .escolha:has(input:checked){border-color:var(--ambar);color:var(--ambar)}
+  .escolha:has(input:focus-visible){outline:3px solid var(--ambar);outline-offset:2px}
+  .sub-campo{margin-top:12px}
+
   button{font:inherit;cursor:pointer;border-radius:0}
   .botao{
     display:block;width:100%;
@@ -174,7 +190,7 @@
   .contagem{font-size:.78rem;color:var(--cinza);text-transform:uppercase;letter-spacing:.12em}
 
   .rolagem{overflow-x:auto;-webkit-overflow-scrolling:touch;border:2px solid var(--borda)}
-  table{width:100%;border-collapse:collapse;font-size:.9rem;min-width:620px}
+  table{width:100%;border-collapse:collapse;font-size:.9rem;min-width:1080px}
   th{
     text-align:left;font-size:.68rem;text-transform:uppercase;letter-spacing:.14em;color:var(--cinza);
     padding:12px 12px;background:var(--superficie);border-bottom:2px solid var(--borda);white-space:nowrap;
@@ -248,9 +264,48 @@
 
       <div class="campo">
         <label for="cidade">Cidade <span style="color:#5A606B">(opcional)</span></label>
-        <input type="text" id="cidade" name="cidade" autocomplete="address-level2" enterkeyhint="done"
+        <input type="text" id="cidade" name="cidade" autocomplete="address-level2" enterkeyhint="next"
                placeholder="Ex.: São Paulo" maxlength="60" aria-describedby="erro-cidade">
         <p class="erro" id="erro-cidade" role="alert"></p>
+      </div>
+
+      <div class="campo">
+        <label for="revenda">Nome da revenda</label>
+        <input type="text" id="revenda" name="revenda" autocomplete="organization" enterkeyhint="next"
+               placeholder="Ex.: Moto Peças Central" maxlength="80" aria-describedby="erro-revenda">
+        <p class="erro" id="erro-revenda" role="alert"></p>
+      </div>
+
+      <div class="campo">
+        <span class="rotulo-grupo" id="rotulo-frota">Tem frota de moto?</span>
+        <div class="escolhas" id="escolhas-frota" role="radiogroup" aria-labelledby="rotulo-frota" aria-describedby="erro-frota">
+          <label class="escolha"><input type="radio" name="frota" value="propria"><span>Própria</span></label>
+          <label class="escolha"><input type="radio" name="frota" value="terceirizada"><span>Terceirizada</span></label>
+        </div>
+        <p class="erro" id="erro-frota" role="alert"></p>
+      </div>
+
+      <div class="campo">
+        <label for="comprador">Qual o nome do comprador?</label>
+        <input type="text" id="comprador" name="comprador" autocomplete="off" enterkeyhint="next"
+               placeholder="Ex.: Maria Souza" maxlength="80" aria-describedby="erro-comprador">
+        <p class="erro" id="erro-comprador" role="alert"></p>
+      </div>
+
+      <div class="campo">
+        <span class="rotulo-grupo" id="rotulo-marca">Qual a marca do baú homologado pela Ambev?</span>
+        <div class="escolhas" id="escolhas-marca" role="radiogroup" aria-labelledby="rotulo-marca" aria-describedby="erro-marca">
+          <label class="escolha"><input type="radio" name="marca" value="nakabox"><span>Nakabox/MN3</span></label>
+          <label class="escolha"><input type="radio" name="marca" value="outra"><span>Outra</span></label>
+        </div>
+        <p class="erro" id="erro-marca" role="alert"></p>
+
+        <div class="sub-campo" id="caixa-marca-outra" hidden>
+          <label for="marca-outra">Qual?</label>
+          <input type="text" id="marca-outra" name="marca-outra" autocomplete="off" enterkeyhint="done"
+                 placeholder="Escreva o nome da marca" maxlength="60" aria-describedby="erro-marca-outra">
+          <p class="erro" id="erro-marca-outra" role="alert"></p>
+        </div>
       </div>
 
       <div class="campo">
@@ -344,7 +399,7 @@
     <div class="placa">
       <h2>Participantes</h2>
       <div class="ferramentas" style="margin-top:14px">
-        <input type="search" id="busca" placeholder="Buscar por nome, ficha, WhatsApp ou cidade" aria-label="Buscar participante">
+        <input type="search" id="busca" placeholder="Buscar por nome, ficha, WhatsApp, cidade, revenda ou comprador" aria-label="Buscar participante">
         <button type="button" class="botao botao-vazado botao-pequeno" id="botao-csv">Exportar CSV</button>
       </div>
       <p class="contagem" id="contagem-lista">0 participantes</p>
@@ -356,6 +411,10 @@
               <th scope="col">Nome</th>
               <th scope="col">WhatsApp</th>
               <th scope="col">Cidade</th>
+              <th scope="col">Revenda</th>
+              <th scope="col">Frota</th>
+              <th scope="col">Comprador</th>
+              <th scope="col">Marca do baú</th>
               <th scope="col">Situação</th>
               <th scope="col"><span class="visually-hidden">Ação</span></th>
             </tr>
@@ -841,22 +900,78 @@ const QR = (() => {
     return null;
   }
 
+  // Texto livre: aceita letras, números e a pontuação comum de nome de empresa.
+  const TEXTO_LIVRE = /^[A-Za-zÀ-ÖØ-öø-ÿ0-9'’.,\-&/ ]+$/;
+
+  function conferirRevenda(valor) {
+    const revenda = limparEspacos(valor);
+    if (!revenda) return 'Preencha o nome da revenda.';
+    if (revenda.length < 2) return 'O nome da revenda está curto demais.';
+    if (revenda.length > 80) return 'O nome da revenda pode ter no máximo 80 letras.';
+    if (!TEXTO_LIVRE.test(revenda)) return 'O nome da revenda tem símbolos que não valem aqui.';
+    return null;
+  }
+
+  function conferirComprador(valor) {
+    const comprador = limparEspacos(valor);
+    if (!comprador) return 'Preencha o nome do comprador.';
+    if (comprador.length < 3) return 'O nome do comprador está curto demais.';
+    if (comprador.length > 80) return 'O nome do comprador pode ter no máximo 80 letras.';
+    if (!LETRAS.test(comprador)) return 'O nome do comprador deve ter apenas letras.';
+    return null;
+  }
+
+  function conferirMarcaOutra(valor) {
+    const marca = limparEspacos(valor);
+    if (!marca) return 'Escreva qual é a marca do baú.';
+    if (marca.length < 2) return 'O nome da marca está curto demais.';
+    if (marca.length > 60) return 'O nome da marca pode ter no máximo 60 letras.';
+    if (!TEXTO_LIVRE.test(marca)) return 'O nome da marca tem símbolos que não valem aqui.';
+    return null;
+  }
+
+  function escolhido(nomeDoGrupo) {
+    const marcado = document.querySelector('input[name="' + nomeDoGrupo + '"]:checked');
+    return marcado ? marcado.value : '';
+  }
+
+  // Alguns campos são grupos de radio: não existe um <input id="frota">.
+  const GRUPOS = { frota: 'escolhas-frota', marca: 'escolhas-marca' };
+
   function marcarErro(campo, mensagem) {
     const entrada = $(campo);
+    const grupo = GRUPOS[campo] ? $(GRUPOS[campo]) : null;
     const caixa = $('erro-' + campo);
+    if (!caixa) return;
     if (mensagem) {
       caixa.textContent = mensagem;
       caixa.classList.add('visivel');
       if (entrada) entrada.setAttribute('aria-invalid', 'true');
+      if (grupo) grupo.classList.add('invalida');
     } else {
       caixa.textContent = '';
       caixa.classList.remove('visivel');
       if (entrada) entrada.removeAttribute('aria-invalid');
+      if (grupo) grupo.classList.remove('invalida');
     }
   }
 
+  // Foca o campo certo, seja um input comum ou o primeiro radio do grupo.
+  function focarCampo(campo) {
+    if (GRUPOS[campo]) {
+      const grupo = $(GRUPOS[campo]);
+      const primeiro = grupo && grupo.querySelector('input[type=radio]');
+      if (primeiro) primeiro.focus();
+      return;
+    }
+    const alvo = $(campo);
+    if (alvo) alvo.focus();
+  }
+
+  const CAMPOS_INSCRICAO = ['nome', 'fone', 'cidade', 'revenda', 'frota', 'comprador', 'marca', 'marca-outra', 'autorizo'];
+
   function limparErros() {
-    ['nome', 'fone', 'cidade', 'autorizo'].forEach((c) => marcarErro(c, null));
+    CAMPOS_INSCRICAO.forEach((c) => marcarErro(c, null));
     recado($('recado-inscricao'), '');
   }
 
@@ -866,10 +981,32 @@ const QR = (() => {
     if (posicaoFinal) e.target.setSelectionRange(e.target.value.length, e.target.value.length);
   });
 
-  ['nome', 'fone', 'cidade'].forEach((campo) => {
+  ['nome', 'fone', 'cidade', 'revenda', 'comprador', 'marca-outra'].forEach((campo) => {
     $(campo).addEventListener('input', () => marcarErro(campo, null));
   });
   $('autorizo').addEventListener('change', () => marcarErro('autorizo', null));
+
+  // "Outra" abre o campinho do "qual?"; qualquer outra escolha esconde e limpa.
+  function sincronizarMarcaOutra() {
+    const outra = escolhido('marca') === 'outra';
+    $('caixa-marca-outra').hidden = !outra;
+    if (!outra) {
+      $('marca-outra').value = '';
+      marcarErro('marca-outra', null);
+    }
+  }
+
+  document.querySelectorAll('input[name="frota"]').forEach((entrada) => {
+    entrada.addEventListener('change', () => marcarErro('frota', null));
+  });
+
+  document.querySelectorAll('input[name="marca"]').forEach((entrada) => {
+    entrada.addEventListener('change', () => {
+      marcarErro('marca', null);
+      sincronizarMarcaOutra();
+      if (escolhido('marca') === 'outra') $('marca-outra').focus({ preventScroll: true });
+    });
+  });
 
   $('formulario').addEventListener('submit', async (evento) => {
     evento.preventDefault();
@@ -878,19 +1015,27 @@ const QR = (() => {
     const nome = limparEspacos($('nome').value);
     const foneDigitos = $('fone').value.replace(/\D/g, '');
     const cidade = limparEspacos($('cidade').value);
+    const revenda = limparEspacos($('revenda').value);
+    const frota = escolhido('frota');
+    const comprador = limparEspacos($('comprador').value);
+    const marca = escolhido('marca');
+    const marcaOutra = limparEspacos($('marca-outra').value);
 
     const problemas = [
       ['nome', conferirNome(nome)],
       ['fone', conferirFone(foneDigitos)],
       ['cidade', conferirCidade(cidade)],
+      ['revenda', conferirRevenda(revenda)],
+      ['frota', frota ? null : 'Escolha se a frota é própria ou terceirizada.'],
+      ['comprador', conferirComprador(comprador)],
+      ['marca', marca ? null : 'Escolha a marca do baú homologado pela Ambev.'],
+      ['marca-outra', marca === 'outra' ? conferirMarcaOutra(marcaOutra) : null],
       ['autorizo', $('autorizo').checked ? null : 'Marque a autorização de contato para participar.'],
     ].filter(([, mensagem]) => mensagem);
 
     if (problemas.length) {
       problemas.forEach(([campo, mensagem]) => marcarErro(campo, mensagem));
-      const [primeiro] = problemas[0];
-      const alvo = $(primeiro);
-      if (alvo) alvo.focus();
+      focarCampo(problemas[0][0]);
       return;
     }
 
@@ -900,14 +1045,19 @@ const QR = (() => {
     botao.textContent = 'Enviando...';
 
     try {
-      const resposta = await api('inscrever', { nome, fone: foneDigitos, cidade, autorizo: true });
+      const resposta = await api('inscrever', {
+        nome, fone: foneDigitos, cidade,
+        revenda, frota, comprador, marca,
+        marcaOutra: marca === 'outra' ? marcaOutra : '',
+        autorizo: true,
+      });
       mostrarConfirmacao(resposta);
       $('formulario').reset();
+      sincronizarMarcaOutra();
     } catch (e) {
       if (e.campo) {
         marcarErro(e.campo, e.message);
-        const alvo = $(e.campo);
-        if (alvo) alvo.focus();
+        focarCampo(e.campo);
       } else {
         recado($('recado-inscricao'), e.message);
       }
@@ -957,6 +1107,7 @@ const QR = (() => {
   function voltarParaInscricao() {
     cancelarVolta();
     $('formulario').reset();
+    sincronizarMarcaOutra();
     limparErros();
     mostrarTela('tela-inscricao');
     $('nome').focus({ preventScroll: true });
@@ -1091,9 +1242,17 @@ const QR = (() => {
     if (!busca) return participantes;
     const digitos = busca.replace(/\D/g, '');
     return participantes.filter((p) => {
-      const alvo = (p.nome + ' ' + p.ficha + ' ' + p.cidade).toLowerCase();
+      const alvo = [p.nome, p.ficha, p.cidade, p.revenda, p.comprador, p.marcaBau]
+        .filter(Boolean).join(' ').toLowerCase();
       return alvo.includes(busca) || (digitos.length >= 3 && p.fone.includes(digitos));
     });
+  }
+
+  // "Outra" só faz sentido junto com o que a pessoa escreveu.
+  function marcaCompleta(p) {
+    if (!p.marcaBau) return '';
+    if (p.marcaOutra) return p.marcaBau + ': ' + p.marcaOutra;
+    return p.marcaBau;
   }
 
   function desenharTabela() {
@@ -1108,7 +1267,7 @@ const QR = (() => {
     if (!lista.length) {
       const linha = document.createElement('tr');
       const celula = document.createElement('td');
-      celula.colSpan = 6;
+      celula.colSpan = 10;
       celula.className = 'vazio';
       celula.textContent = participantes.length
         ? 'Ninguém encontrado com essa busca.'
@@ -1134,6 +1293,18 @@ const QR = (() => {
       const cidade = document.createElement('td');
       cidade.textContent = p.cidade || '—';
 
+      const revenda = document.createElement('td');
+      revenda.textContent = p.revenda || '—';
+
+      const frota = document.createElement('td');
+      frota.textContent = p.frota || '—';
+
+      const comprador = document.createElement('td');
+      comprador.textContent = p.comprador || '—';
+
+      const marca = document.createElement('td');
+      marca.textContent = marcaCompleta(p) || '—';
+
       const situacao = document.createElement('td');
       if (p.ganhador) {
         const marca = document.createElement('span');
@@ -1153,7 +1324,7 @@ const QR = (() => {
       botao.setAttribute('aria-label', 'Remover ' + p.nome);
       acao.appendChild(botao);
 
-      linha.append(ficha, nome, fone, cidade, situacao, acao);
+      linha.append(ficha, nome, fone, cidade, revenda, frota, comprador, marca, situacao, acao);
       corpo.appendChild(linha);
     }
   }
@@ -1277,10 +1448,14 @@ const QR = (() => {
       recado($('recado-painel'), 'Não há ninguém na lista para exportar.');
       return;
     }
-    const linhas = [['Ficha', 'Nome', 'WhatsApp', 'Cidade', 'Ganhador', 'Ganhou em', 'Inscrito em']];
+    const linhas = [[
+      'Ficha', 'Nome', 'WhatsApp', 'Cidade', 'Revenda', 'Frota', 'Comprador', 'Marca do baú',
+      'Ganhador', 'Ganhou em', 'Inscrito em',
+    ]];
     for (const p of participantes) {
       linhas.push([
         p.ficha, p.nome, mascararFone(p.fone), p.cidade,
+        p.revenda, p.frota, p.comprador, marcaCompleta(p),
         p.ganhador ? 'Sim' : 'Não', dataHora(p.ganhouEm), dataHora(p.criadoEm),
       ]);
     }
