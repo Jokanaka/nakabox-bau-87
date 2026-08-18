@@ -38,6 +38,18 @@ alter table public.bau87_participantes add column if not exists marca_outra text
 -- Registros antigos ficam nulos e o painel mostra "—".
 alter table public.bau87_participantes add column if not exists qtd_motos   text;
 
+-- Comprovante no WhatsApp: o watcher local (nakabox-bau87-watcher) manda UMA
+-- mensagem por inscrito novo e fecha o registro aqui. Quem ja estava inscrito
+-- antes do comprovante existir foi marcado como notificado, para nunca receber
+-- mensagem de um cadastro antigo.
+alter table public.bau87_participantes add column if not exists notificado_whatsapp boolean not null default false;
+alter table public.bau87_participantes add column if not exists notificado_em       timestamptz;
+alter table public.bau87_participantes add column if not exists notificado_erro     text;
+
+-- Fila do comprovante: so interessa quem ainda nao recebeu.
+create index if not exists bau87_participantes_notificado_idx
+  on public.bau87_participantes (notificado_whatsapp) where notificado_whatsapp = false;
+
 -- Consultas do painel: lista por ordem de inscricao e filtro de ganhadores.
 create index if not exists bau87_participantes_ganhador_idx on public.bau87_participantes (ganhador);
 create index if not exists bau87_participantes_criado_em_idx on public.bau87_participantes (criado_em);

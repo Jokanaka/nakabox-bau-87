@@ -25,7 +25,9 @@ const TEXTO_LIVRE = /^[A-Za-zÀ-ÖØ-öø-ÿ0-9'’.,\-&/ ]+$/;
 // As escolhas viajam como chave curta e sao gravadas com o rotulo que o
 // organizador le no painel. Nada que venha de fora entra no banco cru.
 const FROTAS = new Map([['propria', 'Própria'], ['terceirizada', 'Terceirizada']]);
-const MARCAS = new Map([['nakabox', 'Nakabox/MN3'], ['outra', 'Outra']]);
+// Nakabox e MN3 sao marcas DIFERENTES: cada uma tem a sua opcao. Fichas antigas
+// gravadas como "Nakabox/MN3" continuam no banco com o rotulo que ja tinham.
+const MARCAS = new Map([['nakabox', 'Nakabox'], ['mn3', 'MN3'], ['outra', 'Outra']]);
 const MOTOS = new Map([
   ['1-10', '1 a 10'],
   ['10-50', '10 a 50'],

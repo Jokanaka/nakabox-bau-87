@@ -306,7 +306,8 @@
       <div class="campo">
         <span class="rotulo-grupo" id="rotulo-marca">Qual a marca do baú homologado pela Ambev?</span>
         <div class="escolhas" id="escolhas-marca" role="radiogroup" aria-labelledby="rotulo-marca" aria-describedby="erro-marca">
-          <label class="escolha"><input type="radio" name="marca" value="nakabox"><span>Nakabox/MN3</span></label>
+          <label class="escolha"><input type="radio" name="marca" value="nakabox"><span>Nakabox</span></label>
+          <label class="escolha"><input type="radio" name="marca" value="mn3"><span>MN3</span></label>
           <label class="escolha"><input type="radio" name="marca" value="outra"><span>Outra</span></label>
         </div>
         <p class="erro" id="erro-marca" role="alert"></p>
@@ -949,6 +950,8 @@ const QR = (() => {
 
   // Alguns campos são grupos de radio: não existe um <input id="frota">.
   const GRUPOS = { frota: 'escolhas-frota', motos: 'escolhas-motos', marca: 'escolhas-marca' };
+  // Nakabox e MN3 sao marcas diferentes; o servidor confere esta mesma lista.
+  const MARCAS_VALIDAS = ['nakabox', 'mn3', 'outra'];
 
   function marcarErro(campo, mensagem) {
     const entrada = $(campo);
@@ -1046,7 +1049,7 @@ const QR = (() => {
       ['frota', frota ? null : 'Escolha se a frota é própria ou terceirizada.'],
       ['motos', motos ? null : 'Escolha quantas motos você tem.'],
       ['comprador', conferirComprador(comprador)],
-      ['marca', marca ? null : 'Escolha a marca do baú homologado pela Ambev.'],
+      ['marca', MARCAS_VALIDAS.includes(marca) ? null : 'Escolha a marca do baú homologado pela Ambev.'],
       ['marca-outra', marca === 'outra' ? conferirMarcaOutra(marcaOutra) : null],
       ['autorizo', $('autorizo').checked ? null : 'Marque a autorização de contato para participar.'],
     ].filter(([, mensagem]) => mensagem);
