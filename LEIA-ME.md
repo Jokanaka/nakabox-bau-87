@@ -13,6 +13,57 @@ serviço do Supabase fica apenas nas variáveis de ambiente do Vercel.
 
 ---
 
+## Deploy em 10 minutos (caminho curto)
+
+Se está em cima da hora, siga só isto. O detalhe de cada passo está nas seções
+seguintes.
+
+**1. Supabase (≈4 min)**
+
+1. <https://supabase.com> → **New project**. Nome `nakabox-sorteio`, região
+   **South America (São Paulo)**. Enquanto ele sobe, siga para o passo 2 em outra aba.
+2. Projeto pronto → **SQL Editor** → **New query** → cole todo o `schema.sql` → **Run**.
+3. **Project Settings** → **API** → copie **Project URL** e a chave **service_role**.
+
+**2. Vercel (≈4 min)**
+
+1. <https://vercel.com> → **Add New** → **Project** → importe este repositório.
+2. **Framework Preset: Other.** Não mexa em build — não existe build.
+3. Em **Environment Variables**, cadastre as três (Production, Preview e Development):
+
+   ```
+   SUPABASE_URL          = a Project URL do Supabase
+   SUPABASE_SERVICE_KEY  = a chave service_role
+   ORG_PIN               = o PIN que você vai digitar no evento
+   ```
+
+4. **Deploy.**
+
+**3. Publicar a branch certa (≈1 min)**
+
+O sorteio está na branch `claude/nakabox-raffle-site-bmwrqd`. Para o endereço
+público servir ele **sem mexer no `main`**:
+
+- Vercel → **Settings** → **Git** → **Production Branch** → troque para
+  `claude/nakabox-raffle-site-bmwrqd` → **Save**.
+- **Deployments** → no último → **⋯** → **Redeploy**.
+
+> Use o endereço de produção (`...vercel.app`), não o link de *preview*: em
+> projetos novos o preview costuma vir com proteção de login ligada, e o pessoal
+> do evento bateria numa tela de senha.
+>
+> A alternativa é dar merge no PR e deixar a produção no `main` — só lembre que
+> isso troca o endereço da página do produto no GitHub Pages, que passa a ser
+> `/bau-87.html`.
+
+**4. Conferir (≈1 min)**
+
+Abra o site no celular, faça uma inscrição de teste, entre no painel pelo link
+**organizador** do rodapé, clique em **SORTEAR AGORA** e depois em **Apagar tudo**
+para zerar antes do evento. Baixe o QR pelo botão **Baixar PNG para imprimir**.
+
+---
+
 ## 1. Criar o banco no Supabase
 
 1. Acesse <https://supabase.com>, crie uma conta e clique em **New project**.
