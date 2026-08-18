@@ -16,6 +16,7 @@ create table if not exists public.bau87_participantes (
   cidade       text,
   revenda      text,
   frota        text,
+  qtd_motos    text,
   comprador    text,
   marca_bau    text,
   marca_outra  text,
@@ -32,6 +33,10 @@ alter table public.bau87_participantes add column if not exists frota       text
 alter table public.bau87_participantes add column if not exists comprador   text;
 alter table public.bau87_participantes add column if not exists marca_bau   text;
 alter table public.bau87_participantes add column if not exists marca_outra text;
+
+-- Faixa de frota ("1 a 10", "10 a 50", "50 a 100", "100+"), guardada como rotulo.
+-- Registros antigos ficam nulos e o painel mostra "—".
+alter table public.bau87_participantes add column if not exists qtd_motos   text;
 
 -- Consultas do painel: lista por ordem de inscricao e filtro de ganhadores.
 create index if not exists bau87_participantes_ganhador_idx on public.bau87_participantes (ganhador);

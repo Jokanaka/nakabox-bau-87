@@ -26,6 +26,12 @@ const TEXTO_LIVRE = /^[A-Za-zÀ-ÖØ-öø-ÿ0-9'’.,\-&/ ]+$/;
 // organizador le no painel. Nada que venha de fora entra no banco cru.
 const FROTAS = new Map([['propria', 'Própria'], ['terceirizada', 'Terceirizada']]);
 const MARCAS = new Map([['nakabox', 'Nakabox/MN3'], ['outra', 'Outra']]);
+const MOTOS = new Map([
+  ['1-10', '1 a 10'],
+  ['10-50', '10 a 50'],
+  ['50-100', '50 a 100'],
+  ['100-mais', '100+'],
+]);
 
 function limpar(valor) {
   return String(valor ?? '').replace(/\s+/g, ' ').trim();
@@ -99,6 +105,13 @@ function validarFrota(bruto) {
   return rotulo;
 }
 
+function validarQtdMotos(bruto) {
+  const chave = limpar(bruto).toLowerCase();
+  const rotulo = MOTOS.get(chave);
+  if (!rotulo) throw new ErroApi(400, 'Escolha quantas motos você tem.', { campo: 'motos' });
+  return rotulo;
+}
+
 /** Devolve [marcaBau, marcaOutra]; o "qual?" so e exigido quando a escolha e "Outra". */
 function validarMarca(brutoMarca, brutoOutra) {
   const chave = limpar(brutoMarca).toLowerCase();
@@ -122,6 +135,7 @@ export default rota(async (req, res) => {
   const cidade = validarCidade(dados.cidade);
   const revenda = validarRevenda(dados.revenda);
   const frota = validarFrota(dados.frota);
+  const qtdMotos = validarQtdMotos(dados.motos);
   const comprador = validarComprador(dados.comprador);
   const [marcaBau, marcaOutra] = validarMarca(dados.marca, dados.marcaOutra);
 
@@ -130,7 +144,7 @@ export default rota(async (req, res) => {
   }
 
   try {
-    const registro = await inserir({ nome, fone, cidade, revenda, frota, comprador, marcaBau, marcaOutra });
+    const registro = await inserir({ nome, fone, cidade, revenda, frota, qtdMotos, comprador, marcaBau, marcaOutra });
     responder(res, 201, {
       ok: true,
       ficha: ficha(registro.id),

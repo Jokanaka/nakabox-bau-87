@@ -19,6 +19,7 @@ export default rota(async (req, res) => {
     cidade: l.cidade || '',
     revenda: l.revenda || '',
     frota: l.frota || '',
+    qtdMotos: l.qtd_motos || '',
     comprador: l.comprador || '',
     marcaBau: l.marca_bau || '',
     marcaOutra: l.marca_outra || '',

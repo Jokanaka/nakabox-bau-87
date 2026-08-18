@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Sorteio NAKABOX — Baús para moto</title>
-<meta name="description" content="Participe do sorteio da NAKABOX nas feiras e eventos. Preencha seus dados e concorra a um baú para moto.">
+<title>Sorteio NAKABOX — iPhone 15</title>
+<meta name="description" content="Participe do sorteio da NAKABOX nas feiras e eventos. Preencha seus dados e concorra a um iPhone 15.">
 <meta name="theme-color" content="#14161A">
 <meta name="robots" content="noindex">
 <link rel="icon" href="img/logo-nakabox-1200.png">
@@ -244,7 +244,7 @@
 
   <!-- ============================ TELA 1: INSCRICAO ============================ -->
   <section class="tela" id="tela-inscricao" aria-labelledby="titulo-inscricao">
-    <h1 id="titulo-inscricao" tabindex="-1">Concorra a um <em>baú NAKABOX</em></h1>
+    <h1 id="titulo-inscricao" tabindex="-1">Concorra a um <em>iPhone 15</em></h1>
     <p class="subtitulo">Preencha os dados e sua ficha entra no sorteio do evento. Leva menos de um minuto.</p>
 
     <form class="placa" id="formulario" novalidate>
@@ -286,6 +286,17 @@
       </div>
 
       <div class="campo">
+        <span class="rotulo-grupo" id="rotulo-motos">Quantas motos você tem?</span>
+        <div class="escolhas" id="escolhas-motos" role="radiogroup" aria-labelledby="rotulo-motos" aria-describedby="erro-motos">
+          <label class="escolha"><input type="radio" name="motos" value="1-10"><span>1 a 10</span></label>
+          <label class="escolha"><input type="radio" name="motos" value="10-50"><span>10 a 50</span></label>
+          <label class="escolha"><input type="radio" name="motos" value="50-100"><span>50 a 100</span></label>
+          <label class="escolha"><input type="radio" name="motos" value="100-mais"><span>100+</span></label>
+        </div>
+        <p class="erro" id="erro-motos" role="alert"></p>
+      </div>
+
+      <div class="campo">
         <label for="comprador">Qual o nome do comprador?</label>
         <input type="text" id="comprador" name="comprador" autocomplete="off" enterkeyhint="next"
                placeholder="Ex.: Maria Souza" maxlength="80" aria-describedby="erro-comprador">
@@ -324,7 +335,7 @@
   <!-- ============================ TELA 2: CONFIRMACAO ============================ -->
   <section class="tela" id="tela-confirmacao" hidden aria-labelledby="titulo-confirmacao">
     <h1 id="titulo-confirmacao" tabindex="-1">Inscrição <em>confirmada</em></h1>
-    <p class="subtitulo" id="recado-confirmacao">Guarde o número da sua ficha. Ele vai aparecer no sorteio.</p>
+    <p class="subtitulo" id="recado-confirmacao">Guarde o número da sua ficha. Você está concorrendo a um iPhone 15.</p>
 
     <div class="ficha" style="margin-top:22px">
       <div class="rotulo">Sua ficha</div>
@@ -340,7 +351,7 @@
   <!-- ============================ TELA 3: PIN ============================ -->
   <section class="tela" id="tela-pin" hidden aria-labelledby="titulo-pin">
     <h1 id="titulo-pin" tabindex="-1">Área do <em>organizador</em></h1>
-    <p class="subtitulo">Digite o PIN do evento para abrir o painel do sorteio.</p>
+    <p class="subtitulo">Digite o PIN do evento para abrir o painel do sorteio do iPhone 15.</p>
 
     <form class="placa" id="formulario-pin" novalidate>
       <div class="campo">
@@ -413,6 +424,7 @@
               <th scope="col">Cidade</th>
               <th scope="col">Revenda</th>
               <th scope="col">Frota</th>
+              <th scope="col">Motos</th>
               <th scope="col">Comprador</th>
               <th scope="col">Marca do baú</th>
               <th scope="col">Situação</th>
@@ -936,7 +948,7 @@ const QR = (() => {
   }
 
   // Alguns campos são grupos de radio: não existe um <input id="frota">.
-  const GRUPOS = { frota: 'escolhas-frota', marca: 'escolhas-marca' };
+  const GRUPOS = { frota: 'escolhas-frota', motos: 'escolhas-motos', marca: 'escolhas-marca' };
 
   function marcarErro(campo, mensagem) {
     const entrada = $(campo);
@@ -968,7 +980,7 @@ const QR = (() => {
     if (alvo) alvo.focus();
   }
 
-  const CAMPOS_INSCRICAO = ['nome', 'fone', 'cidade', 'revenda', 'frota', 'comprador', 'marca', 'marca-outra', 'autorizo'];
+  const CAMPOS_INSCRICAO = ['nome', 'fone', 'cidade', 'revenda', 'frota', 'motos', 'comprador', 'marca', 'marca-outra', 'autorizo'];
 
   function limparErros() {
     CAMPOS_INSCRICAO.forEach((c) => marcarErro(c, null));
@@ -1000,6 +1012,10 @@ const QR = (() => {
     entrada.addEventListener('change', () => marcarErro('frota', null));
   });
 
+  document.querySelectorAll('input[name="motos"]').forEach((entrada) => {
+    entrada.addEventListener('change', () => marcarErro('motos', null));
+  });
+
   document.querySelectorAll('input[name="marca"]').forEach((entrada) => {
     entrada.addEventListener('change', () => {
       marcarErro('marca', null);
@@ -1017,6 +1033,7 @@ const QR = (() => {
     const cidade = limparEspacos($('cidade').value);
     const revenda = limparEspacos($('revenda').value);
     const frota = escolhido('frota');
+    const motos = escolhido('motos');
     const comprador = limparEspacos($('comprador').value);
     const marca = escolhido('marca');
     const marcaOutra = limparEspacos($('marca-outra').value);
@@ -1027,6 +1044,7 @@ const QR = (() => {
       ['cidade', conferirCidade(cidade)],
       ['revenda', conferirRevenda(revenda)],
       ['frota', frota ? null : 'Escolha se a frota é própria ou terceirizada.'],
+      ['motos', motos ? null : 'Escolha quantas motos você tem.'],
       ['comprador', conferirComprador(comprador)],
       ['marca', marca ? null : 'Escolha a marca do baú homologado pela Ambev.'],
       ['marca-outra', marca === 'outra' ? conferirMarcaOutra(marcaOutra) : null],
@@ -1047,7 +1065,7 @@ const QR = (() => {
     try {
       const resposta = await api('inscrever', {
         nome, fone: foneDigitos, cidade,
-        revenda, frota, comprador, marca,
+        revenda, frota, motos, comprador, marca,
         marcaOutra: marca === 'outra' ? marcaOutra : '',
         autorizo: true,
       });
@@ -1075,7 +1093,7 @@ const QR = (() => {
     $('ficha-nome').textContent = dados.nome || '';
     $('recado-confirmacao').textContent = dados.jaInscrito
       ? 'Esse WhatsApp já estava inscrito. Sua ficha continua a mesma.'
-      : 'Guarde o número da sua ficha. Ele vai aparecer no sorteio.';
+      : 'Guarde o número da sua ficha. Você está concorrendo a um iPhone 15.';
     mostrarTela('tela-confirmacao');
     agendarVolta(30);
   }
@@ -1299,6 +1317,9 @@ const QR = (() => {
       const frota = document.createElement('td');
       frota.textContent = p.frota || '—';
 
+      const motos = document.createElement('td');
+      motos.textContent = p.qtdMotos || '—';
+
       const comprador = document.createElement('td');
       comprador.textContent = p.comprador || '—';
 
@@ -1324,7 +1345,7 @@ const QR = (() => {
       botao.setAttribute('aria-label', 'Remover ' + p.nome);
       acao.appendChild(botao);
 
-      linha.append(ficha, nome, fone, cidade, revenda, frota, comprador, marca, situacao, acao);
+      linha.append(ficha, nome, fone, cidade, revenda, frota, motos, comprador, marca, situacao, acao);
       corpo.appendChild(linha);
     }
   }
@@ -1449,13 +1470,13 @@ const QR = (() => {
       return;
     }
     const linhas = [[
-      'Ficha', 'Nome', 'WhatsApp', 'Cidade', 'Revenda', 'Frota', 'Comprador', 'Marca do baú',
+      'Ficha', 'Nome', 'WhatsApp', 'Cidade', 'Revenda', 'Frota', 'Motos', 'Comprador', 'Marca do baú',
       'Ganhador', 'Ganhou em', 'Inscrito em',
     ]];
     for (const p of participantes) {
       linhas.push([
         p.ficha, p.nome, mascararFone(p.fone), p.cidade,
-        p.revenda, p.frota, p.comprador, marcaCompleta(p),
+        p.revenda, p.frota, p.qtdMotos, p.comprador, marcaCompleta(p),
         p.ganhador ? 'Sim' : 'Não', dataHora(p.ganhouEm), dataHora(p.criadoEm),
       ]);
     }

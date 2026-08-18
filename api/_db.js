@@ -200,14 +200,14 @@ export async function consultar(texto, valores = []) {
 // ---------------------------------------------------------------------
 
 const CAMPOS =
-  'id, nome, fone, cidade, revenda, frota, comprador, marca_bau, marca_outra, ganhador, ganhou_em, criado_em';
+  'id, nome, fone, cidade, revenda, frota, qtd_motos, comprador, marca_bau, marca_outra, ganhador, ganhou_em, criado_em';
 
 /** Insere um inscrito. Telefone repetido estoura ErroApi 409. */
-export async function inserir({ nome, fone, cidade, revenda, frota, comprador, marcaBau, marcaOutra }) {
+export async function inserir({ nome, fone, cidade, revenda, frota, qtdMotos, comprador, marcaBau, marcaOutra }) {
   const linhas = await consultar(
-    `insert into ${TABELA} (nome, fone, cidade, revenda, frota, comprador, marca_bau, marca_outra)
-     values ($1, $2, $3, $4, $5, $6, $7, $8) returning ${CAMPOS}`,
-    [nome, fone, cidade, revenda, frota, comprador, marcaBau, marcaOutra]
+    `insert into ${TABELA} (nome, fone, cidade, revenda, frota, qtd_motos, comprador, marca_bau, marca_outra)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9) returning ${CAMPOS}`,
+    [nome, fone, cidade, revenda, frota, qtdMotos, comprador, marcaBau, marcaOutra]
   );
   return linhas[0];
 }
