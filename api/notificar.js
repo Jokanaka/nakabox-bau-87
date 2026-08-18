@@ -30,7 +30,7 @@ export default rota(async (req, res) => {
 
   if (acao === 'pendentes') {
     const linhas = await consultar(
-      `select id, nome, fone from ${TABELA}
+      `select id, ficha_num, nome, fone from ${TABELA}
        where notificado_whatsapp = false
        order by id asc limit ${LIMITE}`
     );
@@ -38,7 +38,7 @@ export default rota(async (req, res) => {
       ok: true,
       pendentes: linhas.map((l) => ({
         id: l.id,
-        ficha: ficha(l.id),
+        ficha: ficha(l),
         nome: l.nome,
         fone: l.fone,
       })),

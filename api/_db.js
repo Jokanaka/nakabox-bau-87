@@ -166,7 +166,9 @@ function erroDoBanco(e) {
   const codigo = e && e.code ? String(e.code) : '';
 
   if (codigo === '23505') {
-    return new ErroApi(409, 'Esse WhatsApp já está inscrito no sorteio.');
+    // Telefone repetido. A inscricao e RECUSADA (nao devolve a ficha antiga):
+    // um numero, uma ficha. A mensagem abaixo e a que aparece na tela.
+    return new ErroApi(409, 'Este número já está inscrito no sorteio.', { campo: 'fone' });
   }
   if (codigo === '42P01') {
     return new ErroApi(500, `A tabela "${TABELA}" não existe no banco. Rode o schema.sql antes.`);
@@ -200,9 +202,14 @@ export async function consultar(texto, valores = []) {
 // ---------------------------------------------------------------------
 
 const CAMPOS =
-  'id, nome, fone, cidade, revenda, frota, qtd_motos, comprador, marca_bau, marca_outra, ganhador, ganhou_em, criado_em';
+  'id, ficha_num, nome, fone, cidade, revenda, frota, qtd_motos, comprador, marca_bau, marca_outra, ganhador, ganhou_em, criado_em';
 
-/** Insere um inscrito. Telefone repetido estoura ErroApi 409. */
+/**
+ * Insere um inscrito. Telefone repetido estoura ErroApi 409.
+ * ficha_num nao aparece aqui de proposito: o valor vem do DEFAULT da coluna
+ * (nextval da sequence bau87_ficha_seq), entao quem distribui o numero e o
+ * proprio Postgres — dois cliques ao mesmo tempo nunca tiram a mesma ficha.
+ */
 export async function inserir({ nome, fone, cidade, revenda, frota, qtdMotos, comprador, marcaBau, marcaOutra }) {
   const linhas = await consultar(
     `insert into ${TABELA} (nome, fone, cidade, revenda, frota, qtd_motos, comprador, marca_bau, marca_outra)
@@ -264,9 +271,24 @@ export async function apagarTudo() {
 // Utilidades de dominio
 // ---------------------------------------------------------------------
 
-/** Numero da ficha derivado do id: 7 -> 'NB-1007'. */
-export function ficha(id) {
-  return `NB-${1000 + Number(id)}`;
+/**
+ * Numero da ficha. O numero de verdade mora na coluna ficha_num, alimentada
+ * pela sequence do banco (sempre crescente e sempre >= 1000).
+ *
+ * Aceita a LINHA inteira do banco (jeito certo) ou, por compatibilidade com
+ * chamadas antigas, um id cru — nesse caso volta a conta antiga 1000 + id,
+ * que e exatamente o numero que as fichas de antes da sequence ja mostravam.
+ */
+export function numeroFicha(linha) {
+  if (linha && typeof linha === 'object') {
+    if (linha.ficha_num !== null && linha.ficha_num !== undefined) return Number(linha.ficha_num);
+    return 1000 + Number(linha.id);
+  }
+  return 1000 + Number(linha);
+}
+
+export function ficha(linha) {
+  return `NB-${numeroFicha(linha)}`;
 }
 
 /** Totais que o painel mostra no topo. */

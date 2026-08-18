@@ -13,7 +13,7 @@ export default rota(async (req, res) => {
 
   const participantes = linhas.map((l) => ({
     id: l.id,
-    ficha: ficha(l.id),
+    ficha: ficha(l),
     nome: l.nome,
     fone: l.fone,
     cidade: l.cidade || '',

@@ -1076,7 +1076,14 @@ const QR = (() => {
       $('formulario').reset();
       sincronizarMarcaOutra();
     } catch (e) {
-      if (e.campo) {
+      // 409 = esse WhatsApp já está no sorteio. A inscrição é recusada e a
+      // pessoa PRECISA ver o porquê: a mensagem aparece embaixo do campo do
+      // WhatsApp e também no recado do fim do formulário, nunca em silêncio.
+      if (e.status === 409) {
+        marcarErro('fone', e.message);
+        recado($('recado-inscricao'), e.message);
+        focarCampo('fone');
+      } else if (e.campo) {
         marcarErro(e.campo, e.message);
         focarCampo(e.campo);
       } else {
@@ -1094,9 +1101,10 @@ const QR = (() => {
   function mostrarConfirmacao(dados) {
     $('ficha-numero').textContent = dados.ficha;
     $('ficha-nome').textContent = dados.nome || '';
-    $('recado-confirmacao').textContent = dados.jaInscrito
-      ? 'Esse WhatsApp já estava inscrito. Sua ficha continua a mesma.'
-      : 'Guarde o número da sua ficha. Você está concorrendo a um iPhone 15.';
+    // Esta tela só aparece quando a inscrição foi mesmo criada. WhatsApp
+    // repetido não chega aqui: é recusado ainda no formulário.
+    $('recado-confirmacao').textContent =
+      'Guarde o número da sua ficha. Você está concorrendo a um iPhone 15.';
     mostrarTela('tela-confirmacao');
     agendarVolta(30);
   }

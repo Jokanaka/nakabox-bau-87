@@ -46,6 +46,39 @@ alter table public.bau87_participantes add column if not exists notificado_whats
 alter table public.bau87_participantes add column if not exists notificado_em       timestamptz;
 alter table public.bau87_participantes add column if not exists notificado_erro     text;
 
+-- ---------------------------------------------------------------------
+-- Numero da ficha: sequencial, crescente, comecando em 1000.
+--
+-- Antes o numero era calculado na hora como 1000 + id. Agora ele mora numa
+-- coluna propria, preenchida por uma SEQUENCE do Postgres — assim dois
+-- cliques no mesmo segundo nunca tiram o mesmo numero, e apagar alguem da
+-- lista nao devolve o numero dela para outra pessoa.
+--
+-- minvalue 999 existe so para o setval abaixo poder repousar em 999 quando a
+-- tabela esta vazia; nesse caso o primeiro nextval devolve exatamente 1000.
+create sequence if not exists public.bau87_ficha_seq as integer minvalue 999 start with 1000;
+
+alter table public.bau87_participantes add column if not exists ficha_num integer;
+
+-- Fichas que ja existiam NAO sao renumeradas: recebem exatamente 1000 + id,
+-- que e o numero que aquela pessoa ja viu na tela.
+update public.bau87_participantes set ficha_num = 1000 + id where ficha_num is null;
+
+-- A sequencia repousa acima da maior ficha ja emitida (e nunca abaixo de 999),
+-- entao a proxima inscricao pega um numero maior que todos e >= 1000.
+select setval(
+  'public.bau87_ficha_seq',
+  greatest(999, coalesce((select max(ficha_num) from public.bau87_participantes), 999))
+);
+
+alter table public.bau87_participantes
+  alter column ficha_num set default nextval('public.bau87_ficha_seq');
+update public.bau87_participantes
+  set ficha_num = nextval('public.bau87_ficha_seq') where ficha_num is null;
+create unique index if not exists bau87_participantes_ficha_num_idx
+  on public.bau87_participantes (ficha_num);
+alter table public.bau87_participantes alter column ficha_num set not null;
+
 -- Fila do comprovante: so interessa quem ainda nao recebeu.
 create index if not exists bau87_participantes_notificado_idx
   on public.bau87_participantes (notificado_whatsapp) where notificado_whatsapp = false;
@@ -60,5 +93,10 @@ create index if not exists bau87_participantes_criado_em_idx on public.bau87_par
 -- uma chave anônima do Supabase, esta tabela continua fechada.
 alter table public.bau87_participantes enable row level security;
 
--- O numero da ficha e derivado do id, sem coluna extra: 'NB-' || (1000 + id).
--- Ex.: id 7 => ficha NB-1007. Quem monta essa string e a funcao /api, nunca o banco.
+-- O numero da ficha vem da coluna ficha_num (sequence bau87_ficha_seq, >= 1000).
+-- A /api so poe o prefixo: ficha_num 1018 => 'NB-1018'.
+--
+-- "fone text not null unique" la em cima e a trava do numero repetido: a
+-- segunda inscricao com o mesmo WhatsApp e recusada pelo banco (erro 23505),
+-- que a /api traduz em HTTP 409 com a mensagem
+-- "Este número já está inscrito no sorteio.".

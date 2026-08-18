@@ -3,7 +3,7 @@
 // Recebe { nome, fone, cidade, autorizo } e devolve o numero da ficha.
 // =====================================================================
 
-import { rota, corpo, responder, porFone, inserir, ficha, ErroApi } from './_db.js';
+import { rota, corpo, responder, inserir, ficha, ErroApi } from './_db.js';
 
 // DDDs que existem de verdade no Brasil.
 const DDDS = new Set([
@@ -145,28 +145,14 @@ export default rota(async (req, res) => {
     throw new ErroApi(400, 'Marque a autorização de contato para participar.', { campo: 'autorizo' });
   }
 
-  try {
-    const registro = await inserir({ nome, fone, cidade, revenda, frota, qtdMotos, comprador, marcaBau, marcaOutra });
-    responder(res, 201, {
-      ok: true,
-      ficha: ficha(registro.id),
-      nome: registro.nome,
-      jaInscrito: false,
-    });
-  } catch (e) {
-    // Telefone repetido: em vez de barrar a pessoa, devolvemos a ficha que ela ja tem.
-    if (e instanceof ErroApi && e.status === 409) {
-      const existente = await porFone(fone);
-      if (existente) {
-        responder(res, 200, {
-          ok: true,
-          ficha: ficha(existente.id),
-          nome: existente.nome,
-          jaInscrito: true,
-        });
-        return;
-      }
-    }
-    throw e;
-  }
+  // Numero repetido e RECUSADO. Quem ja se inscreveu nao tira ficha nova nem
+  // recebe a antiga de volta: a unique em "fone" no banco derruba o insert e
+  // o erro 409 sobe com a mensagem que a pessoa le na tela, apontando o campo
+  // do WhatsApp. Um numero, uma ficha — nada de duas chances no sorteio.
+  const registro = await inserir({ nome, fone, cidade, revenda, frota, qtdMotos, comprador, marcaBau, marcaOutra });
+  responder(res, 201, {
+    ok: true,
+    ficha: ficha(registro),
+    nome: registro.nome,
+  });
 });

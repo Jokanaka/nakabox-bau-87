@@ -20,7 +20,7 @@ export default rota(async (req, res) => {
 
   responder(res, 200, {
     ok: true,
-    removido: { id, ficha: ficha(id), nome: removidos[0].nome },
+    removido: { id, ficha: ficha(removidos[0]), nome: removidos[0].nome },
     totais: await totais(),
   });
 });

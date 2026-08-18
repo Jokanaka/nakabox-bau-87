@@ -41,7 +41,7 @@ export default rota(async (req, res) => {
       ok: true,
       ganhador: {
         id: linha.id,
-        ficha: ficha(linha.id),
+        ficha: ficha(linha),
         nome: linha.nome,
         cidade: linha.cidade || '',
         ganhouEm: linha.ganhou_em,
