@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<!--
+  RASCUNHO — Baú Super Produção 3 Andares.
+  Página ainda NÃO divulgada: está com noindex e não é linkada pela home.
+  Pendências marcadas com a classe .todo (aparecem destacadas em amarelo no navegador).
+  Ao receber fotos + medidas: preencher, remover as .todo, remover o noindex
+  e linkar a partir do index.html da raiz.
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Baú Super Produção 3 Andares — Nakabox | Entregas e Delivery</title>
+<meta name="description" content="Baú de moto Super Produção com 3 andares. Ideal para quem faz muita entrega e precisa separar os pedidos por viagem.">
+<meta property="og:title" content="Baú Super Produção 3 Andares — Nakabox">
+<meta property="og:description" content="Baú de moto com 3 andares, para separar pedidos e render mais entregas por viagem.">
+<meta property="og:image" content="https://jokanaka.github.io/nakabox-bau-87/img/logo-nakabox-1200.png">
+<style>
+  :root{
+    --laranja:#FF7A00;
+    --escuro:#1a1a1a;
+    --cinza:#555;
+    --claro:#f7f7f7;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;color:var(--escuro);background:#fff;line-height:1.6}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 20px}
+
+  header{background:var(--escuro);color:#fff;padding:14px 0}
+  header .wrap{display:flex;justify-content:space-between;align-items:center}
+  .logo{font-weight:800;font-size:1.2rem;letter-spacing:.5px}
+  .logo span{color:var(--laranja)}
+  .zap-top{background:#25D366;color:#fff;text-decoration:none;padding:8px 16px;border-radius:999px;font-weight:700;font-size:.9rem}
+
+  .hero{background:linear-gradient(180deg,#fff 0%,var(--claro) 100%);padding:40px 0 30px;text-align:center}
+  .hero img{max-width:min(420px,85%);height:auto;border-radius:12px}
+  .hero h1{font-size:clamp(1.6rem,5vw,2.4rem);margin:18px 0 6px;font-weight:800}
+  .hero h1 em{color:var(--laranja);font-style:normal}
+  .hero p.sub{color:var(--cinza);font-size:1.05rem;margin-bottom:22px}
+  .cta{display:inline-block;background:#25D366;color:#fff;text-decoration:none;font-weight:800;font-size:1.1rem;padding:15px 34px;border-radius:999px;box-shadow:0 4px 14px rgba(37,211,102,.4)}
+  .cta:hover{filter:brightness(1.05)}
+  .cta small{display:block;font-weight:400;font-size:.75rem;opacity:.9}
+
+  .badges{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:24px}
+  .badge{background:#fff;border:1px solid #e5e5e5;border-radius:999px;padding:7px 16px;font-size:.85rem;font-weight:600;color:var(--escuro)}
+  .badge b{color:var(--laranja)}
+
+  section{padding:44px 0}
+  section h2{font-size:1.5rem;font-weight:800;text-align:center;margin-bottom:26px}
+  section h2 span{color:var(--laranja)}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+  .card{background:var(--claro);border-radius:12px;padding:20px}
+  .card h3{font-size:1rem;margin-bottom:6px}
+  .card h3::before{content:"✓ ";color:var(--laranja);font-weight:800}
+  .card p{font-size:.9rem;color:var(--cinza)}
+
+  .andares{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+  .andar{background:var(--claro);border-radius:12px;padding:20px;border-left:5px solid var(--laranja)}
+  .andar .n{display:inline-block;background:var(--laranja);color:#fff;font-weight:800;font-size:.8rem;padding:3px 12px;border-radius:999px;margin-bottom:8px}
+  .andar h3{font-size:1.05rem;margin-bottom:6px}
+  .andar p{font-size:.9rem;color:var(--cinza)}
+
+  .medidas{background:var(--escuro);color:#fff}
+  .medidas h2{color:#fff}
+  .med-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;text-align:center}
+  .med{background:rgba(255,255,255,.07);border-radius:12px;padding:18px 10px}
+  .med .num{font-size:1.7rem;font-weight:800;color:var(--laranja)}
+  .med .lbl{font-size:.8rem;opacity:.85}
+  .fonte{text-align:center;font-size:.75rem;opacity:.6;margin-top:16px}
+
+  .galeria{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+  .galeria img{width:100%;height:auto;border-radius:10px;border:1px solid #eee;background:#fff}
+  .vazio{border:2px dashed #ccc;border-radius:10px;min-height:150px;display:flex;align-items:center;justify-content:center;color:#999;font-size:.8rem;text-align:center;padding:10px}
+
+  .nota{text-align:center;font-size:.8rem;color:var(--cinza);margin-top:14px}
+
+  .final{background:linear-gradient(135deg,var(--laranja),#ff9a3d);color:#fff;text-align:center}
+  .final h2{color:#fff}
+  .final p{margin-bottom:22px}
+  .final .cta{background:#fff;color:var(--escuro);box-shadow:0 4px 14px rgba(0,0,0,.2)}
+
+  footer{background:var(--escuro);color:#aaa;text-align:center;padding:22px 0;font-size:.8rem}
+  footer b{color:#fff}
+
+  /* marca as pendências de conteúdo — remover junto com o texto placeholder */
+  .todo{background:#fff3cd;outline:1px dashed #d9a400;border-radius:4px;padding:0 4px}
+  .aviso-rascunho{background:#d9a400;color:#1a1a1a;text-align:center;font-size:.8rem;font-weight:700;padding:8px 20px}
+</style>
+</head>
+<body>
+
+<div class="aviso-rascunho">RASCUNHO INTERNO — falta preencher fotos, medidas e textos. Não divulgar este link ainda.</div>
+
+<header>
+  <div class="wrap">
+    <div class="logo">NAKA<span>BOX</span></div>
+    <a class="zap-top" href="https://wa.me/5511971110016?text=Ol%C3%A1!%20Tenho%20interesse%20no%20ba%C3%BA%20Super%20Produ%C3%A7%C3%A3o%203%20andares." target="_blank" rel="noopener">WhatsApp</a>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <div class="vazio" style="max-width:420px;margin:0 auto">foto de capa do Super Produção<br>(img/super-producao/01-capa-frente.jpg)</div>
+    <h1>Baú Super Produção <em>3 Andares</em></h1>
+    <p class="sub"><span class="todo">chamada curta: pra quem é e qual o ganho — ex.: "mais pedidos por viagem, cada um no seu lugar"</span></p>
+    <a class="cta" href="https://wa.me/5511971110016?text=Ol%C3%A1!%20Tenho%20interesse%20no%20ba%C3%BA%20Super%20Produ%C3%A7%C3%A3o%203%20andares." target="_blank" rel="noopener">Pedir pelo WhatsApp<small>resposta rápida • consulte preço e entrega</small></a>
+    <div class="badges">
+      <div class="badge"><b>3 andares</b> independentes</div>
+      <div class="badge"><span class="todo"><b>? L</b> de capacidade</span></div>
+      <div class="badge">Plástico <b>rígido</b></div>
+      <div class="badge"><span class="todo">? cores</span></div>
+    </div>
+  </div>
+</div>
+
+<section>
+  <div class="wrap">
+    <h2>Os <span>3 andares</span></h2>
+    <div class="andares">
+      <div class="andar"><span class="n">1º ANDAR</span><h3><span class="todo">nome do andar</span></h3><p><span class="todo">o que cabe e para que serve este nível</span></p></div>
+      <div class="andar"><span class="n">2º ANDAR</span><h3><span class="todo">nome do andar</span></h3><p><span class="todo">o que cabe e para que serve este nível</span></p></div>
+      <div class="andar"><span class="n">3º ANDAR</span><h3><span class="todo">nome do andar</span></h3><p><span class="todo">o que cabe e para que serve este nível</span></p></div>
+    </div>
+    <p class="nota"><span class="todo">Os andares são bandejas removíveis? fixas? extensores empilhados? — definir</span></p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Feito para o <span>corre do dia a dia</span></h2>
+    <div class="grid">
+      <div class="card"><h3>Corpo em plástico rígido</h3><p>Estrutura resistente que aguenta o uso diário de entregas.</p></div>
+      <div class="card"><h3>Pedidos separados por andar</h3><p><span class="todo">confirmar o texto — entrega certa no endereço certo, sem revirar o baú</span></p></div>
+      <div class="card"><h3><span class="todo">diferencial 3</span></h3><p><span class="todo">descrição</span></p></div>
+      <div class="card"><h3><span class="todo">diferencial 4</span></h3><p><span class="todo">descrição</span></p></div>
+      <div class="card"><h3><span class="todo">diferencial 5</span></h3><p><span class="todo">descrição</span></p></div>
+      <div class="card"><h3>Instalação fácil</h3><p><span class="todo">confirmar se o suporte de fixação também vem incluso neste modelo</span></p></div>
+    </div>
+  </div>
+</section>
+
+<section class="medidas">
+  <div class="wrap">
+    <h2>Medidas</h2>
+    <div class="med-grid">
+      <div class="med"><div class="num">? L</div><div class="lbl">Capacidade total</div></div>
+      <div class="med"><div class="num">? cm</div><div class="lbl">Largura</div></div>
+      <div class="med"><div class="num">? cm</div><div class="lbl">Altura</div></div>
+      <div class="med"><div class="num">? cm</div><div class="lbl">Profundidade</div></div>
+    </div>
+    <p class="fonte"><span class="todo">preencher as medidas e, se houver, citar o laudo/relatório de ensaio como na página do 87L</span></p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Fotos do <span>produto</span></h2>
+    <div class="galeria">
+      <div class="vazio">frente fechado</div>
+      <div class="vazio">aberto, mostrando os 3 andares</div>
+      <div class="vazio">detalhe de um andar</div>
+      <div class="vazio">montado na moto</div>
+      <div class="vazio">traseira</div>
+      <div class="vazio">suporte de fixação</div>
+    </div>
+    <p class="nota">*Nas fotos com moto, a imagem da moto é ilustrativa — moto não inclusa.</p>
+  </div>
+</section>
+
+<section class="final">
+  <div class="wrap">
+    <h2>Quer o seu?</h2>
+    <p>Chama a gente no WhatsApp — respondemos rápido com preço, cor disponível e prazo de entrega.</p>
+    <a class="cta" href="https://wa.me/5511971110016?text=Ol%C3%A1!%20Tenho%20interesse%20no%20ba%C3%BA%20Super%20Produ%C3%A7%C3%A3o%203%20andares." target="_blank" rel="noopener">Chamar no WhatsApp</a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <img src="../img/logo-nakabox-1200.png" alt="Logo NAKABOX" width="72" height="72" style="border-radius:12px;margin-bottom:8px">
+    <div><b>NAKABOX</b> — Baús para moto • Entregas e delivery</div>
+  </div>
+</footer>
+
+</body>
+</html>
