@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Painel do Sorteio — Nakabox</title>
+<style>
+  :root{
+    --laranja:#FF7A00;
+    --escuro:#1a1a1a;
+    --cinza:#555;
+    --cinza2:#888;
+    --claro:#f7f7f7;
+    --borda:#e4e4e4;
+    --verde:#1aa053;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;color:var(--escuro);background:var(--claro);line-height:1.5;font-size:15px}
+  .wrap{max-width:1400px;margin:0 auto;padding:0 16px}
+
+  header{background:var(--escuro);color:#fff;padding:12px 0;position:sticky;top:0;z-index:50}
+  header .wrap{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  .logo{font-weight:800;font-size:1.15rem;letter-spacing:.5px}
+  .logo span{color:var(--laranja)}
+  .logo small{display:block;font-size:.7rem;font-weight:500;opacity:.7;letter-spacing:0}
+  .fonte-info{font-size:.75rem;opacity:.7}
+
+  /* ---------- estado vazio / importar ---------- */
+  .dropzone{background:#fff;border:2px dashed var(--borda);border-radius:14px;padding:44px 24px;text-align:center;margin:28px 0}
+  .dropzone.hover{border-color:var(--laranja);background:#fff8f1}
+  .dropzone h2{font-size:1.25rem;margin-bottom:8px}
+  .dropzone p{color:var(--cinza);font-size:.9rem;margin-bottom:18px}
+
+  .btn{display:inline-block;border:1px solid var(--borda);background:#fff;color:var(--escuro);font-weight:600;font-size:.85rem;padding:8px 16px;border-radius:8px;cursor:pointer;text-decoration:none}
+  .btn:hover{border-color:var(--cinza2)}
+  .btn-laranja{background:var(--laranja);border-color:var(--laranja);color:#fff}
+  .btn-laranja:hover{filter:brightness(1.06);border-color:var(--laranja)}
+  .btn-escuro{background:var(--escuro);border-color:var(--escuro);color:#fff}
+  .btn-escuro:hover{filter:brightness(1.4);border-color:var(--escuro)}
+
+  /* ---------- cartões de quantidade ---------- */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:20px 0}
+  .stat{background:#fff;border:1px solid var(--borda);border-radius:12px;padding:14px 16px}
+  .stat .num{font-size:1.75rem;font-weight:800;line-height:1.1}
+  .stat .lbl{font-size:.75rem;color:var(--cinza);text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+  .stat.destaque .num{color:var(--laranja)}
+
+  /* ---------- painéis ---------- */
+  .painel{background:#fff;border:1px solid var(--borda);border-radius:12px;padding:16px;margin-bottom:16px}
+  .painel h3{font-size:.78rem;text-transform:uppercase;letter-spacing:.6px;color:var(--cinza);margin-bottom:12px;font-weight:700}
+
+  .campos{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+  .campo label{display:block;font-size:.72rem;font-weight:700;color:var(--cinza);margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px}
+  .campo select,.campo input{width:100%;border:1px solid var(--borda);border-radius:8px;padding:8px 10px;font-size:.88rem;font-family:inherit;background:#fff;color:var(--escuro)}
+  .campo select:focus,.campo input:focus{outline:2px solid var(--laranja);outline-offset:-1px;border-color:var(--laranja)}
+  .campo select.ativo{border-color:var(--laranja);background:#fff8f1;font-weight:600}
+
+  .acoes{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px;padding-top:14px;border-top:1px solid var(--borda)}
+  .acoes .esq{display:flex;gap:8px;flex-wrap:wrap;flex:1}
+
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+  .chip{background:#fff8f1;border:1px solid var(--laranja);color:#b35500;border-radius:999px;padding:4px 10px;font-size:.78rem;font-weight:600;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+  .chip b{font-weight:800}
+  .chip::after{content:"✕";font-size:.7rem;opacity:.6}
+
+  /* ---------- abas ---------- */
+  .abas{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+  .aba{border:1px solid var(--borda);background:#fff;color:var(--cinza);font-weight:700;padding:8px 18px;border-radius:999px;cursor:pointer;font-size:.85rem}
+  .aba.on{background:var(--escuro);border-color:var(--escuro);color:#fff}
+
+  /* ---------- tabela ---------- */
+  .tabela-box{background:#fff;border:1px solid var(--borda);border-radius:12px;overflow:auto;max-height:70vh}
+  table{border-collapse:collapse;width:100%;font-size:.85rem;white-space:nowrap}
+  thead th{position:sticky;top:0;background:var(--escuro);color:#fff;text-align:left;padding:10px 12px;font-size:.72rem;text-transform:uppercase;letter-spacing:.4px;cursor:pointer;user-select:none;z-index:2}
+  thead th:hover{background:#333}
+  thead th .seta{color:var(--laranja);font-size:.7rem;margin-left:4px}
+  tbody td{padding:9px 12px;border-bottom:1px solid #f0f0f0}
+  tbody tr:hover{background:#fff8f1}
+  tbody td.nome{font-weight:600;white-space:normal;min-width:190px}
+  tbody td.num{color:var(--cinza);font-variant-numeric:tabular-nums}
+  .tag{display:inline-block;border-radius:999px;padding:2px 9px;font-size:.72rem;font-weight:700}
+  .tag-nakabox{background:#fff1e3;color:#b35500}
+  .tag-outros{background:#eee;color:var(--cinza)}
+  .grupo-linha td{background:var(--claro);font-weight:800;font-size:.82rem;padding:10px 12px;border-top:2px solid var(--escuro);position:sticky;left:0}
+  .grupo-linha .qtd{color:var(--laranja)}
+  .vazio{padding:40px;text-align:center;color:var(--cinza)}
+
+  /* ---------- resumo ---------- */
+  .resumo-lista{display:flex;flex-direction:column;gap:2px}
+  .res-item{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:7px 10px;border-radius:8px;cursor:pointer;position:relative}
+  .res-item:hover{background:#fff8f1}
+  .res-item .barra{position:absolute;left:0;top:0;bottom:0;background:#ffe9d4;border-radius:8px;z-index:0}
+  .res-item>*{position:relative;z-index:1}
+  .res-item .rot{font-weight:600;font-size:.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .res-item .qt{font-weight:800;font-variant-numeric:tabular-nums}
+  .res-item .pc{color:var(--cinza);font-size:.78rem;font-variant-numeric:tabular-nums;min-width:48px;text-align:right}
+
+  .cols-box{display:flex;flex-wrap:wrap;gap:6px}
+  .col-tog{border:1px solid var(--borda);background:#fff;color:var(--cinza2);border-radius:999px;padding:5px 12px;font-size:.78rem;font-weight:600;cursor:pointer}
+  .col-tog.on{background:var(--escuro);border-color:var(--escuro);color:#fff}
+
+  footer{text-align:center;padding:26px 0 40px;color:var(--cinza2);font-size:.78rem}
+  .esconde{display:none !important}
+  @media(max-width:600px){
+    .stat .num{font-size:1.4rem}
+    .painel{padding:13px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="logo">NAKA<span>BOX</span><small>Painel do sorteio</small></div>
+    <div class="fonte-info" id="fonte-info"></div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- ====== IMPORTAR ====== -->
+  <div class="dropzone" id="dropzone">
+    <h2>Solte aqui o CSV do sorteio</h2>
+    <p>Ou clique no botão para escolher o arquivo. Os dados ficam só no seu navegador — nada é enviado para nenhum servidor.</p>
+    <button class="btn btn-laranja" id="btn-escolher">Escolher arquivo CSV</button>
+    <input type="file" id="arquivo" accept=".csv,text/csv" style="display:none">
+  </div>
+
+  <!-- ====== PAINEL ====== -->
+  <div id="app" class="esconde">
+
+    <div class="stats" id="stats"></div>
+
+    <div class="painel">
+      <h3>Filtrar</h3>
+      <div class="campos" id="filtros"></div>
+      <div class="chips" id="chips"></div>
+      <div class="acoes">
+        <div class="esq">
+          <button class="btn" id="btn-limpar">Limpar filtros</button>
+          <button class="btn" id="btn-exportar">Baixar CSV do que está na tela</button>
+        </div>
+        <button class="btn" id="btn-trocar">Trocar arquivo</button>
+      </div>
+    </div>
+
+    <div class="painel">
+      <h3>Ordenar e separar</h3>
+      <div class="campos">
+        <div class="campo">
+          <label for="ordenar">Ordenar por</label>
+          <select id="ordenar"></select>
+        </div>
+        <div class="campo">
+          <label for="direcao">Direção</label>
+          <select id="direcao">
+            <option value="asc">Crescente (A→Z, mais antigo primeiro)</option>
+            <option value="desc">Decrescente (Z→A, mais recente primeiro)</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="agrupar">Separar por (agrupar)</label>
+          <select id="agrupar"></select>
+        </div>
+        <div class="campo">
+          <label for="ordem-grupo">Ordem dos grupos</label>
+          <select id="ordem-grupo">
+            <option value="qtd">Maior quantidade primeiro</option>
+            <option value="nome">Ordem alfabética</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="abas">
+      <button class="aba on" data-aba="lista">Lista</button>
+      <button class="aba" data-aba="resumo">Quantidades</button>
+      <button class="aba" data-aba="colunas">Colunas</button>
+    </div>
+
+    <!-- lista -->
+    <div id="aba-lista">
+      <div class="tabela-box">
+        <table id="tabela">
+          <thead><tr id="cabecalho"></tr></thead>
+          <tbody id="corpo"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- resumo -->
+    <div id="aba-resumo" class="esconde">
+      <div class="painel">
+        <div class="campos" style="margin-bottom:14px">
+          <div class="campo">
+            <label for="resumo-campo">Contar por</label>
+            <select id="resumo-campo"></select>
+          </div>
+          <div class="campo">
+            <label for="resumo-ordem">Ordenar contagem</label>
+            <select id="resumo-ordem">
+              <option value="qtd">Maior quantidade primeiro</option>
+              <option value="nome">Ordem alfabética</option>
+            </select>
+          </div>
+        </div>
+        <div class="resumo-lista" id="resumo-lista"></div>
+      </div>
+    </div>
+
+    <!-- colunas -->
+    <div id="aba-colunas" class="esconde">
+      <div class="painel">
+        <h3>Mostrar/esconder colunas</h3>
+        <div class="cols-box" id="cols-box"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>Nakabox — painel interno do sorteio. Os dados são processados no seu navegador.</footer>
+
+<script type="text/plain" id="csv-embutido"></script>
+
+<script>
+(function(){
+'use strict';
+
+/* ============================================================
+   1. COLUNAS
+   ============================================================ */
+var COLUNAS = [
+  {chave:'ficha',    rot:'Ficha',      csv:'Ficha',        filtro:false, visivel:true },
+  {chave:'nome',     rot:'Nome',       csv:'Nome',         filtro:false, visivel:true,  classe:'nome'},
+  {chave:'whatsapp', rot:'WhatsApp',   csv:'WhatsApp',     filtro:false, visivel:true,  classe:'num'},
+  {chave:'uf',       rot:'UF',         csv:null,           filtro:true,  visivel:true },
+  {chave:'cidade',   rot:'Cidade',     csv:'Cidade',       filtro:true,  visivel:true },
+  {chave:'revenda',  rot:'Revenda',    csv:'Revenda',      filtro:true,  visivel:true },
+  {chave:'frota',    rot:'Frota',      csv:'Frota',        filtro:true,  visivel:true },
+  {chave:'motos',    rot:'Motos',      csv:'Motos',        filtro:true,  visivel:true },
+  {chave:'comprador',rot:'Comprador',  csv:'Comprador',    filtro:false, visivel:false},
+  {chave:'marcaGrupo',rot:'Marca (grupo)',csv:null,        filtro:true,  visivel:true },
+  {chave:'marca',    rot:'Marca do baú',csv:'Marca do baú',filtro:true,  visivel:false},
+  {chave:'ganhador', rot:'Ganhador',   csv:'Ganhador',     filtro:true,  visivel:false},
+  {chave:'ganhouEm', rot:'Ganhou em',  csv:'Ganhou em',    filtro:false, visivel:false},
+  {chave:'inscrito', rot:'Inscrito em',csv:'Inscrito em',  filtro:false, visivel:true,  tipo:'data'},
+  {chave:'dia',      rot:'Dia',        csv:null,           filtro:true,  visivel:false}
+];
+function col(c){ for(var i=0;i<COLUNAS.length;i++) if(COLUNAS[i].chave===c) return COLUNAS[i]; return null; }
+
+/* DDD -> UF (para poder filtrar por estado mesmo quando a cidade vem sem sigla) */
+var DDD_UF = {};
+(function(){
+  var m = {
+    SP:[11,12,13,14,15,16,17,18,19], RJ:[21,22,24], ES:[27,28],
+    MG:[31,32,33,34,35,37,38], PR:[41,42,43,44,45,46], SC:[47,48,49],
+    RS:[51,53,54,55], DF:[61], GO:[62,64], TO:[63], MT:[65,66], MS:[67],
+    AC:[68], RO:[69], BA:[71,73,74,75,77], SE:[79], PE:[81,87], AL:[82],
+    PB:[83], RN:[84], CE:[85,88], PI:[86,89], PA:[91,93,94], AM:[92,97],
+    RR:[95], AP:[96], MA:[98,99]
+  };
+  for(var uf in m) for(var i=0;i<m[uf].length;i++) DDD_UF[m[uf][i]] = uf;
+})();
+
+/* ============================================================
+   2. LEITURA DO CSV
+   ============================================================ */
+function detectarSeparador(linha){
+  var cand = [';', ',', '\t'], melhor = ';', max = -1;
+  for(var i=0;i<cand.length;i++){
+    var n = linha.split(cand[i]).length;
+    if(n > max){ max = n; melhor = cand[i]; }
+  }
+  return melhor;
+}
+
+/* Parser tolerante: lida com aspas, separador dentro de aspas e quebras de linha CRLF/LF. */
+function lerCSV(texto){
+  texto = texto.replace(/^﻿/, '');
+  var primeiraQuebra = texto.indexOf('\n');
+  var sep = detectarSeparador(primeiraQuebra > -1 ? texto.slice(0, primeiraQuebra) : texto);
+  var linhas = [], campo = '', linha = [], dentroAspas = false;
+  for(var i=0;i<texto.length;i++){
+    var ch = texto[i];
+    if(dentroAspas){
+      if(ch === '"'){
+        if(texto[i+1] === '"'){ campo += '"'; i++; } else { dentroAspas = false; }
+      } else campo += ch;
+    } else if(ch === '"'){ dentroAspas = true;
+    } else if(ch === sep){ linha.push(campo); campo = '';
+    } else if(ch === '\n'){ linha.push(campo); linhas.push(linha); linha = []; campo = '';
+    } else if(ch !== '\r'){ campo += ch; }
+  }
+  if(campo !== '' || linha.length){ linha.push(campo); linhas.push(linha); }
+  return linhas;
+}
+
+function normalizarData(txt){
+  // "18/08/2026, 13:46" -> {ts, iso}
+  var m = /(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[,\s]+(\d{1,2}):(\d{2}))?/.exec(txt || '');
+  if(!m) return null;
+  return new Date(+m[3], +m[2]-1, +m[1], +(m[4]||0), +(m[5]||0)).getTime();
+}
+
+function montarRegistros(linhas){
+  if(!linhas.length) return [];
+  var cab = linhas[0].map(function(c){ return c.trim(); });
+  var idx = {};
+  for(var i=0;i<cab.length;i++) idx[cab[i].toLowerCase()] = i;
+  function pegar(linha, nomeCsv){
+    var i = idx[(nomeCsv||'').toLowerCase()];
+    return i === undefined ? '' : (linha[i] || '').trim();
+  }
+  var out = [];
+  for(var l=1;l<linhas.length;l++){
+    var linha = linhas[l];
+    if(!linha.length) continue;
+    var vazia = true;
+    for(var k=0;k<linha.length;k++) if((linha[k]||'').trim()){ vazia = false; break; }
+    if(vazia) continue;
+
+    var r = {};
+    for(var c=0;c<COLUNAS.length;c++){
+      if(COLUNAS[c].csv) r[COLUNAS[c].chave] = pegar(linha, COLUNAS[c].csv);
+    }
+
+    // UF: primeiro pela sigla no fim da cidade ("Tangará da Serra-MT"), senão pelo DDD
+    var uf = '';
+    var mCid = /[-\/,]\s*([A-Za-z]{2})\s*$/.exec(r.cidade || '');
+    if(mCid) uf = mCid[1].toUpperCase();
+    if(!uf || !ehUF(uf)){
+      var mDdd = /\((\d{2})\)/.exec(r.whatsapp || '');
+      if(mDdd) uf = DDD_UF[+mDdd[1]] || '';
+    }
+    r.uf = uf || '—';
+
+    // cidade limpa (sem a sigla repetida) e com caixa consistente
+    var cidade = (r.cidade || '').replace(/[-\/,]\s*[A-Za-z]{2}\s*$/, '').trim();
+    r.cidade = cidade ? tituloCaso(cidade) : '—';
+
+    // marca: agrupa tudo que veio como "Outros: ..."
+    r.marca = r.marca || '—';
+    r.marcaGrupo = /^outros/i.test(r.marca) ? 'Outros' : (r.marca === '—' ? '—' : r.marca);
+
+    for(var c2=0;c2<COLUNAS.length;c2++){
+      var ch = COLUNAS[c2].chave;
+      if(!r[ch]) r[ch] = '—';
+    }
+
+    r._ts = normalizarData(r.inscrito);
+    r.dia = r._ts ? formatarDia(r._ts) : '—';
+    r._busca = [r.ficha,r.nome,r.whatsapp,r.cidade,r.uf,r.revenda,r.comprador,r.marca]
+                 .join(' ').toLowerCase();
+    out.push(r);
+  }
+  return out;
+}
+function ehUF(s){ for(var d in DDD_UF) if(DDD_UF[d] === s) return true; return false; }
+function tituloCaso(s){
+  var min = {'de':1,'da':1,'do':1,'das':1,'dos':1,'e':1,'d\'':1};
+  return s.toLowerCase().split(/\s+/).map(function(p,i){
+    if(i > 0 && min[p]) return p;
+    return p.charAt(0).toUpperCase() + p.slice(1);
+  }).join(' ');
+}
+function formatarDia(ts){
+  var d = new Date(ts), p = function(n){ return (n<10?'0':'') + n; };
+  return p(d.getDate()) + '/' + p(d.getMonth()+1) + '/' + d.getFullYear();
+}
+
+/* ============================================================
+   3. ESTADO
+   ============================================================ */
+var DADOS = [];
+var estado = {
+  busca: '',
+  filtros: {},          // chave -> valor exato
+  ordenar: 'ficha',
+  direcao: 'asc',
+  agrupar: '',
+  ordemGrupo: 'qtd',
+  resumoCampo: 'revenda',
+  resumoOrdem: 'qtd',
+  aba: 'lista'
+};
+var CHAVE_LS = 'nakabox-sorteio-csv';
+
+var $ = function(id){ return document.getElementById(id); };
+
+/* ============================================================
+   4. FILTRAGEM / ORDENAÇÃO / AGRUPAMENTO
+   ============================================================ */
+// Aplica todos os filtros, opcionalmente ignorando um deles
+// (usado para contar as opções de cada dropdown sem que ele zere a si mesmo).
+function aplicarFiltros(exceto){
+  var busca = estado.busca.trim().toLowerCase();
+  return DADOS.filter(function(r){
+    if(busca && r._busca.indexOf(busca) === -1) return false;
+    for(var ch in estado.filtros){
+      if(ch === exceto) continue;
+      if(estado.filtros[ch] && r[ch] !== estado.filtros[ch]) return false;
+    }
+    return true;
+  });
+}
+
+function ordenar(linhas){
+  var ch = estado.ordenar, dir = estado.direcao === 'desc' ? -1 : 1;
+  var c = col(ch);
+  var copia = linhas.slice();
+  copia.sort(function(a,b){
+    var va, vb;
+    if(c && c.tipo === 'data'){
+      va = a._ts === null ? -Infinity : a._ts;
+      vb = b._ts === null ? -Infinity : b._ts;
+      return va === vb ? 0 : (va < vb ? -dir : dir);
+    }
+    va = (a[ch] || '').toString();
+    vb = (b[ch] || '').toString();
+    return va.localeCompare(vb, 'pt-BR', {numeric:true, sensitivity:'base'}) * dir;
+  });
+  return copia;
+}
+
+function agrupar(linhas){
+  if(!estado.agrupar) return [{rotulo:null, linhas:linhas}];
+  var mapa = {}, ordem = [];
+  for(var i=0;i<linhas.length;i++){
+    var v = linhas[i][estado.agrupar] || '—';
+    if(!mapa[v]){ mapa[v] = []; ordem.push(v); }
+    mapa[v].push(linhas[i]);
+  }
+  if(estado.ordemGrupo === 'qtd'){
+    ordem.sort(function(a,b){
+      return mapa[b].length - mapa[a].length || a.localeCompare(b,'pt-BR');
+    });
+  } else {
+    ordem.sort(function(a,b){ return a.localeCompare(b,'pt-BR',{numeric:true}); });
+  }
+  return ordem.map(function(v){ return {rotulo:v, linhas:mapa[v]}; });
+}
+
+function contar(linhas, chave){
+  var mapa = {};
+  for(var i=0;i<linhas.length;i++){
+    var v = linhas[i][chave] || '—';
+    mapa[v] = (mapa[v] || 0) + 1;
+  }
+  var lista = [];
+  for(var k in mapa) lista.push({valor:k, qtd:mapa[k]});
+  return lista;
+}
+
+/* ============================================================
+   5. DESENHO DA TELA
+   ============================================================ */
+function desenharTudo(){
+  var visiveis = aplicarFiltros(null);
+  desenharStats(visiveis);
+  desenharFiltros();
+  desenharChips();
+  desenharTabela(visiveis);
+  desenharResumo(visiveis);
+}
+
+function unicos(linhas, chave){
+  var s = {}, n = 0;
+  for(var i=0;i<linhas.length;i++){
+    var v = linhas[i][chave];
+    if(!v || v === '—') continue;
+    if(!s[v]){ s[v] = 1; n++; }
+  }
+  return n;
+}
+
+function desenharStats(v){
+  var cards = [
+    {n: DADOS.length,            l:'Inscrições no arquivo'},
+    {n: v.length,                l:'Aparecendo agora', destaque:true},
+    {n: unicos(v,'whatsapp'),    l:'WhatsApps únicos'},
+    {n: unicos(v,'cidade'),      l:'Cidades'},
+    {n: unicos(v,'revenda'),     l:'Revendas'},
+    {n: unicos(v,'uf'),          l:'Estados'}
+  ];
+  $('stats').innerHTML = cards.map(function(c){
+    return '<div class="stat'+(c.destaque?' destaque':'')+'">' +
+             '<div class="num">'+c.n.toLocaleString('pt-BR')+'</div>' +
+             '<div class="lbl">'+c.l+'</div>' +
+           '</div>';
+  }).join('');
+}
+
+function desenharFiltros(){
+  var box = $('filtros');
+  if(!box.dataset.pronto){
+    var html = '<div class="campo"><label for="busca">Buscar (nome, ficha, WhatsApp, cidade…)</label>' +
+               '<input type="search" id="busca" placeholder="digite para buscar" autocomplete="off"></div>';
+    COLUNAS.filter(function(c){ return c.filtro; }).forEach(function(c){
+      html += '<div class="campo"><label for="f-'+c.chave+'">'+c.rot+'</label>' +
+              '<select id="f-'+c.chave+'" data-chave="'+c.chave+'"></select></div>';
+    });
+    box.innerHTML = html;
+    box.dataset.pronto = '1';
+    $('busca').addEventListener('input', function(){ estado.busca = this.value; desenharTudo(); });
+    box.querySelectorAll('select[data-chave]').forEach(function(sel){
+      sel.addEventListener('change', function(){
+        var ch = this.dataset.chave;
+        if(this.value) estado.filtros[ch] = this.value; else delete estado.filtros[ch];
+        desenharTudo();
+      });
+    });
+  }
+  // Cada dropdown conta em cima dos OUTROS filtros ativos (contagem cruzada).
+  COLUNAS.filter(function(c){ return c.filtro; }).forEach(function(c){
+    var sel = $('f-'+c.chave);
+    var base = aplicarFiltros(c.chave);
+    var lista = contar(base, c.chave).sort(function(a,b){
+      return b.qtd - a.qtd || a.valor.localeCompare(b.valor,'pt-BR');
+    });
+    var atual = estado.filtros[c.chave] || '';
+    var opts = '<option value="">Todos ('+base.length+')</option>';
+    var achou = false;
+    lista.forEach(function(o){
+      if(o.valor === atual) achou = true;
+      opts += '<option value="'+esc(o.valor)+'"'+(o.valor===atual?' selected':'')+'>' +
+              esc(o.valor)+' ('+o.qtd+')</option>';
+    });
+    if(atual && !achou) opts += '<option value="'+esc(atual)+'" selected>'+esc(atual)+' (0)</option>';
+    sel.innerHTML = opts;
+    sel.className = atual ? 'ativo' : '';
+  });
+}
+
+function desenharChips(){
+  var box = $('chips'), html = '';
+  if(estado.busca.trim()){
+    html += '<span class="chip" data-tipo="busca">Busca: <b>'+esc(estado.busca)+'</b></span>';
+  }
+  for(var ch in estado.filtros){
+    var c = col(ch);
+    html += '<span class="chip" data-chave="'+ch+'">'+esc(c?c.rot:ch)+': <b>'+esc(estado.filtros[ch])+'</b></span>';
+  }
+  box.innerHTML = html;
+  box.querySelectorAll('.chip').forEach(function(el){
+    el.addEventListener('click', function(){
+      if(this.dataset.tipo === 'busca'){ estado.busca = ''; $('busca').value = ''; }
+      else delete estado.filtros[this.dataset.chave];
+      desenharTudo();
+    });
+  });
+}
+
+function colsVisiveis(){ return COLUNAS.filter(function(c){ return c.visivel; }); }
+
+function desenharTabela(visiveis){
+  var cols = colsVisiveis();
+
+  // cabeçalho clicável para ordenar
+  $('cabecalho').innerHTML = cols.map(function(c){
+    var seta = estado.ordenar === c.chave ? '<span class="seta">'+(estado.direcao==='asc'?'▲':'▼')+'</span>' : '';
+    return '<th data-chave="'+c.chave+'" title="Clique para ordenar">'+esc(c.rot)+seta+'</th>';
+  }).join('');
+  $('cabecalho').querySelectorAll('th').forEach(function(th){
+    th.addEventListener('click', function(){
+      var ch = this.dataset.chave;
+      if(estado.ordenar === ch) estado.direcao = estado.direcao === 'asc' ? 'desc' : 'asc';
+      else { estado.ordenar = ch; estado.direcao = 'asc'; }
+      $('ordenar').value = estado.ordenar;
+      $('direcao').value = estado.direcao;
+      desenharTudo();
+    });
+  });
+
+  var grupos = agrupar(ordenar(visiveis));
+  var corpo = $('corpo');
+
+  if(!visiveis.length){
+    corpo.innerHTML = '<tr><td class="vazio" colspan="'+cols.length+'">Nenhuma inscrição com esses filtros.</td></tr>';
+    return;
+  }
+
+  var partes = [];
+  grupos.forEach(function(g){
+    if(g.rotulo !== null){
+      var rotGrupo = col(estado.agrupar);
+      partes.push('<tr class="grupo-linha"><td colspan="'+cols.length+'">' +
+                  esc((rotGrupo?rotGrupo.rot:'') + ': ' + g.rotulo) +
+                  ' <span class="qtd">— '+g.linhas.length+'</span></td></tr>');
+    }
+    g.linhas.forEach(function(r){
+      var tds = cols.map(function(c){
+        var valor = r[c.chave] || '—';
+        var conteudo;
+        if(c.chave === 'marcaGrupo'){
+          var cls = valor === 'Outros' || valor === '—' ? 'tag-outros' : 'tag-nakabox';
+          conteudo = '<span class="tag '+cls+'">'+esc(valor)+'</span>';
+        } else conteudo = esc(valor);
+        return '<td class="'+(c.classe||'')+'">'+conteudo+'</td>';
+      }).join('');
+      partes.push('<tr>'+tds+'</tr>');
+    });
+  });
+  corpo.innerHTML = partes.join('');
+}
+
+function desenharResumo(visiveis){
+  var lista = contar(visiveis, estado.resumoCampo);
+  if(estado.resumoOrdem === 'qtd'){
+    lista.sort(function(a,b){ return b.qtd - a.qtd || a.valor.localeCompare(b.valor,'pt-BR'); });
+  } else {
+    lista.sort(function(a,b){ return a.valor.localeCompare(b.valor,'pt-BR',{numeric:true}); });
+  }
+  var total = visiveis.length || 1;
+  var maior = lista.length ? Math.max.apply(null, lista.map(function(o){ return o.qtd; })) : 1;
+
+  $('resumo-lista').innerHTML = lista.length
+    ? lista.map(function(o){
+        var pc = (o.qtd * 100 / total);
+        return '<div class="res-item" data-valor="'+esc(o.valor)+'" title="Clique para filtrar">' +
+                 '<div class="barra" style="width:'+(o.qtd*100/maior)+'%"></div>' +
+                 '<div class="rot">'+esc(o.valor)+'</div>' +
+                 '<div class="qt">'+o.qtd+'</div>' +
+                 '<div class="pc">'+pc.toFixed(1).replace('.',',')+'%</div>' +
+               '</div>';
+      }).join('') + '<div class="res-item" style="border-top:1px solid var(--borda);margin-top:6px;cursor:default">' +
+        '<div class="rot"><b>'+lista.length+' valores diferentes</b></div>' +
+        '<div class="qt">'+visiveis.length+'</div><div class="pc">100%</div></div>'
+    : '<div class="vazio">Nada para contar com esses filtros.</div>';
+
+  $('resumo-lista').querySelectorAll('.res-item[data-valor]').forEach(function(el){
+    el.addEventListener('click', function(){
+      var c = col(estado.resumoCampo);
+      if(c && c.filtro){
+        estado.filtros[estado.resumoCampo] = this.dataset.valor;
+        desenharTudo();
+      }
+    });
+  });
+}
+
+function esc(s){
+  return String(s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+
+/* ============================================================
+   6. EXPORTAR
+   ============================================================ */
+function exportar(){
+  var cols = colsVisiveis();
+  var grupos = agrupar(ordenar(aplicarFiltros(null)));
+  var linhas = [cols.map(function(c){ return c.rot; })];
+  grupos.forEach(function(g){
+    g.linhas.forEach(function(r){
+      linhas.push(cols.map(function(c){ return r[c.chave] || ''; }));
+    });
+  });
+  var csv = linhas.map(function(l){
+    return l.map(function(v){
+      v = String(v);
+      return /[;"\n]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v;
+    }).join(';');
+  }).join('\r\n');
+
+  var blob = new Blob(['﻿' + csv], {type:'text/csv;charset=utf-8;'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'sorteio-nakabox-filtrado.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+}
+
+/* ============================================================
+   7. CONTROLES
+   ============================================================ */
+function preencherSelects(){
+  var opcoesOrdenar = COLUNAS.map(function(c){
+    return '<option value="'+c.chave+'">'+esc(c.rot)+'</option>';
+  }).join('');
+  $('ordenar').innerHTML = opcoesOrdenar;
+  $('ordenar').value = estado.ordenar;
+
+  var agrupaveis = COLUNAS.filter(function(c){ return c.filtro; });
+  $('agrupar').innerHTML = '<option value="">Não separar</option>' +
+    agrupaveis.map(function(c){ return '<option value="'+c.chave+'">'+esc(c.rot)+'</option>'; }).join('');
+
+  $('resumo-campo').innerHTML = COLUNAS
+    .filter(function(c){ return c.chave !== 'ficha' && c.chave !== 'whatsapp' && c.chave !== 'inscrito'; })
+    .map(function(c){ return '<option value="'+c.chave+'">'+esc(c.rot)+'</option>'; }).join('');
+  $('resumo-campo').value = estado.resumoCampo;
+
+  $('cols-box').innerHTML = COLUNAS.map(function(c){
+    return '<button class="col-tog'+(c.visivel?' on':'')+'" data-chave="'+c.chave+'">'+esc(c.rot)+'</button>';
+  }).join('');
+  $('cols-box').querySelectorAll('.col-tog').forEach(function(b){
+    b.addEventListener('click', function(){
+      var c = col(this.dataset.chave);
+      if(c.visivel && colsVisiveis().length === 1) return; // sempre deixa 1 coluna
+      c.visivel = !c.visivel;
+      this.classList.toggle('on', c.visivel);
+      desenharTudo();
+    });
+  });
+}
+
+function ligarControles(){
+  $('ordenar').addEventListener('change', function(){ estado.ordenar = this.value; desenharTudo(); });
+  $('direcao').addEventListener('change', function(){ estado.direcao = this.value; desenharTudo(); });
+  $('agrupar').addEventListener('change', function(){ estado.agrupar = this.value; desenharTudo(); });
+  $('ordem-grupo').addEventListener('change', function(){ estado.ordemGrupo = this.value; desenharTudo(); });
+  $('resumo-campo').addEventListener('change', function(){ estado.resumoCampo = this.value; desenharTudo(); });
+  $('resumo-ordem').addEventListener('change', function(){ estado.resumoOrdem = this.value; desenharTudo(); });
+
+  $('btn-limpar').addEventListener('click', function(){
+    estado.filtros = {}; estado.busca = '';
+    var b = $('busca'); if(b) b.value = '';
+    desenharTudo();
+  });
+  $('btn-exportar').addEventListener('click', exportar);
+  $('btn-trocar').addEventListener('click', function(){
+    try{ localStorage.removeItem(CHAVE_LS); }catch(e){}
+    $('app').classList.add('esconde');
+    $('dropzone').classList.remove('esconde');
+    $('fonte-info').textContent = '';
+  });
+
+  document.querySelectorAll('.aba').forEach(function(a){
+    a.addEventListener('click', function(){
+      document.querySelectorAll('.aba').forEach(function(x){ x.classList.remove('on'); });
+      this.classList.add('on');
+      estado.aba = this.dataset.aba;
+      ['lista','resumo','colunas'].forEach(function(nome){
+        $('aba-'+nome).classList.toggle('esconde', nome !== estado.aba);
+      });
+    });
+  });
+}
+
+/* ============================================================
+   8. CARGA DO ARQUIVO
+   ============================================================ */
+function carregarTexto(texto, nomeArquivo, salvar){
+  var registros = montarRegistros(lerCSV(texto));
+  if(!registros.length){
+    alert('Não encontrei nenhuma inscrição nesse arquivo. Confira se é o CSV exportado do sorteio.');
+    return false;
+  }
+  DADOS = registros;
+  if(salvar){
+    try{ localStorage.setItem(CHAVE_LS, JSON.stringify({nome:nomeArquivo, texto:texto})); }
+    catch(e){ /* arquivo grande demais para o localStorage — segue sem salvar */ }
+  }
+  $('dropzone').classList.add('esconde');
+  $('app').classList.remove('esconde');
+  $('fonte-info').textContent = (nomeArquivo || 'dados') + ' · ' + registros.length + ' inscrições';
+  desenharTudo();
+  return true;
+}
+
+function lerArquivo(arquivo){
+  var leitor = new FileReader();
+  leitor.onload = function(){ carregarTexto(leitor.result, arquivo.name, true); };
+  leitor.readAsText(arquivo, 'UTF-8');
+}
+
+function ligarImportacao(){
+  var zona = $('dropzone'), input = $('arquivo');
+  $('btn-escolher').addEventListener('click', function(){ input.click(); });
+  input.addEventListener('change', function(){ if(this.files[0]) lerArquivo(this.files[0]); });
+
+  ['dragenter','dragover'].forEach(function(ev){
+    zona.addEventListener(ev, function(e){ e.preventDefault(); zona.classList.add('hover'); });
+  });
+  ['dragleave','drop'].forEach(function(ev){
+    zona.addEventListener(ev, function(e){ e.preventDefault(); zona.classList.remove('hover'); });
+  });
+  zona.addEventListener('drop', function(e){
+    var f = e.dataTransfer.files[0];
+    if(f) lerArquivo(f);
+  });
+}
+
+/* ============================================================
+   9. INÍCIO
+   ============================================================ */
+preencherSelects();
+ligarControles();
+ligarImportacao();
+
+var embutido = ($('csv-embutido').textContent || '').trim();
+if(embutido){
+  carregarTexto(embutido, 'dados embutidos', false);
+} else {
+  var salvo = null;
+  try{ salvo = JSON.parse(localStorage.getItem(CHAVE_LS) || 'null'); }catch(e){}
+  if(salvo && salvo.texto) carregarTexto(salvo.texto, salvo.nome, false);
+}
+
+})();
+</script>
+</body>
+</html>
