@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#1a1a1a">
+<title>CDE 21/08 — Cotação e Rota | Nakabox</title>
+<meta name="description" content="Ferramenta de campo para a compra em Ciudad del Este: cotação item a item, regra de decisão, controle de cota e rota por horário de fechamento.">
+<style>
+  :root{
+    --laranja:#FF7A00;
+    --escuro:#1a1a1a;
+    --cinza:#5b5b5b;
+    --claro:#f4f4f5;
+    --linha:#e4e4e7;
+    --verde:#128a3f;
+    --verde-bg:#e7f6ec;
+    --ambar:#9a6200;
+    --ambar-bg:#fdf3e0;
+    --vermelho:#c0261d;
+    --vermelho-bg:#fdeceb;
+    --azul:#1d4ed8;
+    --azul-bg:#eaf0fe;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%;scroll-behavior:smooth;scroll-padding-top:108px}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;color:var(--escuro);background:var(--claro);line-height:1.55;font-size:16px}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 16px}
+  a{color:var(--azul)}
+
+  /* ---------- topo ---------- */
+  header{background:var(--escuro);color:#fff;padding:12px 0;position:sticky;top:0;z-index:50;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+  header .wrap{display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .logo{font-weight:800;font-size:1.05rem;letter-spacing:.5px;white-space:nowrap}
+  .logo span{color:var(--laranja)}
+  .logo em{display:block;font-style:normal;font-weight:500;font-size:.72rem;opacity:.65;letter-spacing:0}
+  .relogio{text-align:right;font-variant-numeric:tabular-nums}
+  .relogio .hora{font-weight:800;font-size:1.15rem;line-height:1.1}
+  .relogio .tz{font-size:.68rem;opacity:.6}
+
+  nav{background:#262626;position:sticky;top:57px;z-index:49;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  nav::-webkit-scrollbar{display:none}
+  nav .wrap{display:flex;gap:2px;padding:0 8px}
+  nav a{color:#c4c4c4;text-decoration:none;font-size:.82rem;font-weight:700;padding:11px 12px;white-space:nowrap;border-bottom:3px solid transparent}
+  nav a:hover{color:#fff}
+  nav a.on{color:#fff;border-bottom-color:var(--laranja)}
+
+  section{padding:26px 0 8px}
+  h2{font-size:1.15rem;font-weight:800;display:flex;align-items:center;gap:8px;margin-bottom:4px}
+  h2 .n{background:var(--escuro);color:#fff;width:23px;height:23px;border-radius:6px;display:grid;place-items:center;font-size:.78rem;flex:none}
+  .sub{color:var(--cinza);font-size:.85rem;margin-bottom:16px}
+
+  .box{background:#fff;border:1px solid var(--linha);border-radius:12px;padding:16px;margin-bottom:14px}
+
+  /* ---------- painel de câmbio ---------- */
+  .cambio{display:grid;grid-template-columns:1fr;gap:14px}
+  .cambio .campo{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .cambio label{font-weight:700;font-size:.85rem}
+  input[type=number],input[type=text]{font:inherit;border:1px solid var(--linha);border-radius:8px;padding:8px 10px;width:100%;background:#fff;color:var(--escuro)}
+  input[type=number]{font-variant-numeric:tabular-nums}
+  input:focus{outline:2px solid var(--laranja);outline-offset:-1px;border-color:var(--laranja)}
+  .taxa-input{width:110px !important;font-size:1.25rem;font-weight:800;text-align:center}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{border:1px solid var(--linha);background:#fff;border-radius:999px;padding:5px 12px;font-size:.78rem;font-weight:700;cursor:pointer;color:var(--cinza)}
+  .chip:hover{border-color:var(--escuro);color:var(--escuro)}
+  .chip.on{background:var(--escuro);border-color:var(--escuro);color:#fff}
+  .explica{font-size:.8rem;color:var(--cinza);background:var(--claro);border-left:3px solid var(--laranja);padding:9px 12px;border-radius:0 8px 8px 0}
+  .explica b{color:var(--escuro)}
+
+  /* ---------- kpis ---------- */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+  .kpi{background:var(--escuro);color:#fff;border-radius:12px;padding:14px}
+  .kpi .lbl{font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;opacity:.62;font-weight:700}
+  .kpi .val{font-size:1.5rem;font-weight:800;line-height:1.15;font-variant-numeric:tabular-nums;margin-top:2px}
+  .kpi .val.laranja{color:var(--laranja)}
+  .kpi .val.verde{color:#4ade80}
+  .kpi .val.vermelho{color:#fb7185}
+  .kpi .pe{font-size:.72rem;opacity:.65}
+
+  /* ---------- selo ---------- */
+  .selo{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:3px 10px;font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+  .s-compra{background:var(--verde-bg);color:var(--verde)}
+  .s-limite{background:var(--ambar-bg);color:var(--ambar)}
+  .s-nao{background:var(--vermelho-bg);color:var(--vermelho)}
+  .s-br{background:var(--azul-bg);color:var(--azul)}
+  .s-sem{background:#eee;color:#666}
+
+  /* ---------- filtros ---------- */
+  .filtros{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+  .filtros .tit{font-size:.75rem;font-weight:800;color:var(--cinza);text-transform:uppercase;letter-spacing:.4px;margin-right:2px}
+
+  /* ---------- item ---------- */
+  .item{background:#fff;border:1px solid var(--linha);border-radius:12px;margin-bottom:10px;overflow:hidden}
+  .item.comprado{border-color:var(--verde);box-shadow:inset 3px 0 0 var(--verde)}
+  .item-topo{display:flex;gap:11px;padding:13px 14px;align-items:flex-start;cursor:pointer}
+  .item-topo:hover{background:#fafafa}
+  .num{background:var(--claro);color:var(--cinza);font-weight:800;font-size:.78rem;min-width:30px;height:26px;padding:0 6px;border-radius:7px;display:grid;place-items:center;flex:none;font-variant-numeric:tabular-nums}
+  .item.comprado .num{background:var(--verde);color:#fff}
+  .item-id{flex:1;min-width:0}
+  .item-nome{font-weight:800;font-size:.97rem;line-height:1.3}
+  .item-spec{font-size:.8rem;color:var(--cinza)}
+  .item-nums{text-align:right;flex:none;font-variant-numeric:tabular-nums}
+  .item-nums .usd{font-weight:800;font-size:1rem}
+  .item-nums .conv{font-size:.75rem;color:var(--cinza)}
+  .item-nums .econ{font-size:.78rem;font-weight:800}
+  .econ.pos{color:var(--verde)} .econ.neg{color:var(--vermelho)} .econ.neu{color:var(--ambar)}
+  .item-selos{display:flex;gap:5px;flex-wrap:wrap;padding:0 14px 12px 55px}
+  .item-corpo{border-top:1px solid var(--linha);padding:14px;background:#fcfcfc;display:none}
+  .item.aberto .item-corpo{display:block}
+  .item.aberto .item-topo{background:#fafafa}
+
+  .linhas{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:12px}
+  .campo-lbl{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--cinza);display:block;margin-bottom:3px}
+  .campo-fonte{font-size:.72rem;color:#8a8a8a;margin-top:3px;line-height:1.4}
+  .prefixado{display:flex;align-items:center;border:1px solid var(--linha);border-radius:8px;overflow:hidden;background:#fff}
+  .prefixado span{padding:8px 9px;background:var(--claro);font-weight:800;font-size:.82rem;color:var(--cinza);border-right:1px solid var(--linha)}
+  .prefixado input{border:none;border-radius:0}
+  .prefixado:focus-within{outline:2px solid var(--laranja);outline-offset:-1px}
+
+  .nota{font-size:.85rem;border-radius:8px;padding:10px 12px;margin-bottom:10px;line-height:1.5}
+  .nota b{font-weight:800}
+  .n-motivo{background:var(--claro);border-left:3px solid var(--cinza)}
+  .n-flag{background:var(--ambar-bg);border-left:3px solid var(--ambar);color:#5c3c00}
+  .n-critico{background:var(--vermelho-bg);border-left:3px solid var(--vermelho);color:#7a1a14}
+  .n-ok{background:var(--verde-bg);border-left:3px solid var(--verde);color:#0b5227}
+
+  .lojas-tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+  .loja-tag{background:var(--escuro);color:#fff;font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:6px}
+  .loja-tag.fora{background:#fff;color:var(--cinza);border:1px dashed var(--linha)}
+
+  .comprar{border-top:1px dashed var(--linha);padding-top:12px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+  .check{display:flex;align-items:center;gap:8px;font-weight:800;font-size:.88rem;cursor:pointer;user-select:none;background:#fff;border:1px solid var(--linha);border-radius:8px;padding:9px 13px}
+  .check input{width:19px;height:19px;accent-color:var(--verde);cursor:pointer}
+  .check.on{border-color:var(--verde);background:var(--verde-bg);color:var(--verde)}
+  select{font:inherit;border:1px solid var(--linha);border-radius:8px;padding:8px 10px;background:#fff;color:var(--escuro)}
+
+  /* ---------- cota ---------- */
+  .pessoas{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+  .pessoa{border:1px solid var(--linha);border-radius:12px;padding:14px;background:#fff}
+  .pessoa h4{font-size:.95rem;font-weight:800;margin-bottom:2px}
+  .pessoa .gasto{font-size:1.45rem;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.2}
+  .barra{height:9px;background:var(--claro);border-radius:99px;overflow:hidden;margin:9px 0 5px}
+  .barra i{display:block;height:100%;background:var(--verde);border-radius:99px;transition:width .25s}
+  .barra i.alerta{background:var(--laranja)} .barra i.estouro{background:var(--vermelho)}
+  .pessoa .rest{font-size:.78rem;color:var(--cinza)}
+  .pessoa ul{list-style:none;margin-top:9px;border-top:1px solid var(--linha);padding-top:8px}
+  .pessoa li{font-size:.8rem;display:flex;justify-content:space-between;gap:8px;padding:2px 0;font-variant-numeric:tabular-nums}
+  .pessoa li span:last-child{color:var(--cinza);flex:none}
+  .pessoa .vazio{font-size:.8rem;color:#9b9b9b;font-style:italic;margin-top:8px}
+
+  /* ---------- rota ---------- */
+  .parada{background:#fff;border:1px solid var(--linha);border-radius:12px;padding:14px;margin-bottom:10px;display:flex;gap:12px}
+  .parada.fechada{opacity:.55}
+  .parada.urgente{border-color:var(--laranja);box-shadow:inset 3px 0 0 var(--laranja)}
+  .ordem{width:28px;height:28px;border-radius:8px;background:var(--escuro);color:#fff;display:grid;place-items:center;font-weight:800;font-size:.85rem;flex:none}
+  .parada.fechada .ordem{background:#b4b4b4}
+  .parada.urgente .ordem{background:var(--laranja)}
+  .parada-info{flex:1;min-width:0}
+  .parada-nome{font-weight:800;font-size:.98rem}
+  .parada-end{font-size:.8rem;color:var(--cinza)}
+  .parada-status{font-size:.78rem;font-weight:800;margin-top:4px}
+  .aberta{color:var(--verde)} .fechando{color:var(--laranja)} .fechado{color:var(--vermelho)}
+  .parada-itens{margin-top:9px;display:flex;flex-wrap:wrap;gap:5px}
+  .pill{background:var(--claro);border:1px solid var(--linha);border-radius:7px;font-size:.74rem;padding:3px 8px;font-variant-numeric:tabular-nums}
+  .pill b{font-weight:800}
+  .parada-obs{font-size:.78rem;margin-top:8px;color:#5c3c00;background:var(--ambar-bg);border-radius:7px;padding:7px 10px}
+
+  /* ---------- alertas ---------- */
+  .alerta-item{display:flex;gap:11px;padding:12px 0;border-bottom:1px solid var(--linha);align-items:flex-start}
+  .alerta-item:last-child{border-bottom:none;padding-bottom:0}
+  .alerta-ico{font-size:1.1rem;line-height:1.3;flex:none}
+  .alerta-tit{font-weight:800;font-size:.9rem}
+  .alerta-txt{font-size:.84rem;color:var(--cinza)}
+
+  /* ---------- qr ---------- */
+  #video{width:100%;max-width:420px;border-radius:12px;background:#000;display:block;aspect-ratio:4/3;object-fit:cover}
+  .qr-ctrl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0}
+  .btn{font:inherit;font-weight:800;font-size:.88rem;border:none;border-radius:9px;padding:10px 18px;cursor:pointer;background:var(--escuro);color:#fff}
+  .btn:hover{background:#000}
+  .btn.sec{background:#fff;color:var(--escuro);border:1px solid var(--linha)}
+  .btn.sec:hover{background:var(--claro)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  #qr-res{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85rem;background:var(--escuro);color:#4ade80;padding:12px;border-radius:9px;word-break:break-all;min-height:44px;margin-top:10px}
+  #qr-res.erro{color:#fb7185}
+  .qr-metrica{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;color:var(--cinza);margin-top:8px;font-variant-numeric:tabular-nums}
+  .qr-metrica b{color:var(--escuro)}
+
+  /* ---------- rodapé ---------- */
+  .acoes{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 8px}
+  footer{background:var(--escuro);color:#9a9a9a;padding:22px 0;font-size:.78rem;margin-top:28px}
+  footer a{color:#cfcfcf}
+  footer .fnt{margin-top:8px;opacity:.75;line-height:1.6}
+
+  @media (min-width:720px){
+    .cambio{grid-template-columns:auto 1fr;align-items:center}
+  }
+  @media (max-width:520px){
+    .item-nums .conv{display:none}
+    .item-selos{padding-left:14px}
+  }
+  @media print{
+    header,nav,.acoes,#qr,.item-corpo{display:none !important}
+    body{background:#fff}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="logo">NAKA<span>BOX</span><em>CDE · 21 ago 2026</em></div>
+    <div class="relogio">
+      <div class="hora" id="hora">--:--</div>
+      <div class="tz">Ciudad del Este</div>
+    </div>
+  </div>
+</header>
+
+<nav>
+  <div class="wrap">
+    <a href="#cambio" class="on">Câmbio</a>
+    <a href="#cotacao">Cotação</a>
+    <a href="#cota">Cota</a>
+    <a href="#rota">Rota</a>
+    <a href="#alertas">Alertas</a>
+    <a href="#qr">Teste QR</a>
+  </div>
+</nav>
+
+<!-- =============== CÂMBIO =============== -->
+<section id="cambio">
+  <div class="wrap">
+    <h2><span class="n">1</span> Câmbio e regra de decisão</h2>
+    <p class="sub">Tudo na página recalcula a partir daqui.</p>
+
+    <div class="box cambio">
+      <div class="campo">
+        <label for="taxa">US$ 1 =</label>
+        <input type="number" id="taxa" class="taxa-input" step="0.01" min="1" value="5.50">
+        <span style="font-weight:700">R$</span>
+      </div>
+      <div>
+        <div class="chips" style="margin-bottom:10px">
+          <button class="chip on" data-taxa="5.50">5,50 — espécie (usar esta)</button>
+          <button class="chip" data-taxa="5.19">5,19 — comercial</button>
+          <button class="chip" data-taxa="6.10">6,10 — cartão +10%</button>
+          <button class="chip" data-taxa="6.65">6,65 — cartão +20%</button>
+        </div>
+        <p class="explica">
+          O comercial fechou em <b>R$ 5,19</b> (20/08/26). Mas você não compra ao comercial:
+          dólar em espécie no Brasil sai com <b>IOF de 1,1% + spread da casa de câmbio</b>, o que joga
+          o custo real para perto de <b>R$ 5,50</b>. É esse o número que decide a compra — usar 5,19
+          faz item ruim parecer bom.
+        </p>
+      </div>
+    </div>
+
+    <div class="box">
+      <div style="font-weight:800;font-size:.9rem;margin-bottom:6px">A regra</div>
+      <p style="font-size:.88rem;color:var(--cinza);margin-bottom:10px">
+        <b style="color:var(--escuro)">USD × taxa</b> tem que ficar <b style="color:var(--escuro)">25% abaixo</b> do preço no Brasil.
+        Abaixo disso o desconto não paga o risco (garantia curta, sem nota, peso na mala, fila da aduana).
+      </p>
+      <div class="chips">
+        <span class="selo s-compra">≥ 25% · compensa</span>
+        <span class="selo s-limite">15–25% · limítrofe</span>
+        <span class="selo s-nao">&lt; 15% · não compensa</span>
+        <span class="selo s-sem">sem cotação</span>
+      </div>
+    </div>
+
+    <div class="kpis" id="kpis"></div>
+  </div>
+</section>
+
+<!-- =============== COTAÇÃO =============== -->
+<section id="cotacao">
+  <div class="wrap">
+    <h2><span class="n">2</span> Cotação dos 14 itens</h2>
+    <p class="sub">Preços de CDE levantados em 21/08/2026 no comparador Compras Paraguai (agrega Cellshop, Nissei, Shopping China, New Zone, Atacado Connect, Mega Eletrônicos e outras). Toque no item para abrir. Todos os valores são editáveis — corrija na loja e a decisão recalcula.</p>
+
+    <div class="filtros" id="filtros">
+      <span class="tit">Ver</span>
+      <button class="chip on" data-f="todos">Todos</button>
+      <button class="chip" data-f="compra">Compensa</button>
+      <button class="chip" data-f="limite">Limítrofe</button>
+      <button class="chip" data-f="nao">Não compensa</button>
+      <button class="chip" data-f="revisao">⚡ Mudou vs. plano</button>
+      <button class="chip" data-f="pendente">Falta comprar</button>
+    </div>
+
+    <div id="lista"></div>
+
+    <div class="acoes">
+      <button class="btn sec" id="expandir">Abrir todos</button>
+      <button class="btn sec" id="recolher">Fechar todos</button>
+      <button class="btn sec" id="resetar">Zerar marcações</button>
+    </div>
+  </div>
+</section>
+
+<!-- =============== COTA =============== -->
+<section id="cota">
+  <div class="wrap">
+    <h2><span class="n">3</span> Cota e caixa</h2>
+    <p class="sub">US$ 500 por pessoa, por via terrestre. Não é transferível: sobra de um não cobre o estouro do outro.</p>
+
+    <div class="box">
+      <div class="pessoas" id="pessoas"></div>
+    </div>
+
+    <div class="box">
+      <label class="campo-lbl" for="caixa">Dólar em espécie levado (total do grupo)</label>
+      <div class="prefixado" style="max-width:190px"><span>US$</span><input type="number" id="caixa" step="10" min="0" value="700"></div>
+      <div id="caixa-res" style="margin-top:10px;font-size:.88rem"></div>
+    </div>
+
+    <div class="nota n-critico">
+      <b>Cota ≠ mercadoria.</b> A franquia de US$ 500 é para <b>bagagem de uso pessoal</b>. Mini PC, webcam,
+      painel de LED e holograma comprados em nome da empresa são <b>mercadoria</b> — em tese entram por
+      importação formal, com imposto, e não pela franquia. Na prática o risco é a apreensão na barreira da
+      Receita na BR-277. Leve tudo desembalado, sem caixa lacrada em duplicidade, e não declare como estoque.
+    </div>
+  </div>
+</section>
+
+<!-- =============== ROTA =============== -->
+<section id="rota">
+  <div class="wrap">
+    <h2><span class="n">4</span> Rota</h2>
+    <p class="sub">Ordenada por horário de fechamento, não por distância — tudo está dentro de 1 km a pé. Quem fecha primeiro vem primeiro.</p>
+    <div id="paradas"></div>
+
+    <div class="box">
+      <div style="font-weight:800;font-size:.9rem;margin-bottom:8px">Lojas fora da rota onde a cotação apareceu mais barata</div>
+      <p style="font-size:.84rem;color:var(--cinza)">
+        <b>Victoria Store</b> — fita LED RGB 2835 com controle a US$ 5 (a mais barata da lista).
+        <b>Flytec Computers</b> — testador de cabo RJ45/RJ11 a US$ 4, fita Sonoff L3 a US$ 14.
+        <b>Icompy</b> — cabo de rede RJ45 CAT5 de 1,8 m a US$ 0,80.
+        <b>Digital Center</b> — iluminadores de vídeo (DVL-30L US$ 30, Godox FH50BI US$ 129).
+        <b>Visãovip</b> — mini PC Kamrui Hyper H1 (Ryzen 7 / 24 GB / 1 TB) a US$ 568.
+        Valem um desvio só se a parada principal não tiver o item.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- =============== ALERTAS =============== -->
+<section id="alertas">
+  <div class="wrap">
+    <h2><span class="n">5</span> Alertas</h2>
+    <p class="sub">Ler antes de sacar a carteira.</p>
+    <div class="box" id="lista-alertas"></div>
+  </div>
+</section>
+
+<!-- =============== QR =============== -->
+<section id="qr">
+  <div class="wrap">
+    <h2><span class="n">6</span> Teste de QR na loja</h2>
+    <p class="sub">
+      Abra esta página no celular ligado na webcam que você está avaliando (ou use a câmera do próprio
+      celular como referência). O portal Nakabox é React/Vercel e lê QR no navegador via
+      <code>getUserMedia</code> — então o que funciona aqui funciona lá.
+      <b>Requisito crítico: autofoco.</b> Câmera de foco fixo não fecha o foco a 15 cm e não lê o código.
+    </p>
+
+    <div class="box">
+      <div class="qr-ctrl">
+        <select id="cams"><option>Câmeras aparecem depois de permitir o acesso</option></select>
+        <button class="btn" id="qr-start">Ligar câmera</button>
+        <button class="btn sec" id="qr-stop" disabled>Parar</button>
+      </div>
+      <video id="video" playsinline muted></video>
+      <div id="qr-res">Aguardando…</div>
+      <div class="qr-metrica" id="qr-metrica"></div>
+
+      <div class="nota n-flag" style="margin-top:14px">
+        <b>Como testar em 20 segundos:</b> segure o QR a <b>15 cm</b> da lente. Se não ler, afaste até 40 cm.
+        Se só ler longe, a câmera é de <b>foco fixo</b> — descarta. Depois teste com a luz da loja apagada
+        atrás de você: iluminação derruba mais leitura do que resolução.
+      </div>
+
+      <div style="margin-top:14px">
+        <label class="campo-lbl" for="manual">Fallback manual (o portal precisa ter isto)</label>
+        <input type="text" id="manual" placeholder="Digitar o código na mão quando a câmera falhar">
+        <p class="campo-fonte">Nunca dependa só da câmera: sol na tela, caixa amassada ou etiqueta suja e a operação para.</p>
+      </div>
+    </div>
+
+    <div class="nota n-motivo">
+      <b>Por que webcam e não leitor de código de barras.</b> O leitor entrega o código como se fosse
+      teclado — funciona em qualquer campo de texto, mas é mais um objeto para carregar e não serve
+      para foto do baú nem para chamada. A webcam com autofoco resolve QR, registro visual e vídeo
+      na mesma peça, e a mesma página roda no celular usando a câmera traseira.
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div><b style="color:#fff">NAKABOX</b> — ferramenta de campo · CDE 21/08/2026</div>
+    <div class="fnt">
+      Cotação de CDE: <a href="https://www.comprasparaguai.com.br/" target="_blank" rel="noopener">Compras Paraguai</a> (consulta em 21/08/2026).
+      Referências BR: Kalunga, Logitech Store, Mercado Livre, KaBuM, 3D Prime, Rocket Lion.
+      Câmbio comercial: <a href="https://br.investing.com/currencies/usd-brl" target="_blank" rel="noopener">Investing.com</a>.
+      Preços de balcão em CDE mudam no dia e por negociação — trate a cotação como teto, não como promessa.
+    </div>
+  </div>
+</footer>
+
+<script>
+"use strict";
+
+/* ================== DADOS ================== */
+/* usd: melhor cotação encontrada em CDE em 21/08/2026. null = não localizado.
+   br : referência de preço no Brasil.
+   dec: recomendação final (pode divergir da regra por garantia, peso, cota).      */
+
+var ITENS = [
+  {
+    n:"1", nome:"Webcam Logitech C920s", spec:"Autofoco — o item mais crítico do portal",
+    usd:62, usdFonte:"C920s Pro Full HD US$ 62 · C920e US$ 59 (2 resultados, loja não identificada no comparador)",
+    br:460, brFonte:"Kalunga R$ 459,90 · Logitech Store R$ 449,91 no Pix · Mercado Livre R$ 536",
+    lojas:["Cellshop","Nissei","Shopping China"], dec:"brasil", revisao:true,
+    motivo:"A regra aprova, mas a garantia decide: 1 ano no Brasil contra 3 meses no Paraguai. Se essa webcam morrer, o portal para de ler QR.",
+    flag:"A cotação real derruba a premissa do plano. O plano estimava ~R$ 490 em CDE; a cotação deu US$ 62 = R$ 341. A diferença de preço agora é grande — se você aceitar 3 meses de garantia, comprar aqui passa a fazer sentido. Decida na loja: peça para testar o autofoco antes (Cellshop deixa)."
+  },
+  {
+    n:"2", nome:"Fita LED do baú", spec:"12 V, 5 m — puxa da bateria da moto",
+    usd:5, usdFonte:"Fita LED RGB 2835 Strip Light c/ controle remoto US$ 5,00 (Victoria Store). Sonoff L3-5M US$ 14 na Flytec",
+    br:80, brFonte:"Referência do plano",
+    lojas:["Victoria Store","Flytec Computers","Nissei","Cellshop"], dec:"cde",
+    motivo:"Margem enorme mesmo pagando o dobro do cotado. Item leve, sem risco de cota.",
+    flag:"CUIDADO COM A TENSÃO. As fitas de marca da lista (Sonoff L2/L3, TP-Link Tapo) são 5 V por USB ou fonte 110/220 V — não ligam direto na bateria de 12 V da moto. Você precisa da fita analógica 2835/5050 de 12 V, aquela em rolo com fio vermelho e preto. Peça 12 V explicitamente e confira o rolo: tem que vir escrito DC12V no próprio adesivo. Leve também fusível de 2 A e chave — ligar LED direto na bateria sem fusível queima chicote."
+  },
+  {
+    n:"3", nome:"Painel de LED da empresa", spec:"Iluminação para filmagem",
+    usd:29, usdFonte:"Iluminador LED Prosper U200 US$ 29 · DVL-30L US$ 30 (Digital Center) · Yongnuo YN-608 US$ 85 · Godox FH50BI US$ 129",
+    br:250, brFonte:"Referência do plano",
+    lojas:["New Zone","Digital Center"], dec:"cde",
+    motivo:"36% de economia no modelo básico, e a lista tem degraus até US$ 129 se quiser qualidade de cor melhor.",
+    flag:"Antes de escolher pelo preço: para filmagem, o que importa é ser bicolor (3200–5600 K) e ter CRI alto. O Prosper U200 a US$ 29 é luz fria simples. O Yongnuo YN-608 a US$ 85 é bicolor de verdade — pela regra ele também passa se sua referência BR for de painel bicolor (esses saem R$ 500+ no Brasil)."
+  },
+  {
+    n:"4", nome:"Holograma rotativo", spec:"Abaixo de 50 cm perde impacto",
+    usd:null, usdFonte:"Nenhum ventilador holográfico (LED fan) localizado em CDE. A busca só retorna projetores comuns vendidos como 'holográficos': Sate A-HL30 US$ 105 e A-HL42 US$ 145 (New Zone / Mobile Zone) — produto diferente",
+    br:900, brFonte:"Holograma 30 cm, referência do plano. Display 50 cm no BR: R$ 1.500–2.500",
+    lojas:["New Zone","Shopping China"], dec:"nao", revisao:true,
+    motivo:"Sem cotação não há decisão possível — e o que existe com esse nome em CDE é outra coisa.",
+    flag:"ARMADILHA DE NOME. 'Projetor holográfico' a US$ 105 é um projetor de vídeo comum com marketing; não é o ventilador de hélice de LED que gera a imagem flutuante. Se o vendedor oferecer isso, é o produto errado. Se aparecer um LED fan de verdade, o de 50 cm precisa sair abaixo de US$ 205 para passar na regra contra os R$ 1.500 do Brasil — e o de 30 cm, abaixo de US$ 123."
+  },
+  {
+    n:"5", nome:"Tênis New Balance", spec:"—",
+    usd:78.75, usdFonte:"574 U574LGMO US$ 78,75 · 480 Low US$ 78 · 574 ML574EVB US$ 80 · 1906W US$ 94,50 · Fresh Foam 1080v14 US$ 115 (Shopping China). Faixa total US$ 78–230",
+    br:600, brFonte:"Referência do plano (574 no Brasil)",
+    lojas:["Shopping China"], dec:"cde",
+    motivo:"Passa na regra no 574, com 28%. Item pessoal, entra na franquia sem discussão.",
+    flag:"Quanto mais caro o modelo, melhor fica a conta: o Fresh Foam 1080v14 a US$ 115 (R$ 633) custa R$ 1.400+ no Brasil, ou seja 55% de economia contra os 28% do 574. Se for gastar cota com tênis, gaste no modelo caro."
+  },
+  {
+    n:"6", nome:"Capinha iPhone 14", spec:"—",
+    usd:12, usdFonte:"Mcdodo magnética PC/TPU US$ 12–15 (New Zone) · C-Covers magnética US$ 10 · Original Space TPU US$ 2 · Spigen ACS05041 US$ 20 (Shopping China) · Quad Lock MagCase US$ 62 (Cellshop)",
+    br:60, brFonte:"Capa genérica, referência do plano",
+    lojas:["New Zone","Shopping China","Cellshop"], dec:"nao", revisao:true,
+    motivo:"Contra capa genérica de R$ 60, a capa de CDE fica mais cara. Não compensa.",
+    flag:"Só inverte se você comparar marca com marca. A Spigen a US$ 20 sai R$ 110 e no Brasil custa R$ 150–200 — aí passa na regra com 27%. A Quad Lock a US$ 62 (R$ 341) contra R$ 450 no Brasil também passa. Já capa genérica contra genérica: compre no Brasil e não gaste cota com isso."
+  },
+  {
+    n:"7", nome:"Cartão de memória", spec:"SanDisk Extreme 128 GB",
+    usd:26.99, usdFonte:"Extreme microSDXC 128 GB 160 MB/s US$ 26,99 · 190 MB/s US$ 27,65 · Extreme Go US$ 27,50 (Cellshop) · Alborada US$ 28 · Extreme Pro US$ 32,50",
+    br:130, brFonte:"Referência do plano",
+    lojas:["Cellshop","Nissei","Icompy"], dec:"nao", revisao:true,
+    motivo:"O Brasil está mais barato. US$ 26,99 dá R$ 148 contra R$ 130 aqui — você pagaria 14% a mais para ter 3 meses de garantia em vez de 1 ano.",
+    flag:"REVERSÃO. Este item estava em 'comprar aqui' e a cotação derruba. Para o SanDisk Extreme 128 GB compensar, teria que sair abaixo de US$ 17,70 — nenhuma loja chega perto. Cartão de memória é o produto mais falsificado de CDE; somando isso ao preço pior, não há motivo para comprar. O único que ainda faria sentido é o Extreme Pro a US$ 32,50 (R$ 179) se sua referência for o Pro brasileiro de R$ 250+."
+  },
+  {
+    n:"8", nome:"Cabo de telefone", spec:"PENDENTE: RJ11 ou RJ45?",
+    usd:2, usdFonte:"Cabo de rede RJ45 CAT5 3 m US$ 2,00 · 1,8 m US$ 0,80 (Icompy) · RJ45 1 m US$ 1,00 (Raio Laser). RJ11 puro não aparece no comparador",
+    br:20, brFonte:"Cabo RJ45 3 m ~R$ 20 no Brasil",
+    lojas:["Icompy","Flytec Computers","Raio Laser"], dec:"cde",
+    motivo:"Valor irrelevante em qualquer cenário. Compre se passar na frente, não desvie por isso.",
+    flag:"RESOLVA A PENDÊNCIA ANTES. RJ11 tem 6 pinos e é linha telefônica analógica. RJ45 tem 8 pinos e é rede — é o que um telefone IP/VoIP usa. Se o aparelho é IP ou vai num switch: RJ45. Se é telefone comum de linha fixa: RJ11. Na dúvida, leve os dois: juntos custam menos de US$ 4. Vale também o testador RJ45/RJ11 a US$ 4 na Flytec — no Brasil não sai por menos de R$ 60."
+  },
+  {
+    n:"9", nome:"Computador", spec:"Notebook i5 / 16 GB",
+    usd:548, usdFonte:"Lenovo IdeaPad Slim 3 i5/16/256 US$ 548 · Acer Aspire 3 i5/16/512 US$ 585 · Samsung Galaxy Book 4 US$ 695 (Visãovip). Dell Latitude 5420 US$ 449 na Matrix (checar se é recondicionado)",
+    br:3500, brFonte:"Notebook i5 16 GB 512 GB no Brasil: R$ 3.200–3.800",
+    lojas:["Atacado Connect","Visãovip"], dec:"brasil",
+    motivo:"Não passa na regra — 14% de economia, longe dos 25% — e ainda consome a cota inteira de uma pessoa. Confirma o plano: comprar no Brasil.",
+    flag:"O Dell Latitude 5420 a US$ 449 é o único que passaria na regra (R$ 2.470, 29% de economia), mas está numa loja de corporativo usado — provável recondicionado, sem garantia. É exatamente o caso do alerta do Mega Eletrônicos. Não compre notebook de vitrine sem ligar e olhar as horas de uso do SSD."
+  },
+  {
+    n:"10", nome:"Tela extra", spec:"Monitor 24\"",
+    usd:80, usdFonte:"Mtek MK24SFV100P US$ 80 · Xiaomi A24I US$ 85 · Samsung LS24F320GAN US$ 93 · Xiaomi G24I US$ 98 · Samsung S4 US$ 125",
+    br:550, brFonte:"Samsung/LG 24\" Full HD no Brasil ~R$ 550. Entrada no KaBuM: a partir de R$ 442",
+    lojas:["Cellshop","Nissei","Shopping China"], dec:"brasil",
+    motivo:"Fica na faixa limítrofe e é volume puro: caixa grande, frágil, ocupa a mala inteira. Confirma o plano.",
+    flag:"Se você comparar contra o monitor de entrada brasileiro de R$ 442, a economia cai para zero. O único que ainda passaria é o Mtek a US$ 80 contra um Samsung de R$ 550 — mas trocar marca conhecida por Mtek para economizar R$ 110 e carregar uma caixa de 24 polegadas na mão não fecha."
+  },
+  {
+    n:"11", nome:"Starlink", spec:"Kit de internet via satélite",
+    usd:null, usdFonte:"Nenhum kit completo localizado em CDE — o comparador só lista acessórios avulsos (cabos, adaptadores Ethernet, roteador solto)",
+    br:1680, brFonte:"Kit Padrão V4 no Brasil R$ 1.680–2.400, com promoções a partir de R$ 900. Mensalidade R$ 189 (Residencial) a R$ 235 (Max)",
+    lojas:[], dec:"nao",
+    motivo:"Confirma o plano, e por três motivos somados, não um.",
+    flag:"O kit paraguaio fica preso à conta local e à área de serviço do Paraguai — atravessar a fronteira com ele não migra o serviço. Não tem homologação Anatel, então é irregular no Brasil. E o kit brasileiro já cai para R$ 900 em promoção, abaixo de qualquer coisa que você acharia lá. Comprar no Brasil, com a conta brasileira."
+  },
+  {
+    n:"12A", nome:"Mini PC do painel de status", spec:"Kamrui — roda o painel do baú",
+    usd:399, usdFonte:"Kamrui E3B Ryzen 5 / 16 GB / 512 GB / W11 Pro US$ 399 · Pinova P1 Ryzen 3 / 16 GB US$ 399 · Essenx E1 Ryzen 3 / 8 GB US$ 345 (Cellshop) e US$ 299 (Nissei)",
+    br:4566, brFonte:"Kamrui Ryzen 5 5500U 16 GB / 512 GB: R$ 4.566 na Rocket Lion (importador, Mercado Livre)",
+    lojas:["Cellshop","Nissei","Visãovip"], dec:"cde", revisao:true,
+    motivo:"A maior economia da lista inteira: 52%. E ao contrário da TV, é um bloco de 500 gramas que cabe no bolso da mochila.",
+    flag:"REVERSÃO. O item 12 estava inteiro em 'comprar no Brasil' por volume — mas isso vale para a TV, não para o mini PC. Kamrui não tem distribuição oficial no Brasil, então o preço de cá é de importador com margem cheia. Ressalva honesta: se você aceitar qualquer mini PC em vez de um Kamrui, o mercado brasileiro tem genéricos por ~R$ 2.000, e aí a economia cai para ~8% e não compensa mais. O ganho existe porque é essa marca. Confira a etiqueta de tensão: alguns vêm com fonte 110 V."
+  },
+  {
+    n:"12B", nome:"TV do painel de status", spec:"43–50\", 4K",
+    usd:270, usdFonte:"Smartfy STV50B US$ 230 (Atacado Connect) · BAK US$ 230 · Magnavox US$ 258 (Nissei) · Mtek US$ 270 · Toshiba QLED US$ 300 (Mega) · Samsung UN50U8000 US$ 320 (Cellshop) · LG 50UT7300 US$ 414",
+    br:1815, brFonte:"AOC 50U7045 R$ 1.815 (Amazon) · LG 50UA7500 R$ 2.077 · Samsung DU8000 ~R$ 1.900",
+    lojas:["Atacado Connect","Nissei","Mega Eletrônicos","Cellshop"], dec:"brasil",
+    motivo:"Limítrofe nas marcas boas e volume impossível: 50 polegadas não sobe em ônibus nem passa despercebido na barreira.",
+    flag:"As que passariam na regra são Smartfy e BAK a US$ 230 — marcas que não existem no Brasil, sem assistência e sem peça de reposição. Para um painel que fica ligado o dia inteiro, isso é o pior lugar para economizar. A Samsung a US$ 320 dá R$ 1.760 contra R$ 1.900 no Brasil: 7% de economia para carregar uma TV por 1 km a pé e atravessar a ponte com ela."
+  },
+  {
+    n:"13", nome:"Impressora 3D", spec:"—",
+    usd:349, usdFonte:"Bambu Lab A1 Mini US$ 349 · A1 US$ 475 · A1 Mini Combo US$ 495 · A1 Combo AMS US$ 643 · Creality Halot-One Plus US$ 345",
+    br:2319, brFonte:"Bambu Lab A1 Mini no Brasil R$ 2.319 (3D Prime / GTMax3D)",
+    lojas:["Cellshop","Nissei","Shopping China"], dec:"nao",
+    motivo:"17% de economia: cai na faixa limítrofe, abaixo do corte de 25%. A regra confirma o plano por conta própria.",
+    flag:"Para a A1 Mini passar, teria que sair abaixo de US$ 316. E o número nem é o principal: sem assistência no Brasil, um bico entupido ou uma placa queimada vira sucata. Some o peso na cota. O plano estava certo."
+  },
+  {
+    n:"14", nome:"Cortadora laser", spec:"—",
+    usd:null, usdFonte:"Nenhuma máquina de corte a laser localizada no comparador de CDE",
+    br:0, brFonte:"—",
+    lojas:[], dec:"nao",
+    motivo:"Confirma o plano. Sem cotação e com o argumento de peça de reposição de pé.",
+    flag:"O motivo do plano é o certo e é definitivo: tubo e lente são consumíveis. Se a peça só existe do outro lado da fronteira, cada manutenção vira uma viagem. Não compre."
+  }
+];
+
+var PARADAS = [
+  { nome:"Atacado Connect", end:"Acessórios", fecha:"16:00",
+    itens:[{t:"TV Smartfy 50\" 4K",v:"US$ 230"},{t:"Notebook Acer TravelMate",v:"US$ 1.270"}],
+    obs:"Fecha primeiro de todas — se for passar, é a primeira parada. Só a TV justifica, e a TV está marcada para comprar no Brasil. Considere pular." },
+  { nome:"Mega Eletrônicos", end:"Monseñor Rodríguez", fecha:"16:30",
+    itens:[{t:"TV Toshiba QLED 50\"",v:"US$ 300"}],
+    obs:"Relatos de recondicionado vendido como novo. Nada da sua lista está mais barato aqui. Pular, salvo emergência." },
+  { nome:"Cellshop", end:"Av. Adrián Jara — deixa testar o produto", fecha:"17:00",
+    itens:[{t:"Mini PC Kamrui E3B R5/16/512",v:"US$ 399"},{t:"Webcam C920s",v:"US$ 62"},{t:"SanDisk Extreme 128 GB",v:"US$ 27,50"},{t:"TV Samsung 50\"",v:"US$ 320"}],
+    obs:"PARADA PRINCIPAL. Tem o mini PC (a maior economia da lista) e é a única que deixa testar antes — use isso para o autofoco da webcam. Só aceita nota de US$ 100 azul, não a verde antiga." },
+  { nome:"Nissei", end:"Shopping Hijazi — 100 m da Cellshop", fecha:"17:00",
+    itens:[{t:"Mini PC Essenx E1",v:"US$ 299"},{t:"Kamrui Pinova P2",v:"US$ 419"},{t:"Fita LED Sonoff",v:"US$ 25"},{t:"TV Magnavox 50\"",v:"US$ 258"}],
+    obs:"Embute cerca de 10% no câmbio próprio. Pergunte a taxa antes de fechar e pague em dólar em espécie — o preço de vitrine não é o preço final se deixar converter." },
+  { nome:"Shopping China", end:"—", fecha:"20:00",
+    itens:[{t:"New Balance 574",v:"US$ 78,75"},{t:"Fresh Foam 1080v14",v:"US$ 115"},{t:"Capa Spigen iPhone 14",v:"US$ 20"},{t:"TV LG 50UT7300",v:"US$ 414"}],
+    obs:"Praticamente todo o New Balance da cotação está aqui. Fecha tarde: deixe para depois das lojas das 16h–17h." },
+  { nome:"New Zone", end:"500 m a leste", fecha:"22:00",
+    itens:[{t:"Capinhas iPhone 14",v:"US$ 2–17"},{t:"Iluminador A'Gold Pro",v:"US$ 25"},{t:"TV Samsung QLED 50\"",v:"US$ 389"}],
+    obs:"Última a fechar — é a sua rede de segurança se o dia atrasar. Cuidado: o 'projetor holográfico' de US$ 105 daqui não é o ventilador de holograma que você quer." },
+  { nome:"Shopping del Este / Paris", end:"Backup", fecha:null,
+    itens:[], obs:"Só se algo faltar nas anteriores." }
+];
+
+var ALERTAS = [
+  { i:"💵", t:"Dólar em espécie", d:"Cartão sai 10 a 20% mais caro (IOF + spread do emissor). Todo o cálculo desta página assume espécie. Se pagar no cartão, troque a taxa lá em cima para 6,10 ou 6,65 e veja quase tudo virar vermelho." },
+  { i:"💱", t:"Nissei embute o câmbio", d:"Cerca de 10% na conversão própria. Pergunte a taxa antes de fechar o preço, não depois." },
+  { i:"💵", t:"Cellshop e a nota de US$ 100", d:"Não aceita a nota verde antiga, só a azul. Separe as notas antes de sair do hotel — descobrir isso no caixa custa a compra." },
+  { i:"⚠️", t:"Mega Eletrônicos", d:"Relatos de recondicionado vendido como novo. Nenhum item da sua lista está mais barato lá — o custo de pular é zero." },
+  { i:"🛃", t:"Cota de US$ 500 por pessoa", d:"Não é transferível. Sobra de um não cobre estouro do outro, e a conferência é individual." },
+  { i:"📦", t:"Equipamento de empresa é mercadoria", d:"A franquia cobre bagagem de uso pessoal. Mini PC, webcam e painel de LED em nome da empresa não entram por ela. Leve desembalado e não leve duas unidades do mesmo item." },
+  { i:"🔌", t:"Tensão e plugue", d:"Paraguai é 220 V com plugue europeu. Confira se a fonte é bivolt antes de pagar, principalmente no mini PC e no painel de LED. Leve um adaptador." },
+  { i:"🧾", t:"Guarde a nota", d:"Nota do Paraguai não vale como nota fiscal no Brasil, mas serve para provar valor na barreira e para acionar a garantia de 3 meses. Fotografe todas ainda na loja." }
+];
+
+/* ================== ESTADO ================== */
+var CHAVE = "nakabox-cde-2026-08-21";
+var estado = { taxa:5.50, caixa:700, itens:{}, abertos:{}, filtro:"todos" };
+
+function carregar(){
+  try{
+    var s = localStorage.getItem(CHAVE);
+    if(s){ var o = JSON.parse(s); for(var k in o){ if(o.hasOwnProperty(k)) estado[k] = o[k]; } }
+  }catch(e){}
+  ITENS.forEach(function(it){
+    if(!estado.itens[it.n]) estado.itens[it.n] = { usd:it.usd, br:it.br, comprado:false, pago:null, pessoa:"A" };
+  });
+}
+function salvar(){ try{ localStorage.setItem(CHAVE, JSON.stringify(estado)); }catch(e){} }
+
+/* ================== UTIL ================== */
+function brl(v){ return "R$ " + v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function usd(v){ return "US$ " + v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function pct(v){ return (v>0?"+":"") + Math.round(v*100) + "%"; }
+
+function economia(it){
+  var e = estado.itens[it.n];
+  if(e.usd === null || e.usd === undefined || !e.br) return null;
+  return 1 - (e.usd * estado.taxa) / e.br;
+}
+function regra(it){
+  var ec = economia(it);
+  if(ec === null) return { cls:"s-sem", txt:"sem cotação", k:"sem" };
+  if(ec >= 0.25)  return { cls:"s-compra", txt:"compensa · " + pct(ec), k:"compra" };
+  if(ec >= 0.15)  return { cls:"s-limite", txt:"limítrofe · " + pct(ec), k:"limite" };
+  return { cls:"s-nao", txt:"não compensa · " + pct(ec), k:"nao" };
+}
+function decisao(it){
+  if(it.dec === "cde")    return { cls:"s-compra", txt:"comprar em CDE" };
+  if(it.dec === "brasil") return { cls:"s-br",     txt:"comprar no Brasil" };
+  return { cls:"s-nao", txt:"não comprar" };
+}
+
+/* ================== RENDER: ITENS ================== */
+function renderItens(){
+  var alvo = document.getElementById("lista");
+  var html = "";
+  var vis = 0;
+
+  ITENS.forEach(function(it){
+    var e = estado.itens[it.n];
+    var r = regra(it), d = decisao(it), ec = economia(it);
+    var f = estado.filtro;
+
+    var passa = f === "todos"
+      || (f === "revisao"  && it.revisao)
+      || (f === "pendente" && it.dec === "cde" && !e.comprado)
+      || (f === r.k);
+    if(!passa) return;
+    vis++;
+
+    var aberto = estado.abertos[it.n] ? " aberto" : "";
+    var comp   = e.comprado ? " comprado" : "";
+    var ecCls  = ec === null ? "neu" : (ec >= 0.25 ? "pos" : (ec >= 0.15 ? "neu" : "neg"));
+
+    html += '<div class="item' + aberto + comp + '" data-n="' + it.n + '">';
+    html +=   '<div class="item-topo" data-toggle="' + it.n + '">';
+    html +=     '<div class="num">' + it.n + '</div>';
+    html +=     '<div class="item-id"><div class="item-nome">' + it.nome + '</div>';
+    html +=       '<div class="item-spec">' + it.spec + '</div></div>';
+    html +=     '<div class="item-nums">';
+    if(e.usd === null || e.usd === undefined){
+      html +=     '<div class="usd" style="color:#9b9b9b">—</div><div class="conv">não cotado</div>';
+    }else{
+      html +=     '<div class="usd">' + usd(e.usd) + '</div>';
+      html +=     '<div class="conv">' + brl(e.usd * estado.taxa) + '</div>';
+      if(ec !== null) html += '<div class="econ ' + ecCls + '">' + pct(ec) + '</div>';
+    }
+    html +=     '</div>';
+    html +=   '</div>';
+
+    html +=   '<div class="item-selos">';
+    html +=     '<span class="selo ' + r.cls + '">' + r.txt + '</span>';
+    html +=     '<span class="selo ' + d.cls + '">' + d.txt + '</span>';
+    if(it.revisao) html += '<span class="selo s-limite">⚡ mudou vs. plano</span>';
+    if(e.comprado) html += '<span class="selo s-compra">✓ comprado</span>';
+    html +=   '</div>';
+
+    /* corpo */
+    html +=   '<div class="item-corpo">';
+    html +=     '<div class="linhas">';
+    html +=       '<div><label class="campo-lbl">Cotado em CDE</label>';
+    html +=         '<div class="prefixado"><span>US$</span><input type="number" step="0.01" min="0" data-campo="usd" data-n="' + it.n + '" value="' + (e.usd === null || e.usd === undefined ? "" : e.usd) + '" placeholder="não cotado"></div>';
+    html +=         '<div class="campo-fonte">' + it.usdFonte + '</div></div>';
+    html +=       '<div><label class="campo-lbl">Referência no Brasil</label>';
+    html +=         '<div class="prefixado"><span>R$</span><input type="number" step="1" min="0" data-campo="br" data-n="' + it.n + '" value="' + (e.br || "") + '"></div>';
+    html +=         '<div class="campo-fonte">' + it.brFonte + '</div></div>';
+    html +=     '</div>';
+
+    if(ec !== null){
+      var alvo25 = (e.br * 0.75) / estado.taxa;
+      html +=   '<div class="nota ' + (ec >= 0.25 ? "n-ok" : (ec >= 0.15 ? "n-flag" : "n-critico")) + '">';
+      html +=     usd(e.usd) + ' × ' + estado.taxa.toFixed(2).replace(".",",") + ' = <b>' + brl(e.usd * estado.taxa) + '</b> contra ' + brl(e.br) + ' no Brasil — <b>' + pct(ec) + '</b>. ';
+      html +=     'Para passar na regra dos 25%, o teto em CDE é <b>' + usd(alvo25) + '</b>.';
+      html +=   '</div>';
+    }
+
+    html +=     '<div class="nota n-motivo"><b>Decisão:</b> ' + it.motivo + '</div>';
+    if(it.flag) html += '<div class="nota ' + (it.revisao ? "n-critico" : "n-flag") + '">' + it.flag + '</div>';
+
+    if(it.lojas.length){
+      html +=   '<div class="lojas-tags">';
+      it.lojas.forEach(function(l){
+        var naRota = PARADAS.some(function(p){ return p.nome === l; });
+        html +=     '<span class="loja-tag' + (naRota ? "" : " fora") + '">' + l + (naRota ? "" : " · fora da rota") + '</span>';
+      });
+      html +=   '</div>';
+    }
+
+    if(it.dec === "cde" || it.revisao){
+      html +=   '<div class="comprar">';
+      html +=     '<label class="check' + (e.comprado ? " on" : "") + '"><input type="checkbox" data-campo="comprado" data-n="' + it.n + '"' + (e.comprado ? " checked" : "") + '> Comprei</label>';
+      html +=     '<div><label class="campo-lbl">Preço pago</label>';
+      html +=       '<div class="prefixado" style="width:130px"><span>US$</span><input type="number" step="0.01" min="0" data-campo="pago" data-n="' + it.n + '" value="' + (e.pago === null || e.pago === undefined ? "" : e.pago) + '" placeholder="' + (e.usd || 0) + '"></div></div>';
+      html +=     '<div><label class="campo-lbl">Cota de quem</label>';
+      html +=       '<select data-campo="pessoa" data-n="' + it.n + '"><option value="A"' + (e.pessoa === "A" ? " selected" : "") + '>Pessoa A</option><option value="B"' + (e.pessoa === "B" ? " selected" : "") + '>Pessoa B</option></select></div>';
+      html +=   '</div>';
+    }
+    html +=   '</div>';
+    html += '</div>';
+  });
+
+  if(!vis) html = '<div class="box" style="text-align:center;color:var(--cinza)">Nenhum item neste filtro.</div>';
+  alvo.innerHTML = html;
+}
+
+/* ================== RENDER: KPIs ================== */
+function renderKpis(){
+  var totalUsd = 0, econRs = 0, compradosUsd = 0, nCompra = 0, nComprado = 0;
+
+  ITENS.forEach(function(it){
+    var e = estado.itens[it.n];
+    if(it.dec === "cde" && e.usd){
+      totalUsd += e.usd; nCompra++;
+      var ec = economia(it);
+      if(ec !== null && ec > 0) econRs += e.br - (e.usd * estado.taxa);
+    }
+    if(e.comprado){
+      nComprado++;
+      compradosUsd += (e.pago !== null && e.pago !== undefined && e.pago !== "") ? Number(e.pago) : (e.usd || 0);
+    }
+  });
+
+  var cota = 1000;
+  var pctCota = Math.min(100, Math.round(compradosUsd / cota * 100));
+
+  var h = "";
+  h += '<div class="kpi"><div class="lbl">Cesta recomendada</div><div class="val laranja">' + usd(totalUsd) + '</div><div class="pe">' + nCompra + ' itens marcados para CDE</div></div>';
+  h += '<div class="kpi"><div class="lbl">Economia estimada</div><div class="val verde">' + brl(econRs) + '</div><div class="pe">vs. comprar tudo no Brasil</div></div>';
+  h += '<div class="kpi"><div class="lbl">Já comprado</div><div class="val">' + usd(compradosUsd) + '</div><div class="pe">' + nComprado + ' itens · ' + pctCota + '% da cota do grupo</div></div>';
+  h += '<div class="kpi"><div class="lbl">Reversões</div><div class="val ' + 'laranja' + '">' + ITENS.filter(function(i){return i.revisao;}).length + '</div><div class="pe">itens que mudaram vs. o plano</div></div>';
+  document.getElementById("kpis").innerHTML = h;
+}
+
+/* ================== RENDER: COTA ================== */
+function renderCota(){
+  var pes = { A:{ nome:"Pessoa A", itens:[], total:0 }, B:{ nome:"Pessoa B", itens:[], total:0 } };
+
+  ITENS.forEach(function(it){
+    var e = estado.itens[it.n];
+    if(!e.comprado) return;
+    var v = (e.pago !== null && e.pago !== undefined && e.pago !== "") ? Number(e.pago) : (e.usd || 0);
+    var p = pes[e.pessoa] || pes.A;
+    p.itens.push({ nome:it.nome, v:v }); p.total += v;
+  });
+
+  var h = "", gasto = 0;
+  ["A","B"].forEach(function(k){
+    var p = pes[k]; gasto += p.total;
+    var perc = Math.min(100, p.total / 500 * 100);
+    var cls = p.total > 500 ? "estouro" : (p.total > 400 ? "alerta" : "");
+    var rest = 500 - p.total;
+
+    h += '<div class="pessoa"><h4>' + p.nome + '</h4>';
+    h +=   '<div class="gasto"' + (p.total > 500 ? ' style="color:var(--vermelho)"' : "") + '>' + usd(p.total) + '</div>';
+    h +=   '<div class="barra"><i class="' + cls + '" style="width:' + perc + '%"></i></div>';
+    h +=   '<div class="rest">' + (rest >= 0 ? "Restam " + usd(rest) + " da cota" : "<b style=\"color:var(--vermelho)\">Estourou " + usd(-rest) + "</b>") + '</div>';
+    if(p.itens.length){
+      h += '<ul>';
+      p.itens.forEach(function(i){ h += '<li><span>' + i.nome + '</span><span>' + usd(i.v) + '</span></li>'; });
+      h += '</ul>';
+    }else{
+      h += '<div class="vazio">Nada marcado ainda.</div>';
+    }
+    h += '</div>';
+  });
+  document.getElementById("pessoas").innerHTML = h;
+
+  /* caixa */
+  var caixa = Number(document.getElementById("caixa").value) || 0;
+  var sobra = caixa - gasto;
+  var cesta = 0;
+  ITENS.forEach(function(it){ var e = estado.itens[it.n]; if(it.dec === "cde" && e.usd && !e.comprado) cesta += e.usd; });
+
+  var t = "";
+  t += 'Gasto até agora: <b>' + usd(gasto) + '</b> · em caixa: <b>' + usd(sobra) + '</b> (' + brl(sobra * estado.taxa) + ').';
+  if(cesta > 0){
+    t += '<br>Falta comprar da cesta recomendada: <b>' + usd(cesta) + '</b>. ';
+    t += (sobra >= cesta)
+      ? '<span style="color:var(--verde);font-weight:800">O caixa cobre.</span>'
+      : '<span style="color:var(--vermelho);font-weight:800">Faltam ' + usd(cesta - sobra) + ' — troque mais dólar ou corte um item.</span>';
+  }
+  document.getElementById("caixa-res").innerHTML = t;
+}
+
+/* ================== RENDER: ROTA ================== */
+function agoraCDE(){
+  var f = new Intl.DateTimeFormat("pt-BR",{ timeZone:"America/Asuncion", hour:"2-digit", minute:"2-digit", hour12:false });
+  var p = f.format(new Date()).split(":");
+  return { h:Number(p[0]), m:Number(p[1]), txt:f.format(new Date()) };
+}
+
+function renderRota(){
+  var ag = agoraCDE();
+  var mins = ag.h * 60 + ag.m;
+  document.getElementById("hora").textContent = ag.txt;
+
+  var ordenadas = PARADAS.slice().sort(function(a,b){
+    if(!a.fecha) return 1; if(!b.fecha) return -1;
+    return a.fecha.localeCompare(b.fecha);
+  });
+
+  var h = "";
+  ordenadas.forEach(function(p, idx){
+    var cls = "", stat = "", statCls = "";
+    if(p.fecha){
+      var pf = p.fecha.split(":");
+      var fm = Number(pf[0]) * 60 + Number(pf[1]);
+      var falta = fm - mins;
+      if(falta <= 0){ cls = " fechada"; stat = "Fechada — abre amanhã"; statCls = "fechado"; }
+      else if(falta <= 60){ cls = " urgente"; stat = "Fecha em " + falta + " min · " + p.fecha; statCls = "fechando"; }
+      else{ stat = "Aberta · fecha " + p.fecha + " (faltam " + Math.floor(falta/60) + "h" + String(falta%60).padStart(2,"0") + ")"; statCls = "aberta"; }
+    }else{
+      stat = "Backup — sem horário fixo"; statCls = "";
+    }
+
+    h += '<div class="parada' + cls + '"><div class="ordem">' + (idx+1) + '</div><div class="parada-info">';
+    h +=   '<div class="parada-nome">' + p.nome + '</div>';
+    h +=   '<div class="parada-end">' + p.end + '</div>';
+    h +=   '<div class="parada-status ' + statCls + '">' + stat + '</div>';
+    if(p.itens.length){
+      h += '<div class="parada-itens">';
+      p.itens.forEach(function(i){ h += '<span class="pill">' + i.t + ' <b>' + i.v + '</b></span>'; });
+      h += '</div>';
+    }
+    if(p.obs) h += '<div class="parada-obs">' + p.obs + '</div>';
+    h += '</div></div>';
+  });
+  document.getElementById("paradas").innerHTML = h;
+}
+
+function renderAlertas(){
+  var h = "";
+  ALERTAS.forEach(function(a){
+    h += '<div class="alerta-item"><div class="alerta-ico">' + a.i + '</div><div><div class="alerta-tit">' + a.t + '</div><div class="alerta-txt">' + a.d + '</div></div></div>';
+  });
+  document.getElementById("lista-alertas").innerHTML = h;
+}
+
+function renderTudo(){ renderItens(); renderKpis(); renderCota(); }
+
+/* ================== EVENTOS ================== */
+document.getElementById("taxa").addEventListener("input", function(){
+  var v = Number(this.value);
+  if(v > 0){ estado.taxa = v; salvar(); renderTudo(); }
+  document.querySelectorAll("[data-taxa]").forEach(function(c){
+    c.classList.toggle("on", Math.abs(Number(c.dataset.taxa) - estado.taxa) < 0.005);
+  });
+});
+document.querySelectorAll("[data-taxa]").forEach(function(c){
+  c.addEventListener("click", function(){
+    estado.taxa = Number(this.dataset.taxa);
+    document.getElementById("taxa").value = estado.taxa.toFixed(2);
+    document.querySelectorAll("[data-taxa]").forEach(function(x){ x.classList.remove("on"); });
+    this.classList.add("on");
+    salvar(); renderTudo();
+  });
+});
+
+document.getElementById("filtros").addEventListener("click", function(ev){
+  var b = ev.target.closest("[data-f]"); if(!b) return;
+  estado.filtro = b.dataset.f; salvar();
+  this.querySelectorAll("[data-f]").forEach(function(x){ x.classList.remove("on"); });
+  b.classList.add("on");
+  renderItens();
+});
+
+document.getElementById("lista").addEventListener("click", function(ev){
+  var t = ev.target.closest("[data-toggle]");
+  if(t && !ev.target.closest("input,select,label")){
+    var n = t.dataset.toggle;
+    estado.abertos[n] = !estado.abertos[n]; salvar();
+    document.querySelector('.item[data-n="' + n + '"]').classList.toggle("aberto");
+  }
+});
+
+document.getElementById("lista").addEventListener("input", function(ev){
+  var el = ev.target; if(!el.dataset.campo) return;
+  var e = estado.itens[el.dataset.n], c = el.dataset.campo;
+  if(c === "usd" || c === "br" || c === "pago"){
+    e[c] = el.value === "" ? (c === "br" ? 0 : null) : Number(el.value);
+  }
+  salvar(); renderKpis(); renderCota();
+});
+
+document.getElementById("lista").addEventListener("change", function(ev){
+  var el = ev.target; if(!el.dataset.campo) return;
+  var e = estado.itens[el.dataset.n], c = el.dataset.campo;
+  if(c === "comprado"){ e.comprado = el.checked; estado.abertos[el.dataset.n] = true; salvar(); renderTudo(); return; }
+  if(c === "pessoa"){ e.pessoa = el.value; salvar(); renderCota(); }
+});
+
+document.getElementById("caixa").addEventListener("input", function(){
+  estado.caixa = Number(this.value) || 0; salvar(); renderCota();
+});
+
+document.getElementById("expandir").addEventListener("click", function(){
+  ITENS.forEach(function(i){ estado.abertos[i.n] = true; }); salvar(); renderItens();
+});
+document.getElementById("recolher").addEventListener("click", function(){
+  estado.abertos = {}; salvar(); renderItens();
+});
+document.getElementById("resetar").addEventListener("click", function(){
+  if(!confirm("Zerar marcações de compra e voltar os preços cotados ao original?")) return;
+  estado.itens = {};
+  ITENS.forEach(function(it){ estado.itens[it.n] = { usd:it.usd, br:it.br, comprado:false, pago:null, pessoa:"A" }; });
+  salvar(); renderTudo();
+});
+
+/* nav ativo */
+var secoes = [].slice.call(document.querySelectorAll("section"));
+window.addEventListener("scroll", function(){
+  var y = window.scrollY + 130, at = secoes[0].id;
+  secoes.forEach(function(s){ if(s.offsetTop <= y) at = s.id; });
+  document.querySelectorAll("nav a").forEach(function(a){
+    a.classList.toggle("on", a.getAttribute("href") === "#" + at);
+  });
+}, { passive:true });
+
+/* ================== QR ================== */
+var stream = null, rafId = null, detector = null, lidos = 0, t0 = 0;
+var video = document.getElementById("video");
+var res = document.getElementById("qr-res");
+var metrica = document.getElementById("qr-metrica");
+
+function metricaTxt(extra){
+  var st = stream && stream.getVideoTracks()[0];
+  var s = st ? st.getSettings() : {};
+  var partes = [];
+  if(s.width) partes.push("Resolução <b>" + s.width + "×" + s.height + "</b>");
+  if(s.frameRate) partes.push("<b>" + Math.round(s.frameRate) + "</b> fps");
+  if(s.focusMode) partes.push("Foco <b>" + s.focusMode + "</b>");
+  partes.push("Leituras <b>" + lidos + "</b>");
+  if(extra) partes.push(extra);
+  metrica.innerHTML = partes.join(" · ");
+}
+
+function listarCams(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+  navigator.mediaDevices.enumerateDevices().then(function(ds){
+    var cams = ds.filter(function(d){ return d.kind === "videoinput"; });
+    var sel = document.getElementById("cams");
+    if(!cams.length) return;
+    sel.innerHTML = cams.map(function(c,i){
+      return '<option value="' + c.deviceId + '">' + (c.label || ("Câmera " + (i+1))) + '</option>';
+    }).join("");
+  });
+}
+
+function loop(){
+  if(!detector || !stream){ return; }
+  detector.detect(video).then(function(codes){
+    if(codes && codes.length){
+      lidos++;
+      res.classList.remove("erro");
+      var dt = t0 ? (performance.now() - t0) : 0;
+      res.textContent = "✓ " + codes[0].rawValue;
+      metricaTxt(dt ? "1ª leitura em <b>" + Math.round(dt) + " ms</b>" : null);
+      t0 = 0;
+    }
+  }).catch(function(){});
+  rafId = requestAnimationFrame(loop);
+}
+
+document.getElementById("qr-start").addEventListener("click", function(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    res.classList.add("erro");
+    res.textContent = "Este navegador não expõe getUserMedia. Precisa de HTTPS e de um navegador atual.";
+    return;
+  }
+  var id = document.getElementById("cams").value;
+  var constraints = {
+    video: (id && id.length > 12)
+      ? { deviceId:{ exact:id }, width:{ ideal:1920 }, height:{ ideal:1080 } }
+      : { facingMode:{ ideal:"environment" }, width:{ ideal:1920 }, height:{ ideal:1080 } }
+  };
+  navigator.mediaDevices.getUserMedia(constraints).then(function(s){
+    stream = s; video.srcObject = s; video.play();
+    listarCams();
+    document.getElementById("qr-start").disabled = true;
+    document.getElementById("qr-stop").disabled = false;
+    lidos = 0; t0 = performance.now();
+    metricaTxt();
+
+    if("BarcodeDetector" in window){
+      detector = new window.BarcodeDetector({ formats:["qr_code"] });
+      res.classList.remove("erro");
+      res.textContent = "Câmera ligada. Aponte o QR a 15 cm da lente…";
+      loop();
+    }else{
+      res.classList.add("erro");
+      res.textContent = "Câmera OK, mas este navegador não tem BarcodeDetector. Use Chrome/Edge no Android ou desktop — o vídeo acima já serve para avaliar o autofoco a olho nu.";
+    }
+  }).catch(function(err){
+    res.classList.add("erro");
+    res.textContent = "Falha ao abrir a câmera: " + err.name + ". Verifique a permissão e se a página está em HTTPS.";
+  });
+});
+
+document.getElementById("qr-stop").addEventListener("click", function(){
+  if(rafId) cancelAnimationFrame(rafId);
+  if(stream) stream.getTracks().forEach(function(t){ t.stop(); });
+  stream = null; detector = null; video.srcObject = null;
+  document.getElementById("qr-start").disabled = false;
+  document.getElementById("qr-stop").disabled = true;
+  res.textContent = "Parado.";
+  metrica.innerHTML = "";
+});
+
+/* ================== INÍCIO ================== */
+carregar();
+document.getElementById("taxa").value = estado.taxa.toFixed(2);
+document.getElementById("caixa").value = estado.caixa;
+document.querySelectorAll("[data-taxa]").forEach(function(c){
+  c.classList.toggle("on", Math.abs(Number(c.dataset.taxa) - estado.taxa) < 0.005);
+});
+document.querySelectorAll("[data-f]").forEach(function(c){
+  c.classList.toggle("on", c.dataset.f === estado.filtro);
+});
+renderTudo();
+renderRota();
+renderAlertas();
+setInterval(renderRota, 30000);
+listarCams();
+</script>
+
+</body>
+</html>
