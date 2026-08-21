@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex,nofollow">
 <meta name="theme-color" content="#1a1a1a">
 <title>CDE 21/08 — Cotação e Rota | Nakabox</title>
-<meta name="description" content="Ferramenta de campo para a compra em Ciudad del Este: cotação item a item, regra de decisão, controle de cota e rota por horário de fechamento.">
+<meta name="description" content="Ferramenta de campo para a compra em Ciudad del Este: cotação item a item, regra de decisão, controle de cota, rota por horário de fechamento e viabilidade dos óculos com câmera.">
 <style>
   :root{
     --laranja:#FF7A00;
@@ -186,6 +186,14 @@
   .qr-metrica{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;color:var(--cinza);margin-top:8px;font-variant-numeric:tabular-nums}
   .qr-metrica b{color:var(--escuro)}
 
+  /* ---------- fluxo ---------- */
+  .fluxo{display:flex;flex-direction:column;gap:2px}
+  .passo{background:var(--claro);border-left:3px solid var(--laranja);border-radius:0 9px 9px 0;padding:10px 13px}
+  .passo b{display:block;font-size:.85rem;font-weight:800}
+  .passo span{font-size:.83rem;color:var(--cinza)}
+  .seta{color:var(--laranja);font-weight:800;padding-left:14px;line-height:1}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.85em;background:rgba(0,0,0,.06);padding:1px 5px;border-radius:4px}
+
   /* ---------- rodapé ---------- */
   .acoes{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 8px}
   footer{background:var(--escuro);color:#9a9a9a;padding:22px 0;font-size:.78rem;margin-top:28px}
@@ -225,6 +233,7 @@
     <a href="#rota">Rota</a>
     <a href="#alertas">Alertas</a>
     <a href="#qr">Teste QR</a>
+    <a href="#oculos">Óculos + Claude</a>
   </div>
 </nav>
 
@@ -277,7 +286,7 @@
 <!-- =============== COTAÇÃO =============== -->
 <section id="cotacao">
   <div class="wrap">
-    <h2><span class="n">2</span> Cotação dos 14 itens</h2>
+    <h2><span class="n">2</span> Cotação dos 18 itens</h2>
     <p class="sub">Preços de CDE levantados em 21/08/2026 no comparador Compras Paraguai (agrega Cellshop, Nissei, Shopping China, New Zone, Atacado Connect, Mega Eletrônicos e outras). Toque no item para abrir. Todos os valores são editáveis — corrija na loja e a decisão recalcula.</p>
 
     <div class="filtros" id="filtros">
@@ -398,13 +407,114 @@
   </div>
 </section>
 
+<!-- =============== ÓCULOS + CLAUDE =============== -->
+<section id="oculos">
+  <div class="wrap">
+    <h2><span class="n">7</span> Claude nos óculos — dá?</h2>
+    <p class="sub">Resposta curta: dá, e ficou possível de verdade em maio de 2026. Mas não do jeito que parece, e provavelmente não com o que está à venda em CDE hoje.</p>
+
+    <div class="box">
+      <div style="font-weight:800;font-size:.95rem;margin-bottom:8px">O que mudou</div>
+      <p style="font-size:.88rem;color:var(--cinza);margin-bottom:12px">
+        Até o começo de 2026 a resposta era não: o Ray-Ban Meta era ecossistema fechado, com a Meta AI soldada
+        dentro e sem porta para ninguém. Em maio de 2026 a Meta abriu o
+        <b style="color:var(--escuro)">Wearables Device Access Toolkit</b>, que dá a apps de terceiros acesso à
+        <b style="color:var(--escuro)">câmera e ao áudio</b> dos óculos, por SDK nativo (Swift no iOS, Kotlin no
+        Android) ou por web app.
+      </p>
+      <div class="nota n-ok">
+        E tem um detalhe que joga a seu favor: os comandos de voz da Meta AI <b>não</b> fazem parte do toolkit.
+        Ou seja, a Meta abriu o hardware sem abrir o assistente — que é exatamente o que você quer, porque
+        significa que a IA que responde é a sua, não a deles.
+      </div>
+    </div>
+
+    <div class="box">
+      <div style="font-weight:800;font-size:.95rem;margin-bottom:10px">Como fica a arquitetura</div>
+      <div class="fluxo">
+        <div class="passo"><b>1. Óculos</b><span>Você aperta o botão. A câmera tira a foto do que está na sua frente e o microfone pega a pergunta.</span></div>
+        <div class="seta">↓</div>
+        <div class="passo"><b>2. Seu app no celular</b><span>Os óculos são periférico Bluetooth. Quem manda a requisição é um app nativo que você escreve — Swift ou Kotlin.</span></div>
+        <div class="seta">↓</div>
+        <div class="passo"><b>3. Seu backend</b><span>A chave da API nunca pode ficar no app nem no navegador. Como o portal já é Vercel, uma serverless function ali é o lugar natural.</span></div>
+        <div class="seta">↓</div>
+        <div class="passo"><b>4. Claude Opus 5</b><span>Recebe imagem e pergunta, devolve o texto. Visão é nativa, não precisa de nada extra.</span></div>
+        <div class="seta">↓</div>
+        <div class="passo"><b>5. Volta pro seu ouvido</b><span>Texto vira voz e sai pelos alto-falantes open-ear dos óculos.</span></div>
+      </div>
+      <div class="nota n-motivo" style="margin-top:12px">
+        <b>O ponto que costuma passar batido:</b> os óculos não rodam o Claude. Eles são olho, ouvido e
+        alto-falante. Quem pensa é a nuvem e quem faz a ponte é o celular. Sem celular no bolso e sem sinal,
+        os óculos não respondem nada.
+      </div>
+    </div>
+
+    <div class="box">
+      <div style="font-weight:800;font-size:.95rem;margin-bottom:10px">As cinco ressalvas honestas</div>
+      <div class="alerta-item"><div class="alerta-ico">1️⃣</div><div>
+        <div class="alerta-tit">Ainda é developer preview</div>
+        <div class="alerta-txt">Publicação limitada a parceiros selecionados. Para uso próprio você roda build de desenvolvimento; para distribuir para a equipe, ainda não.</div></div></div>
+      <div class="alerta-item"><div class="alerta-ico">2️⃣</div><div>
+        <div class="alerta-tit">É app nativo, não é o seu stack</div>
+        <div class="alerta-txt">Swift ou Kotlin. O portal Nakabox é React/Vercel — nada disso se reaproveita. É projeto de semanas com uma stack nova, não de um fim de semana.</div></div></div>
+      <div class="alerta-item"><div class="alerta-ico">3️⃣</div><div>
+        <div class="alerta-tit">Sem "Hey Meta"</div>
+        <div class="alerta-txt">O gatilho por voz é da Meta e não abriu. Você aciona pelo botão dos óculos ou pelo app — o que na prática significa levar a mão ao rosto a cada pergunta.</div></div></div>
+      <div class="alerta-item"><div class="alerta-ico">4️⃣</div><div>
+        <div class="alerta-tit">Latência de 2 a 5 segundos</div>
+        <div class="alerta-txt">Foto, upload, Claude pensando, texto virando voz. Serve para consulta pontual — "quanto tem nessa etiqueta", "esse baú é o 87 ou o 60". Não serve para conversa fluida.</div></div></div>
+      <div class="alerta-item"><div class="alerta-ico">5️⃣</div><div>
+        <div class="alerta-tit">Wayfarer e Skyler não têm tela</div>
+        <div class="alerta-txt">Resposta é só áudio. Qualquer coisa mais longa que uma frase vira audiobook e você perde o fio. Quem tem tela é o Ray-Ban <b>Display</b> — e ele não aparece em CDE.</div></div></div>
+    </div>
+
+    <div class="box">
+      <div style="font-weight:800;font-size:.95rem;margin-bottom:8px">A alternativa que já nasce fazendo isso</div>
+      <p style="font-size:.88rem;color:var(--cinza);margin-bottom:12px">
+        <b style="color:var(--escuro)">Brilliant Labs Halo.</b> Open source de ponta a ponta, design e código no
+        GitHub. Câmera, microfone, alto-falante de condução óssea e tela OLED colorida, 40 g, 14 h de bateria,
+        runtime Lua rodando no próprio aparelho. Você aponta para a API que quiser e pronto — não precisa pedir
+        licença para ninguém, não depende de preview e não tem conta de rede social no meio.
+      </p>
+      <div class="nota n-flag">
+        O custo: não vende em CDE nem no Brasil. É compra direta do fabricante, com frete e imposto de
+        importação por fora — e aí some qualquer vantagem que a viagem daria. É a escolha certa se o objetivo
+        for construir; é a escolha errada para aproveitar uma ida a Ciudad del Este.
+      </div>
+    </div>
+
+    <div class="box">
+      <div style="font-weight:800;font-size:.95rem;margin-bottom:8px">O custo que não aparece na etiqueta</div>
+      <p style="font-size:.88rem;color:var(--cinza)">
+        Cada pergunta com imagem é uma chamada de API. O Claude Opus 5 custa US$ 5 por milhão de tokens de
+        entrada e US$ 25 por milhão de saída; uma foto consome por volta de 1.500 tokens. Na conta redonda,
+        algo entre <b style="color:var(--escuro)">US$ 0,01 e US$ 0,03 por pergunta</b> — perto de US$ 1 a 3 por
+        dia em uso pesado. Não é caro, mas é recorrente, e é dinheiro que os óculos não mostram no preço.
+      </p>
+    </div>
+
+    <div class="nota n-critico">
+      <b>Recomendação: não compre os óculos nesta viagem.</b> Quatro motivos que se somam — a economia é de
+      25,0% contra um teto de 25%, ou seja reprova por 14 centavos; a única loja que tem é a com histórico de recondicionado;
+      são 3 meses de garantia num aparelho de US$ 450 que depende de app, conta e firmware; e o SDK que
+      viabiliza a ideia ainda está em preview.
+      <br><br>
+      <b>O que fazer no lugar:</b> prove o conceito antes de comprar hardware. Dá para montar hoje, sem gastar
+      nada em equipamento — uma página no portal que abre a câmera do celular, manda a foto para o Claude e lê
+      a resposta em voz alta. É a mesma <code>getUserMedia</code> do leitor de QR da seção 6, com uma chamada de
+      API atrás. Se depois de duas semanas usando isso o ganho for real, você compra o hardware certo sabendo
+      exatamente o que precisa. Se não for, você economizou R$ 2.475 e a descoberta custou uma tarde.
+    </div>
+  </div>
+</section>
+
 <footer>
   <div class="wrap">
     <div><b style="color:#fff">NAKABOX</b> — ferramenta de campo · CDE 21/08/2026</div>
     <div class="fnt">
       Cotação de CDE: <a href="https://www.comprasparaguai.com.br/" target="_blank" rel="noopener">Compras Paraguai</a> (consulta em 21/08/2026).
       Referências BR: Kalunga, Logitech Store, Mercado Livre, KaBuM, 3D Prime, Rocket Lion.
-      Câmbio comercial: <a href="https://br.investing.com/currencies/usd-brl" target="_blank" rel="noopener">Investing.com</a>.
+      Câmbio comercial: <a href="https://br.investing.com/currencies/usd-brl" target="_blank" rel="noopener">Investing.com</a>. Óculos: <a href="https://developers.meta.com/blog/introducing-meta-wearables-device-access-toolkit/" target="_blank" rel="noopener">Meta Wearables Device Access Toolkit</a> · <a href="https://brilliant.xyz/products/halo" target="_blank" rel="noopener">Brilliant Labs Halo</a>.
       Preços de balcão em CDE mudam no dia e por negociação — trate a cotação como teto, não como promessa.
     </div>
   </div>
@@ -539,6 +649,39 @@ var ITENS = [
     motivo:"Confirma o plano. Sem cotação e com o argumento de peça de reposição de pé.",
     flag:"O motivo do plano é o certo e é definitivo: tubo e lente são consumíveis. Se a peça só existe do outro lado da fronteira, cada manutenção vira uma viagem. Não compre."
   }
+  ,{
+    n:"15", nome:"Suporte de celular", spec:"Tipo galinha / pescoço flexível — para filmar",
+    usd:3, usdFonte:"Quanta Krab KB500 3,5–7\" US$ 3,00 · KB600 US$ 2,75 · KB300 6,5\" US$ 2,50 (Shopping China) · suporte de mesa Quanta QTSMA20 até 11\" US$ 9,90",
+    br:30, brFonte:"Suporte gooseneck / lazy arm no Brasil: R$ 25–40",
+    lojas:["Shopping China"], dec:"cde",
+    motivo:"45% de economia, mas em cima de R$ 30 — o ganho real é de R$ 13. Compre porque está no caminho, não porque compensa.",
+    flag:"O suporte galinha é o objeto errado para filmar. Pescoço flexível vibra a cada toque na tela e cede sozinho com o peso do celular depois de alguns minutos — você só descobre isso revendo o take. O que segura para vídeo é tripé com cabeça de bola. E tem um atalho: o kit de ring light do item 16 (US$ 38) já vem com tripé de 2 m e suporte de celular embutido. Comprando o kit, este item some da lista."
+  },
+  {
+    n:"16", nome:"Luz de filmagem", spec:"Ring light com tripé para o set",
+    usd:38, usdFonte:"Aro LED Prosper RL-18 + tripé US$ 38 · RL-21 + tripé US$ 50 · RL-14 + tripé US$ 30 · Ring Light 14\" US$ 25 (Victoria Store) · Yongnuo YN-608 bicolor US$ 85",
+    br:300, brFonte:"Ring light 18\" com tripé de 2,10 m: R$ 299,99 (Magazine Luiza). Faixa no Mercado Livre: R$ 28–709",
+    lojas:["New Zone","Victoria Store","Digital Center"], dec:"cde",
+    motivo:"30% de economia, e o kit RL-18 resolve luz e suporte de celular numa compra só. Leve, sem peso na cota.",
+    flag:"Não é substituto do item 3, é complemento. Ring light dá luz frontal chapada: ótima para falar com a câmera, péssima para produto — apaga a sombra que mostra o relevo do baú. O painel do item 3 é luz direcional, que modela. Para filmar o baú você quer os dois: painel como luz principal a 45 graus, ring como preenchimento. Juntos dão US$ 67 (R$ 369) contra R$ 550 dos dois no Brasil."
+  },
+  {
+    n:"17", nome:"Fundo infinito", spec:"Para o set de filmagem",
+    usd:120, usdFonte:"Savage papel 2,72 m × 11 m US$ 120, preço único em várias cores — branco, cinza TV, cinza fashion, preto, vermelho, verde (Nissei)",
+    br:989, brFonte:"Savage 2,72 × 11 m: R$ 989 à vista, R$ 1.099 parcelado (Camera Ninja)",
+    lojas:["Nissei"], dec:"brasil", revisao:true,
+    motivo:"A economia é real — 33% — mas o objeto é um tubo de 2,7 metros. Aqui a decisão não é de preço, é de transporte.",
+    flag:"Some 2,7 m de tubo rígido à rota de 1 km a pé, à Ponte da Amizade e ao ônibus. Não cabe. E papel amassa: um vinco no rolo aparece em toda filmagem depois dele. Se você for de carro e tiver como amarrar, os 33% são reais e aí vale — é o único item da lista onde a decisão inverte pela logística e não pelo número. Alternativa que resolve melhor os dois lados: fundo de TECIDO no Brasil, R$ 150–250, enrola numa bolsa e lava quando suja. Em vídeo de produto ninguém vê a diferença."
+  },
+  {
+    n:"18", nome:"Óculos com câmera", spec:"Para o Claude ver o que você vê",
+    usd:450, usdFonte:"Ray-Ban Meta Wayfarer Gen 2 US$ 450 · Wayfarer Gen 1 US$ 309 · Skyler Gen 2 US$ 495 · Oakley Meta HSTN US$ 449 · Oakley Meta Vanguard US$ 550 · Meta Fury US$ 395 · Meta Adventurer US$ 370 · Blackview BV100 US$ 70 — todos no Mega Eletrônicos",
+    br:3299, brFonte:"Ray-Ban Meta Gen 2 no Brasil a partir de R$ 3.299 (lançado set/2025, Sunglass Hut e Solaris)",
+    lojas:["Mega Eletrônicos"], dec:"nao", revisao:true,
+    motivo:"Reprova por 14 centavos. O teto da regra dos 25% é US$ 449,86 e o preço é US$ 450 — não existe exemplo mais limpo de item que não compensa. E a única loja de CDE que tem é justamente a com relato de recondicionado vendido como novo.",
+    flag:"A ideia de colocar o Claude nos óculos é viável, e ficou mais viável em maio de 2026 — mas com ressalvas que mudam a decisão de compra. Leia a seção 7 antes de gastar US$ 450. Armadilha imediata: o Blackview BV100 a US$ 70 NÃO serve. É óculos com câmera que grava para memória interna, sem SDK e sem como mandar imagem para lugar nenhum. Barato porque é outra coisa."
+  }
+
 ];
 
 var PARADAS = [
@@ -546,19 +689,19 @@ var PARADAS = [
     itens:[{t:"TV Smartfy 50\" 4K",v:"US$ 230"},{t:"Notebook Acer TravelMate",v:"US$ 1.270"}],
     obs:"Fecha primeiro de todas — se for passar, é a primeira parada. Só a TV justifica, e a TV está marcada para comprar no Brasil. Considere pular." },
   { nome:"Mega Eletrônicos", end:"Monseñor Rodríguez", fecha:"16:30",
-    itens:[{t:"TV Toshiba QLED 50\"",v:"US$ 300"}],
-    obs:"Relatos de recondicionado vendido como novo. Nada da sua lista está mais barato aqui. Pular, salvo emergência." },
+    itens:[{t:"Ray-Ban Meta Gen 2",v:"US$ 450"},{t:"Ray-Ban Meta Gen 1",v:"US$ 309"},{t:"Oakley Meta HSTN",v:"US$ 449"},{t:"TV Toshiba QLED 50\"",v:"US$ 300"}],
+    obs:"É a ÚNICA loja de CDE com os óculos inteligentes — e é a mesma com relatos de recondicionado vendido como novo. Combinação ruim para um aparelho de US$ 450 com 3 meses de garantia. Se for olhar, exija caixa lacrada, confira o número de série no app da Meta e ligue antes de pagar." },
   { nome:"Cellshop", end:"Av. Adrián Jara — deixa testar o produto", fecha:"17:00",
     itens:[{t:"Mini PC Kamrui E3B R5/16/512",v:"US$ 399"},{t:"Webcam C920s",v:"US$ 62"},{t:"SanDisk Extreme 128 GB",v:"US$ 27,50"},{t:"TV Samsung 50\"",v:"US$ 320"}],
     obs:"PARADA PRINCIPAL. Tem o mini PC (a maior economia da lista) e é a única que deixa testar antes — use isso para o autofoco da webcam. Só aceita nota de US$ 100 azul, não a verde antiga." },
   { nome:"Nissei", end:"Shopping Hijazi — 100 m da Cellshop", fecha:"17:00",
-    itens:[{t:"Mini PC Essenx E1",v:"US$ 299"},{t:"Kamrui Pinova P2",v:"US$ 419"},{t:"Fita LED Sonoff",v:"US$ 25"},{t:"TV Magnavox 50\"",v:"US$ 258"}],
+    itens:[{t:"Mini PC Essenx E1",v:"US$ 299"},{t:"Kamrui Pinova P2",v:"US$ 419"},{t:"Fundo infinito Savage",v:"US$ 120"},{t:"Fita LED Sonoff",v:"US$ 25"},{t:"TV Magnavox 50\"",v:"US$ 258"}],
     obs:"Embute cerca de 10% no câmbio próprio. Pergunte a taxa antes de fechar e pague em dólar em espécie — o preço de vitrine não é o preço final se deixar converter." },
   { nome:"Shopping China", end:"—", fecha:"20:00",
-    itens:[{t:"New Balance 574",v:"US$ 78,75"},{t:"Fresh Foam 1080v14",v:"US$ 115"},{t:"Capa Spigen iPhone 14",v:"US$ 20"},{t:"TV LG 50UT7300",v:"US$ 414"}],
+    itens:[{t:"New Balance 574",v:"US$ 78,75"},{t:"Fresh Foam 1080v14",v:"US$ 115"},{t:"Suporte celular Quanta",v:"US$ 2,50"},{t:"Capa Spigen iPhone 14",v:"US$ 20"},{t:"TV LG 50UT7300",v:"US$ 414"}],
     obs:"Praticamente todo o New Balance da cotação está aqui. Fecha tarde: deixe para depois das lojas das 16h–17h." },
   { nome:"New Zone", end:"500 m a leste", fecha:"22:00",
-    itens:[{t:"Capinhas iPhone 14",v:"US$ 2–17"},{t:"Iluminador A'Gold Pro",v:"US$ 25"},{t:"TV Samsung QLED 50\"",v:"US$ 389"}],
+    itens:[{t:"Ring light RL-18 + tripé",v:"US$ 38"},{t:"Capinhas iPhone 14",v:"US$ 2–17"},{t:"Iluminador A'Gold Pro",v:"US$ 25"},{t:"TV Samsung QLED 50\"",v:"US$ 389"}],
     obs:"Última a fechar — é a sua rede de segurança se o dia atrasar. Cuidado: o 'projetor holográfico' de US$ 105 daqui não é o ventilador de holograma que você quer." },
   { nome:"Shopping del Este / Paris", end:"Backup", fecha:null,
     itens:[], obs:"Só se algo faltar nas anteriores." }
