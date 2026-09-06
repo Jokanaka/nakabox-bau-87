@@ -197,6 +197,8 @@ hr.sep { border: 0; border-top: 1px solid var(--border); margin: 12px 0; }
 .streak { display: flex; align-items: center; gap: 12px; }
 .streak .num { font-size: 32px; font-weight: 800; color: var(--accent); }
 
+/* ícones inline em links de texto */
+.card a:not(.btn):not(.row) > svg, .small > svg { width: 16px; height: 16px; vertical-align: -3px; }
 /* cards com ícone à esquerda e seta à direita */
 .card.row > svg:last-child { width: 20px; height: 20px; flex: none; color: var(--muted); }
 .card .ico { width: 44px; height: 44px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; flex: none; }
