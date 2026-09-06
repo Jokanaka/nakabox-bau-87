@@ -151,8 +151,8 @@ export function guidedMass(lit, readings, texts, iso) {
         ${rd ? `<div class="reading-box"><div class="row between" style="margin-bottom:6px"><b class="ref">${esc(rd.disp)}</b>${rd.verses.length ? `<button class="btn sm" data-act="listen">${icon('play')} Ouvir</button>` : ''}</div>${rd.verses.length ? `<div class="reading-text">${rd.verses.map((x) => `<span class="rv" data-v="${x.v}"><sup>${x.v}</sup>${esc(x.t)}</span>`).join(' ')}</div>` : `<p class="small muted">Texto não disponível na base local. <a href="#/biblia/${rd.b}/${rd.c}" data-act="open">Abrir ${esc(rd.disp)} na Bíblia</a></p>`}</div>` : ''}
         ${dialogHtml(s.after)}
       </div>
-      <div class="ch-nav" style="position:sticky;bottom:0;background:var(--bg);padding-bottom:calc(16px + env(safe-area-inset-bottom))">
-        <button class="btn" data-act="prev" ${i === 0 ? 'disabled' : ''}>${icon('chevL')} Anterior</button>
+      <div class="ch-nav missa-nav">
+        <button class="btn nav" data-act="prev" aria-label="Anterior" title="Anterior" ${i === 0 ? 'disabled' : ''}>${icon('chevL')}</button>
         <button class="btn primary big-btn grow" data-act="next">${s.last ? 'Concluir 🙏' : 'Terminei · Próximo ' + icon('chevR')}</button>
       </div>`;
     $('[data-act=x]', el).onclick = () => close();
@@ -160,17 +160,19 @@ export function guidedMass(lit, readings, texts, iso) {
     $('[data-act=next]', el).onclick = () => { audio.stop(); if (s.last) { toast('Ide em paz. Deus te abençoe! 🙏'); close(); } else { i++; render(); window.scrollTo(0, 0); } };
     const op = $('[data-act=open]', el); if (op) op.onclick = () => close();
     const li = $('[data-act=listen]', el);
+    const setListen = (playing) => { if (li) li.innerHTML = playing ? `${icon('close')} Parar` : `${icon('play')} Ouvir`; };
     if (li) li.onclick = async () => {
       if (audio.isActive()) { audio.stop(); return; }
       const vs = rd.verses;
+      setListen(true);
       const onItem = (idx, it) => { $$('.rv.speaking', el).forEach((x) => x.classList.remove('speaking')); const t = it.v ? $(`.rv[data-v="${it.v}"]`, el) : null; if (t) { t.classList.add('speaking'); t.scrollIntoView({ block: 'center', behavior: 'smooth' }); } };
-      const onEnd = () => { $$('.rv.speaking', el).forEach((x) => x.classList.remove('speaking')); };
+      const onEnd = () => { $$('.rv.speaking', el).forEach((x) => x.classList.remove('speaking')); setListen(false); };
       const sameChapter = vs.every((x) => x.c === undefined || x.c === rd.c);
       let ok = false;
       if (sameChapter) {
         try { ok = await audio.playRecordedRange({ title: `${s.title} · ${rd.disp}`, book: rd.b, chapter: rd.c, fromV: vs[0].v, toV: vs[vs.length - 1].v, texts: new Map(vs.map((x) => [x.v, x.t])), onItem, onEnd }); } catch { ok = false; }
       }
-      if (!ok) audio.play({ title: `${s.title} · ${rd.disp}`, items: vs.map((x) => ({ v: x.v, label: `Versículo ${x.v}`, text: x.t })), lang: 'pt-BR', onItem, onEnd });
+      if (!ok && !audio.play({ title: `${s.title} · ${rd.disp}`, items: vs.map((x) => ({ v: x.v, label: `Versículo ${x.v}`, text: x.t })), lang: 'pt-BR', onItem, onEnd })) setListen(false);
     };
   };
   render();

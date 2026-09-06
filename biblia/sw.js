@@ -1,7 +1,7 @@
 /* Service worker — Bíblia Católica
    Shell: precache. Data (data/*.json): cache-first, immutable per version. */
 const SHELL_CACHE = 'bc-v8-shell';   // casca do app: mude a cada versão do código
-const DATA_CACHE = 'bc-v4-data';     // textos: mude só quando os dados forem regenerados
+const DATA_CACHE = 'bc-v5-data';     // textos: mude só quando os dados forem regenerados
 const VOICE_CACHE = 'bc-voice-v1';   // runtime do narrador offline (wasm de terceiros)
 const AUDIO_CACHE = 'bc-audio-v1';   // narração gravada (últimos capítulos ouvidos)
 const AUDIO_MAX = 40;
@@ -20,7 +20,7 @@ self.addEventListener('install', (e) => {
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== SHELL_CACHE && k !== DATA_CACHE && k !== VOICE_CACHE && k !== AUDIO_CACHE).map((k) => caches.delete(k))))
+    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== SHELL_CACHE && k !== DATA_CACHE && k !== VOICE_CACHE && k !== AUDIO_CACHE && !k.startsWith('bc-tts-')).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });

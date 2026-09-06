@@ -24,12 +24,30 @@ page.on('response', (r) => { if (r.status() >= 400 && !r.url().includes('texttos
 
 const step = async (name, fn) => {
   try { await fn(); console.log('OK  ', name); }
-  catch (e) { console.log('FAIL', name, '-', e.message.split('\n')[0]); errors.push(`[step ${name}] ${e.message.split('\n')[0]}`); }
+  catch (e) { const lines = e.message.split('\n').filter((l) => l.trim()).slice(0, 6); console.log('FAIL', name, '-', lines.join(' | ')); errors.push(`[step ${name}] ${lines.join(' | ')}`); }
   await page.screenshot({ path: `${SHOT}/${name}.png` }).catch(() => {});
   // nenhum passo deixa áudio tocando para o seguinte (a leitura contínua mudaria de capítulo sozinha)
   await page.evaluate(() => import('./js/audio.js').then((a) => a.stop())).catch(() => {});
 };
 
+// Narração gravada: manifesto e capítulo Mt 1 servidos dos arquivos gerados localmente
+const AUDIO_DIR = '/tmp/claude-0/-home-user-nakabox-bau-87/972f22bb-545c-5ad0-ac6c-c883efe8c07c/scratchpad/audio_out';
+const recCalls = [];
+await page.route('**/data/audio.json', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ base: 'https://cdn.jsdelivr.net/gh/jokanaka/nakabox-bau-87@test/', fallback: '', voices: { alex: { name: 'Alex', desc: 'masculina', books: { mt: 1 } }, santa: { name: 'Santa', desc: 'masculina, mais grave', books: {} } } }) }));
+await page.route(/cdn\.jsdelivr\.net\/gh\/jokanaka\/nakabox-bau-87@test\//, (route) => {
+  const u = new URL(route.request().url()); const rel = u.pathname.split('@test/')[1]; recCalls.push(rel + (route.request().headers()['range'] ? ' [range]' : ''));
+  const local = `${AUDIO_DIR}/${rel}`;
+  if (!fs.existsSync(local)) return route.fulfill({ status: 404, body: '' });
+  return route.fulfill({ status: 200, contentType: rel.endsWith('.json') ? 'application/json' : 'audio/mpeg', headers: { 'Access-Control-Allow-Origin': '*', 'Accept-Ranges': 'bytes' }, body: fs.readFileSync(local) });
+});
+await page.route('https://texttospeech.googleapis.com/**', async (route) => {
+  const url = new URL(route.request().url());
+  if (url.searchParams.get('key') !== 'CHAVE-TESTE') return route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error: { message: 'API key not valid. Please pass a valid API key.' } }) });
+  if (url.pathname.endsWith('/voices')) { cloudCalls.voices++; return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ voices: [
+    { name: 'pt-BR-Neural2-A', ssmlGender: 'FEMALE', languageCodes: ['pt-BR'] }, { name: 'pt-BR-Chirp3-HD-Charon', ssmlGender: 'MALE', languageCodes: ['pt-BR'] }, { name: 'pt-BR-Neural2-B', ssmlGender: 'MALE', languageCodes: ['pt-BR'] }, { name: 'pt-BR-Standard-A', ssmlGender: 'FEMALE', languageCodes: ['pt-BR'] } ] }) }); }
+  cloudCalls.synth++;
+  return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ audioContent: wav }) });
+});
 await step('00-simple-mode', async () => {
   await page.goto(BASE + '#/biblia/gn/1');
   await page.waitForSelector('#chapter .verse', { timeout: 15000 });
@@ -224,24 +242,6 @@ await page.route(/cdnjs\.cloudflare\.com\/ajax\/libs\/onnxruntime-web|cdn\.jsdel
   if (name === 'voices.json' || !fs.existsSync(local)) return route.fulfill({ status: 404, body: '' });
   const type = name.endsWith('.js') ? 'application/javascript' : name.endsWith('.wasm') ? 'application/wasm' : name.endsWith('.json') ? 'application/json' : 'application/octet-stream';
   return route.fulfill({ status: 200, contentType: type, headers: { 'Access-Control-Allow-Origin': '*' }, body: fs.readFileSync(local) });
-});
-// Narração gravada: manifesto e capítulo Mt 1 servidos dos arquivos gerados localmente
-const AUDIO_DIR = '/tmp/claude-0/-home-user-nakabox-bau-87/972f22bb-545c-5ad0-ac6c-c883efe8c07c/scratchpad/audio_out';
-const recCalls = [];
-await page.route('**/data/audio.json', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ base: 'https://cdn.jsdelivr.net/gh/jokanaka/nakabox-bau-87@test/', fallback: '', voices: { alex: { name: 'Alex', desc: 'masculina', books: { mt: 1 } }, santa: { name: 'Santa', desc: 'masculina, mais grave', books: {} } } }) }));
-await page.route(/cdn\.jsdelivr\.net\/gh\/jokanaka\/nakabox-bau-87@test\//, (route) => {
-  const u = new URL(route.request().url()); const rel = u.pathname.split('@test/')[1]; recCalls.push(rel + (route.request().headers()['range'] ? ' [range]' : ''));
-  const local = `${AUDIO_DIR}/${rel}`;
-  if (!fs.existsSync(local)) return route.fulfill({ status: 404, body: '' });
-  return route.fulfill({ status: 200, contentType: rel.endsWith('.json') ? 'application/json' : 'audio/mpeg', headers: { 'Access-Control-Allow-Origin': '*', 'Accept-Ranges': 'bytes' }, body: fs.readFileSync(local) });
-});
-await page.route('https://texttospeech.googleapis.com/**', async (route) => {
-  const url = new URL(route.request().url());
-  if (url.searchParams.get('key') !== 'CHAVE-TESTE') return route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error: { message: 'API key not valid. Please pass a valid API key.' } }) });
-  if (url.pathname.endsWith('/voices')) { cloudCalls.voices++; return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ voices: [
-    { name: 'pt-BR-Neural2-A', ssmlGender: 'FEMALE', languageCodes: ['pt-BR'] }, { name: 'pt-BR-Chirp3-HD-Charon', ssmlGender: 'MALE', languageCodes: ['pt-BR'] }, { name: 'pt-BR-Neural2-B', ssmlGender: 'MALE', languageCodes: ['pt-BR'] }, { name: 'pt-BR-Standard-A', ssmlGender: 'FEMALE', languageCodes: ['pt-BR'] } ] }) }); }
-  cloudCalls.synth++;
-  return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ audioContent: wav }) });
 });
 await step('20b-audio-player', async () => {
   await page.goto(BASE + '#/biblia/gn/1');
@@ -468,9 +468,17 @@ await step('23-missa', async () => {
   await page.click('#missa [data-act=listen]');
   await page.waitForSelector('#player-root .player', { timeout: 5000 });
   await page.waitForFunction(() => document.querySelector('.missa-step .rv.speaking'), null, { timeout: 5000 });
-  await page.click('#player-root [data-act=stop]');
+  if (!/Parar/.test(await page.$eval('#missa [data-act=listen]', (el) => el.textContent))) throw new Error('botão Ouvir não virou Parar');
+  await page.screenshot({ path: `${SHOT}/23-missa-playing.png` });
+  // a barra do player fica por cima da tela da Missa: parar por ela tem de funcionar
+  await page.click('#player-root [data-act=stop]', { timeout: 5000 });
+  await page.waitForFunction(() => /Ouvir/.test(document.querySelector('#missa [data-act=listen]').textContent) && !document.querySelector('.missa-step .rv.speaking'), null, { timeout: 3000 });
+  await page.click('#missa [data-act=listen]');
+  await page.waitForSelector('#player-root .player', { timeout: 5000 });
+  await page.click('#missa [data-act=listen]');   // Parar pelo próprio botão
+  await page.waitForFunction(() => !document.querySelector('#player-root .player'), null, { timeout: 3000 });
   await page.click('#missa [data-act=x]');
-  await page.waitForFunction(() => !document.querySelector('.modal'), null, { timeout: 3000 });
+  await page.waitForFunction(() => !document.querySelector('.modal') && !document.body.classList.contains('modal-open'), null, { timeout: 3000 });
 });
 await step('21-desktop', async () => {
   await page.setViewportSize({ width: 1200, height: 800 });
