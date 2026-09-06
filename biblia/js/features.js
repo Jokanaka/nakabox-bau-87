@@ -5,7 +5,7 @@ import { book, refString, refLong, getVerses } from './data.js';
 import { openSheet, openModal, topbar, confirm } from './ui.js';
 import { PLANS, plan as getPlan, planDays, planProgress, nextDay } from './plans.js';
 import { PRAYERS, PRAYER_GROUPS, prayer as getPrayer, prayersByGroup } from './prayers.js';
-import { MYSTERIES, mysteryOfDay, rosarySteps } from './rosary.js';
+import { MYSTERIES, mysteryOfDay, rosarySteps, chapletSteps } from './rosary.js';
 import { liturgicalDay, readingsFor, upcoming, SEASON_KEYS } from './liturgy.js';
 import { shareText } from './share.js';
 
@@ -149,17 +149,20 @@ export function renderRosary(view) {
       <div class="section" style="padding-top:0"><div class="section-title">${esc(m.name)} · ${m.days}</div>
         <div class="list">${m.list.map((my, i) => `<a class="list-item" href="#/biblia/${my.ref[0]}/${my.ref[1]}/${my.ref[2]}"><div class="ico" style="background:${m.color};color:#fff;font-weight:800">${i + 1}</div><div class="grow"><div class="title">${esc(my.t)}</div><div class="sub">${esc(refString(my.ref[0], my.ref[1], my.ref[2], my.ref[3]))} · fruto: ${esc(my.fruit)}</div></div><span class="chev">${icon('chevR')}</span></a>`).join('')}</div>
       </div>
+      <div class="section" style="padding-top:0"><a class="card row between" href="#/rosario" data-act="chaplet"><div><h3>🤍 Terço da Divina Misericórdia</h3><div class="small muted">Guiado, com as orações de Santa Faustina · ideal às 15h</div></div>${icon('chevR')}</a></div>
       <div class="section" style="padding-top:0"><div class="card"><h3>Como rezar</h3><p class="small muted" style="margin-top:6px">Sinal da Cruz, Creio, Pai Nosso, três Ave Marias e Glória. Em cada mistério: anuncia-se o mistério, reza-se um Pai Nosso, dez Ave Marias, o Glória e a oração de Fátima. Ao final, Salve Rainha. Terços rezados neste app: <b>${store.rosaryCount}</b>.</p></div></div>`;
     $$('[data-k]', view).forEach((b) => b.onclick = () => { kind = b.dataset.k; render(); });
     $('[data-act=pray]', view).onclick = () => guidedRosary(kind);
+    $('[data-act=chaplet]', view).onclick = (e) => { e.preventDefault(); guidedRosary('misericordia'); };
   };
   render();
 }
 
 function guidedRosary(kind) {
-  const steps = rosarySteps(kind);
+  const chaplet = kind === 'misericordia';
+  const steps = chaplet ? chapletSteps() : rosarySteps(kind);
   let i = 0;
-  const m = MYSTERIES[kind];
+  const m = chaplet ? { name: 'Terço da Divina Misericórdia', color: '#B3264A' } : MYSTERIES[kind];
   let wake = null;
   const { el, close } = openModal(`<div id="ros"></div>`, { onClose: () => { if (wake) { try { wake.release(); } catch { /* */ } wake = null; } } });
   if (navigator.wakeLock) navigator.wakeLock.request('screen').then((w) => { wake = w; }).catch(() => {});
@@ -183,7 +186,7 @@ function guidedRosary(kind) {
       </div>`;
     $('[data-act=x]', el).onclick = () => close();
     $('[data-act=prev]', el).onclick = () => { if (i > 0) { i--; render(); } };
-    $('[data-act=next]', el).onclick = () => { if (s.last) { store.rosaryDone(); toast('Terço concluído. Deus te abençoe! 🙏'); close(); } else { i++; render(); window.scrollTo(0, 0); } };
+    $('[data-act=next]', el).onclick = () => { if (s.last) { store.rosaryDone(); toast(chaplet ? 'Jesus, eu confio em vós! 🙏' : 'Terço concluído. Deus te abençoe! 🙏'); close(); } else { i++; render(); window.scrollTo(0, 0); } };
     const ref = $('[data-act=ref]', el); if (ref) ref.onclick = () => close();
   };
   render();

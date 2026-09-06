@@ -71,3 +71,21 @@ export function rosarySteps(kind) {
   steps.push({ kind: 'Conclusão', title: 'Sinal da Cruz', text: 'Em nome do Pai, e do Filho, e do Espírito Santo. Amém.', last: true });
   return steps;
 }
+
+// Terço da Divina Misericórdia (São Faustina), rezado no terço comum
+export function chapletSteps() {
+  const steps = [];
+  const PN2 = PN, AM2 = AM;
+  steps.push({ kind: 'Início', title: 'Sinal da Cruz', text: 'Em nome do Pai, e do Filho, e do Espírito Santo. Amém.' });
+  steps.push({ kind: 'Início', title: 'Pai Nosso', text: PN2, bead: 'pn' });
+  steps.push({ kind: 'Início', title: 'Ave Maria', text: AM2, bead: 'am' });
+  steps.push({ kind: 'Início', title: 'Creio', text: CREDO });
+  for (let i = 1; i <= 5; i++) {
+    steps.push({ kind: `${i}ª dezena`, title: 'Eterno Pai', text: 'Eterno Pai, eu vos ofereço o Corpo e Sangue, Alma e Divindade de vosso diletíssimo Filho, nosso Senhor Jesus Cristo, em expiação dos nossos pecados e dos do mundo inteiro.', bead: 'pn', mystery: i });
+    for (let j = 1; j <= 10; j++) steps.push({ kind: `${i}ª dezena`, title: `Pela sua dolorosa Paixão (${j} de 10)`, text: 'Pela sua dolorosa Paixão, tende misericórdia de nós e do mundo inteiro.', bead: 'am', mystery: i, n: j });
+  }
+  for (let k = 1; k <= 3; k++) steps.push({ kind: 'Conclusão', title: `Deus Santo (${k} de 3)`, text: 'Deus Santo, Deus Forte, Deus Imortal, tende piedade de nós e do mundo inteiro.' });
+  steps.push({ kind: 'Conclusão', title: 'Oração final', text: 'Ó Deus eterno, em quem a misericórdia é infinita e o tesouro de compaixão inesgotável, volvei para nós o vosso olhar benigno e aumentai em nós a vossa misericórdia, a fim de que, nos momentos difíceis, não nos desesperemos nem desanimemos, mas, com grande confiança, nos submetamos à vossa santa vontade, que é o próprio amor e a própria misericórdia. Amém.' });
+  steps.push({ kind: 'Conclusão', title: 'Jesus, eu confio em vós', text: 'Jesus, eu confio em vós! (três vezes)\n\nEm nome do Pai, e do Filho, e do Espírito Santo. Amém.', last: true });
+  return steps;
+}
