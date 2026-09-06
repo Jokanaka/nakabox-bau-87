@@ -234,20 +234,46 @@ const localEngine = {
 };
 export function localVoiceState() { return localEngine.state(); }
 export function localVoicePrepare(listener) { if (listener) localEngine.listeners.add(listener); localEngine.reset(); localEngine.ensure(); return () => localEngine.listeners.delete(listener); }
-// ---------- narração gravada (MP3 por capítulo com voz neural, gerado de antemão) ----------
+// ---------- narração gravada (MP3 por capítulo com voz neural, gerado de antemão; várias vozes) ----------
+export const VOICE_INFO = {
+  alex: { name: 'Alex', desc: 'masculina' },
+  santa: { name: 'Santa', desc: 'masculina, mais grave' },
+  dora: { name: 'Dora', desc: 'feminina' },
+};
 let manifest = null;
 let manifestPromise = null;
 export function loadAudioManifest() {
   if (manifest) return Promise.resolve(manifest);
   if (!manifestPromise) {
     manifestPromise = fetch('data/audio.json', { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : null)).catch(() => null)
-      .then((m) => { manifest = m && m.books ? m : { books: {} }; return manifest; });
+      .then((m) => { manifest = m && m.voices ? m : { voices: {} }; return manifest; });
   }
   return manifestPromise;
 }
-export function recordedAvailable(book, chapter) { return !!(manifest && manifest.base && manifest.books[book] && +chapter >= 1 && +chapter <= manifest.books[book]); }
-export function recordedCount() { return manifest ? Object.values(manifest.books).reduce((a, b) => a + b, 0) : 0; }
-export function recordedBooks() { return manifest ? Object.keys(manifest.books) : []; }
+// vozes gravadas: [{ id, name, desc, count, books }]
+export function recordedVoices() {
+  if (!manifest) return [];
+  return Object.entries(manifest.voices).map(([id, v]) => ({ id, name: (v && v.name) || (VOICE_INFO[id] || {}).name || id, desc: (v && v.desc) || (VOICE_INFO[id] || {}).desc || '', books: (v && v.books) || {}, count: Object.values((v && v.books) || {}).reduce((x, y) => x + y, 0) }));
+}
+function voiceHas(v, book, chapter) { return !!(v && v.books && v.books[book] && +chapter >= 1 && +chapter <= v.books[book]); }
+export function recordedAvailable(book, chapter, voice = null) {
+  if (!manifest || !manifest.base) return false;
+  if (voice) return voiceHas(manifest.voices[voice], book, chapter);
+  return Object.values(manifest.voices).some((v) => voiceHas(v, book, chapter));
+}
+export function recordedVoiceFor(book, chapter) {
+  if (!manifest || !manifest.base) return null;
+  const pref = store.settings.recordedVoice || 'alex';
+  if (voiceHas(manifest.voices[pref], book, chapter)) return pref;
+  const any = Object.keys(manifest.voices).find((id) => voiceHas(manifest.voices[id], book, chapter));
+  return any || null;
+}
+export function recordedCount(voice) {
+  if (!manifest) return 0;
+  const vs = voice ? [manifest.voices[voice]] : Object.values(manifest.voices);
+  return vs.reduce((n, v) => n + Object.values((v && v.books) || {}).reduce((x, y) => x + y, 0), 0);
+}
+export function recordedSampleUrl(voice) { return manifest && manifest.base ? `${manifest.base}${voice}/sample.mp3` : ''; }
 async function fetchJsonFrom(urls) {
   let err = null;
   for (const u of urls) {
@@ -255,14 +281,38 @@ async function fetchJsonFrom(urls) {
   }
   throw err || new Error('sem áudio');
 }
-export async function recordedChapter(book, chapter) {
+export async function recordedChapter(book, chapter, voice = null) {
   await loadAudioManifest();
-  if (!recordedAvailable(book, chapter)) return null;
-  const rel = `${book}/${chapter}`;
+  const vid = voice && recordedAvailable(book, chapter, voice) ? voice : recordedVoiceFor(book, chapter);
+  if (!vid) return null;
+  const rel = `${vid}/${book}/${chapter}`;
   const bases = [manifest.base, manifest.fallback].filter(Boolean);
   const marks = await fetchJsonFrom(bases.map((b) => `${b}${rel}.json`));
   if (!marks || !Array.isArray(marks.v)) return null;
-  return { url: `${manifest.base}${rel}.mp3`, alt: manifest.fallback ? `${manifest.fallback}${rel}.mp3` : null, marks };
+  const info = recordedVoices().find((v) => v.id === vid) || { name: vid };
+  return { url: `${manifest.base}${rel}.mp3`, alt: manifest.fallback ? `${manifest.fallback}${rel}.mp3` : null, marks, voice: vid, voiceName: info.name, book, chapter };
+}
+// troca a voz gravada; se estiver lendo com narração gravada, recomeça o versículo atual na voz nova
+export async function setRecordedVoice(voice) {
+  store.setSetting('recordedVoice', voice);
+  if (!st.active || st.engine !== recEngine || !st.recInfo || !st.fallback) return;
+  const { book, chapter } = st.recInfo;
+  const idx = st.idx;
+  try {
+    const rec = await recordedChapter(book, chapter, voice);
+    if (!rec || !st.active || st.engine !== recEngine) return;
+    play({ ...st.fallback, from: idx, recorded: rec });
+  } catch { /* mantém a voz atual */ }
+}
+// toca a amostra de uma voz gravada (para a leitura em andamento)
+export function playRecordedSample(voice) {
+  const url = recordedSampleUrl(voice);
+  if (!url) { toast('Amostra ainda não disponível'); return; }
+  if (st.active) stop();
+  const a = mediaEl();
+  a.onended = null; a.onerror = () => toast('Não foi possível tocar a amostra'); a.ontimeupdate = null;
+  a.src = url; a.playbackRate = 1;
+  a.play().catch(() => toast('Não foi possível tocar a amostra'));
 }
 const recEngine = {
   kind: 'gravado', pausable: true, rec: null, token: null, triedAlt: false,
@@ -336,7 +386,7 @@ export function play({ title = '', items = [], lang = 'pt-BR', from = 0, onItem 
   if (recorded && items.length) {
     stop({ silent: true });
     recEngine.unlock();
-    Object.assign(st, { title, items, lang, idx: clamp(from, 0, items.length - 1), onItem, onEnd, active: true, paused: false, pausedInPlace: false, errors: 0, engine: recEngine, status: '', fallback: { title, items, lang, from, onItem, onEnd } });
+    Object.assign(st, { title, items, lang, idx: clamp(from, 0, items.length - 1), onItem, onEnd, active: true, paused: false, pausedInPlace: false, errors: 0, engine: recEngine, status: '', fallback: { title, items, lang, from, onItem, onEnd }, voiceName: recorded.voiceName || '', recInfo: { book: recorded.book, chapter: recorded.chapter } });
     document.body.classList.add('has-player');
     renderBar();
     const it = st.items[st.idx]; if (it && onItem) { try { onItem(st.idx, it); } catch { /* ignora */ } }
@@ -452,7 +502,7 @@ export function skip(delta) {
 function teardown() {
   const onEnd = st.onEnd;
   const engine = st.engine;
-  st.active = false; st.paused = false; st.pausedInPlace = false; st.onEnd = null; st.onItem = null; st.items = []; st.status = ''; st.fallback = null;
+  st.active = false; st.paused = false; st.pausedInPlace = false; st.onEnd = null; st.onItem = null; st.items = []; st.status = ''; st.fallback = null; st.voiceName = ''; st.recInfo = null;
   clearTimeout(st.watchdog); clearTimeout(st.restart); clearTimeout(st.gap);
   stopNudge();
   if (engine) engine.cancel(); else sysEngine.cancel();
@@ -589,9 +639,9 @@ function updateBar() {
   if (!st.active || !r.firstChild) return;
   const it = st.items[st.idx] || {};
   $('.p-title', r).textContent = st.title || 'Leitura';
-  $('.p-pos', r).textContent = `${st.status || (it.label ? it.label : `${st.idx + 1} de ${st.items.length}`)} · `;
+  $('.p-pos', r).textContent = `${st.status || (it.label ? it.label : `${st.idx + 1} de ${st.items.length}`)}${st.engine === recEngine && st.voiceName ? ` · ${st.voiceName}` : ''} · `;
   $('.p-rate', r).textContent = fmtRate(store.settings.ttsRate);
-  const eng = $('.p-engine', r); eng.hidden = !(st.engine === cloudEngine || st.engine === localEngine || st.engine === recEngine); eng.innerHTML = st.engine === recEngine ? I.mic : st.engine === localEngine ? I.chip : I.cloud; eng.title = st.engine === recEngine ? 'Narração gravada' : st.engine === localEngine ? 'Narrador offline' : 'Narrador na nuvem';
+  const eng = $('.p-engine', r); eng.hidden = !(st.engine === cloudEngine || st.engine === localEngine || st.engine === recEngine); eng.innerHTML = st.engine === recEngine ? I.mic : st.engine === localEngine ? I.chip : I.cloud; eng.title = st.engine === recEngine ? `Narração gravada${st.voiceName ? ' · ' + st.voiceName : ''}` : st.engine === localEngine ? 'Narrador offline' : 'Narrador na nuvem';
   const tg = $('[data-act=toggle]', r);
   tg.innerHTML = st.paused ? icon('play') : I.pause;
   tg.setAttribute('aria-label', st.paused ? 'Continuar' : 'Pausar');
@@ -676,9 +726,11 @@ export function openAudioSheet() {
     <div class="chips" id="au-timer-chips">${mins.map((m) => `<button class="chip" data-min="${m}">${m ? `${m} min` : 'Desligado'}</button>`).join('')}<button class="chip" data-act="attime">No horário…</button></div>
     <div class="row" id="au-time-row" style="margin-top:10px" hidden><input type="time" id="au-time" class="input" value="${esc(s.ttsTimerTime || '22:00')}" aria-label="Horário para parar"><button class="btn sm primary" data-act="settime">Parar nesse horário</button></div>
     <p class="small muted" id="au-timer-state" style="margin-top:8px"></p>
-    <div class="section-title" style="margin-top:16px">Narrador gravado (voz Alex)</div>
-    <p class="small muted">Narração já gravada com uma voz neural masculina, em estilo de história, pronta para tocar sem baixar nada. <span id="au-rec-state">${recordedCount() ? `${recordedCount()} capítulos disponíveis` : 'Carregando a lista…'}</span></p>
+    <div class="section-title" style="margin-top:16px">Narração gravada</div>
+    <p class="small muted">Capítulos já narrados com vozes neurais, em estilo de história, prontos para tocar sem baixar nada. <span id="au-rec-state">Carregando a lista…</span></p>
     <div class="setting"><span>Usar narração gravada quando existir</span><button class="switch ${s.recordedOn !== false ? 'on' : ''}" data-act="rec-on" aria-label="Usar narração gravada"></button></div>
+    <label class="au-label" for="au-rec-voice">Voz da narração</label>
+    <div class="row" style="gap:8px"><select id="au-rec-voice" class="input" aria-label="Voz da narração"></select><button class="btn sm" data-act="rec-sample" aria-label="Ouvir amostra">${icon('play')} Amostra</button></div>
     <div class="section-title" style="margin-top:16px">Narrador masculino grátis (no aparelho)</div>
     <p class="small muted">Voz masculina brasileira "Faber", gerada no próprio celular, sem conta nem chave. Baixa cerca de 90 MB uma única vez (use Wi-Fi) e precisa de um aparelho razoavelmente recente; soa mais natural que a maioria das vozes do celular, mas menos que a da nuvem.</p>
     <div class="setting"><span>Usar narrador offline</span><button class="switch ${s.localVoiceOn ? 'on' : ''}" data-act="local-on" aria-label="Usar narrador offline"></button></div>
@@ -721,7 +773,18 @@ export function openAudioSheet() {
     if (end) toast(`A leitura para às ${fmtClock(end)}`);
   };
   // narração gravada
-  loadAudioManifest().then(() => { const x = $('#au-rec-state', el); if (x) x.textContent = recordedCount() ? `${recordedCount()} capítulos disponíveis (${recordedBooks().length} livros)` : 'Ainda sem capítulos gravados.'; });
+  const fillRecVoices = () => {
+    const vs = recordedVoices();
+    const sel = $('#au-rec-voice', el); if (!sel) return;
+    const cur = store.settings.recordedVoice || 'alex';
+    const list = vs.length ? vs : Object.entries(VOICE_INFO).map(([id, v]) => ({ id, name: v.name, desc: v.desc, count: 0 }));
+    sel.innerHTML = list.map((v) => `<option value="${esc(v.id)}" ${v.id === cur ? 'selected' : ''}>${esc(v.name)} · ${esc(v.desc)}${v.count ? ` · ${v.count} cap.` : ' · em preparação'}</option>`).join('');
+    const x = $('#au-rec-state', el); if (x) x.textContent = recordedCount() ? `${recordedCount()} capítulos gravados (${vs.filter((v) => v.count).map((v) => `${v.name}: ${v.count}`).join(', ')}).` : 'Ainda sem capítulos gravados; a narração está sendo produzida.';
+  };
+  fillRecVoices();
+  loadAudioManifest().then(fillRecVoices);
+  $('#au-rec-voice', el).onchange = (e) => { setRecordedVoice(e.target.value); toast(`Voz da narração: ${(recordedVoices().find((v) => v.id === e.target.value) || VOICE_INFO[e.target.value] || { name: e.target.value }).name}`); };
+  $('[data-act=rec-sample]', el).onclick = () => playRecordedSample($('#au-rec-voice', el).value);
   $('[data-act=rec-on]', el).onclick = (e) => { const on = store.settings.recordedOn === false; store.setSetting('recordedOn', on); e.currentTarget.classList.toggle('on', on); toast(on ? 'Narração gravada ligada' : 'Narração gravada desligada'); };
   // narrador offline
   const localState = (x) => {
