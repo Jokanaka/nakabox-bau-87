@@ -55,6 +55,8 @@ await step('00-simple-mode', async () => {
   if (await page.$('[data-act=ver]')) throw new Error('no modo simples o seletor de versão não deve aparecer');
   await page.click('[data-act=tts]');
   await page.waitForSelector('#player-root .player', { timeout: 5000 });
+  // a voz gravada escolhida (Alex) ainda não tem Gênesis 1: o app avisa na hora de começar
+  await page.waitForFunction(() => /Alex ainda não gravou Gênesis 1/.test(document.querySelector('#toast')?.textContent || ''), null, { timeout: 5000 });
   await page.click('#player-root [data-act=cfg]');
   await page.waitForSelector('.sheet [data-act=voice]', { timeout: 5000 });
   if (await page.$('#au-key') || await page.$('#au-pitch') || await page.$('#au-voice')) throw new Error('modo simples não deveria mostrar nuvem/tom/seletor antigo');

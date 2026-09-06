@@ -383,6 +383,7 @@ function markChapterRead(bid, chapter) {
     const d = $('[data-act=done]'); if (d) d.innerHTML = `${icon('check')} Lido · próximo capítulo`;
   }
 }
+let noticedKey = '';
 async function startTTS(fromVerse) {
   audio.unlock();   // ainda dentro do toque: no iPhone o áudio só inicia num gesto (antes de qualquer await)
   const b = book(current.book);
@@ -406,6 +407,9 @@ async function startTTS(fromVerse) {
   if (store.settings.recordedOn !== false && store.settings.version === 'figueiredo') {
     try {
       await audio.loadAudioManifest();
+      // avisa uma vez por capítulo quando a voz gravada escolhida ainda não o tem (a leitura segue com a voz do celular)
+      const notice = audio.recordedMissingNotice(b.id, chapter);
+      if (notice && noticedKey !== `${b.id}.${chapter}`) { noticedKey = `${b.id}.${chapter}`; toast(notice, 5000); }
       if (audio.recordedAvailable(b.id, chapter)) {
         const rec = await audio.recordedChapter(b.id, chapter);
         if (rec && current.book === b.id && current.chapter === chapter) {

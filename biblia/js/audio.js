@@ -371,6 +371,16 @@ export function voiceLabel() {
   if (c.kind === 'local') return 'Faber';
   const v = chosenVoice(); return v ? shortVoiceName(v) : 'Celular';
 }
+// aviso para quando a voz gravada escolhida ainda não tem o capítulo (a leitura segue com a voz do celular); '' se não se aplica
+export function recordedMissingNotice(bk, chapter) {
+  const c = voiceChoice();
+  if (c.kind !== 'rec' || !manifest || recordedAvailable(bk, chapter)) return '';
+  const vs = recordedVoices();
+  const done = [...new Set(vs.flatMap((v) => Object.keys(v.books).filter((b) => v.books[b] > 0)))].map((b) => (book(b) ? bookName(book(b), store.settings.version) : b));
+  const here = book(bk) ? `${bookName(book(bk), store.settings.version)} ${chapter}` : 'este capítulo';
+  const dv = chosenVoice();
+  return `A voz ${recName(c.id)} ainda não gravou ${here}: lendo com a voz do celular${dv ? ` (${shortVoiceName(dv)})` : ''}.${done.length ? ` Já gravado: ${done.join(', ')}.` : ''}`;
+}
 // aplica a voz escolhida; se estiver lendo, troca na hora a partir do versículo atual.
 // devolve { status: 'switched' | 'unavailable' | 'saved', name }
 export async function chooseVoice(kind, id = '') {
