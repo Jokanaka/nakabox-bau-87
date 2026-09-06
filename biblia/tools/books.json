@@ -1,0 +1,1209 @@
+[
+ {
+  "id": "gn",
+  "slug": "genesis",
+  "bolls": 1,
+  "name": "Gênesis",
+  "abbr": "Gn",
+  "test": "AT",
+  "group": "Pentateuco",
+  "la": "Genesis",
+  "en": "Genesis",
+  "aliases": [
+   "genesis",
+   "gen",
+   "ge"
+  ]
+ },
+ {
+  "id": "ex",
+  "slug": "exodo",
+  "bolls": 2,
+  "name": "Êxodo",
+  "abbr": "Ex",
+  "test": "AT",
+  "group": "Pentateuco",
+  "la": "Exodus",
+  "en": "Exodus",
+  "aliases": [
+   "exodo",
+   "exo"
+  ]
+ },
+ {
+  "id": "lv",
+  "slug": "levitico",
+  "bolls": 3,
+  "name": "Levítico",
+  "abbr": "Lv",
+  "test": "AT",
+  "group": "Pentateuco",
+  "la": "Leviticus",
+  "en": "Leviticus",
+  "aliases": [
+   "levitico",
+   "lev",
+   "le"
+  ]
+ },
+ {
+  "id": "nm",
+  "slug": "numeros",
+  "bolls": 4,
+  "name": "Números",
+  "abbr": "Nm",
+  "test": "AT",
+  "group": "Pentateuco",
+  "la": "Numeri",
+  "en": "Numbers",
+  "aliases": [
+   "numeros",
+   "num",
+   "nu"
+  ]
+ },
+ {
+  "id": "dt",
+  "slug": "deuteronomio",
+  "bolls": 5,
+  "name": "Deuteronômio",
+  "abbr": "Dt",
+  "test": "AT",
+  "group": "Pentateuco",
+  "la": "Deuteronomium",
+  "en": "Deuteronomy",
+  "aliases": [
+   "deuteronomio",
+   "deut",
+   "de"
+  ]
+ },
+ {
+  "id": "js",
+  "slug": "josue",
+  "bolls": 6,
+  "name": "Josué",
+  "abbr": "Js",
+  "test": "AT",
+  "group": "Livros Históricos",
+  "la": "Iosue",
+  "en": "Joshua",
+  "aliases": [
+   "josue",
+   "jos"
+  ]
+ },
+ {
+  "id": "jz",
+  "slug": "juizes",
+  "bolls": 7,
+  "name": "Juízes",
+  "abbr": "Jz",
+  "test": "AT",
+  "group": "Livros Históricos",
+  "la": "Iudices",
+  "en": "Judges",
+  "aliases": [
+   "juizes",
+   "jui",
+   "jg"
+  ]
+ },
+ {
+  "id": "rt",
+  "slug": "rute",
+  "bolls": 8,
+  "name": "Rute",
+  "abbr": "Rt",
+  "test": "AT",
+  "group": "Livros Históricos",
+  "la": "Ruth",
+  "en": "Ruth",
+  "aliases": [
+   "rute",
+   "rt",
+   "ru"
+  ]
+ },
+ {
+  "id": "1sm",
+  "slug": "1-samuel",
+  "bolls": 9,
+  "name": "1 Samuel",
+  "abbr": "1Sm",
+  "test": "AT",
+  "group": "Livros Históricos",
+  "la": "I Samuelis (I Regum)",
+  "en": "1 Samuel (1 Kings)",
+  "aliases": [
+   "1samuel",
+   "1sm",
+   "1sam",
+   "isamuel",
+   "1 samuel"
+  ]
+ },
+ {
+  "id": "2sm",
+  "slug": "2-samuel",
+  "bolls": 10,
+  "name": "2 Samuel",
+  "abbr": "2Sm",
+  "test": "AT",
+  "group": "Livros Históricos",
+  "la": "II Samuelis (II Regum)",
+  "en": "2 Samuel (2 Kings)",
+  "aliases": [
+   "2samuel",
+   "2sm",
+   "2sam",
+   "2 samuel"
+  ]
+ },
+ {
+  "id": "1rs",
+  "slug": "1-reis",
+  "bolls": 11,
+  "name": "1 Reis",
+  "abbr": "1Rs",
+  "test": "AT",
+  "group": "Livros Históricos",
+  "la": "I Regum (III Regum)",
+  "en": "1 Kings (3 Kings)",
+  "aliases": [
+   "1reis",
+   "1rs",
+   "1re",
+   "1 reis"
+  ]
+ },
+ {
+  "id": "2rs",
+  "slug": "2-reis",
+  "bolls": 12,
+  "name": "2 Reis",
+  "abbr": "2Rs",
+  "test": "AT",
+  "group": "Livros Históricos",
+  "la": "II Regum (IV Regum)",
+  "en": "2 Kings (4 Kings)",
+  "aliases": [
+   "2reis",
+   "2rs",
+   "2re",
+   "2 reis"
+  ]
+ },
+ {
+  "id": "1cr",
+  "slug": "1-cronicas",
+  "bolls": 13,
+  "name": "1 Crônicas",
+  "abbr": "1Cr",
+  "test": "AT",
+  "group": "Livros Históricos",
+  "la": "I Paralipomenon",
+  "en": "1 Chronicles (1 Paralipomenon)",
+  "aliases": [
+   "1cronicas",
+   "1cr",
+   "1cro",
+   "1 cronicas",
+   "1paralipomenos"
+  ]
+ },
+ {
+  "id": "2cr",
+  "slug": "2-cronicas",
+  "bolls": 14,
+  "name": "2 Crônicas",
+  "abbr": "2Cr",
+  "test": "AT",
+  "group": "Livros Históricos",
+  "la": "II Paralipomenon",
+  "en": "2 Chronicles (2 Paralipomenon)",
+  "aliases": [
+   "2cronicas",
+   "2cr",
+   "2cro",
+   "2 cronicas",
+   "2paralipomenos"
+  ]
+ },
+ {
+  "id": "esd",
+  "slug": "esdras",
+  "bolls": 15,
+  "name": "Esdras",
+  "abbr": "Esd",
+  "test": "AT",
+  "group": "Livros Históricos",
+  "la": "Esdrae",
+  "en": "Ezra (1 Esdras)",
+  "aliases": [
+   "esdras",
+   "esd",
+   "ezra"
+  ]
+ },
+ {
+  "id": "ne",
+  "slug": "neemias",
+  "bolls": 16,
+  "name": "Neemias",
+  "abbr": "Ne",
+  "test": "AT",
+  "group": "Livros Históricos",
+  "la": "Nehemiae (II Esdrae)",
+  "en": "Nehemiah (2 Esdras)",
+  "aliases": [
+   "neemias",
+   "ne",
+   "neh"
+  ]
+ },
+ {
+  "id": "tb",
+  "slug": "tobias",
+  "bolls": 68,
+  "name": "Tobias",
+  "abbr": "Tb",
+  "test": "AT",
+  "group": "Livros Históricos",
+  "la": "Tobiae",
+  "en": "Tobias (Tobit)",
+  "aliases": [
+   "tobias",
+   "tb",
+   "tob",
+   "tobit"
+  ],
+  "deutero": true
+ },
+ {
+  "id": "jt",
+  "slug": "judite",
+  "bolls": 69,
+  "name": "Judite",
+  "abbr": "Jt",
+  "test": "AT",
+  "group": "Livros Históricos",
+  "la": "Iudith",
+  "en": "Judith",
+  "aliases": [
+   "judite",
+   "jt",
+   "jdt",
+   "judith"
+  ],
+  "deutero": true
+ },
+ {
+  "id": "est",
+  "slug": "ester",
+  "bolls": 17,
+  "name": "Ester",
+  "abbr": "Est",
+  "test": "AT",
+  "group": "Livros Históricos",
+  "la": "Esther",
+  "en": "Esther",
+  "aliases": [
+   "ester",
+   "est",
+   "esther"
+  ]
+ },
+ {
+  "id": "1mc",
+  "slug": "1-macabeus",
+  "bolls": 74,
+  "name": "1 Macabeus",
+  "abbr": "1Mc",
+  "test": "AT",
+  "group": "Livros Históricos",
+  "la": "I Machabaeorum",
+  "en": "1 Machabees (1 Maccabees)",
+  "aliases": [
+   "1macabeus",
+   "1mc",
+   "1mac",
+   "1 macabeus"
+  ],
+  "deutero": true
+ },
+ {
+  "id": "2mc",
+  "slug": "2-macabeus",
+  "bolls": 75,
+  "name": "2 Macabeus",
+  "abbr": "2Mc",
+  "test": "AT",
+  "group": "Livros Históricos",
+  "la": "II Machabaeorum",
+  "en": "2 Machabees (2 Maccabees)",
+  "aliases": [
+   "2macabeus",
+   "2mc",
+   "2mac",
+   "2 macabeus"
+  ],
+  "deutero": true
+ },
+ {
+  "id": "job",
+  "slug": "jo",
+  "bolls": 18,
+  "name": "Jó",
+  "abbr": "Jó",
+  "test": "AT",
+  "group": "Livros Sapienciais",
+  "la": "Iob",
+  "en": "Job",
+  "aliases": [
+   "job",
+   "jó",
+   "jo."
+  ]
+ },
+ {
+  "id": "sl",
+  "slug": "salmos",
+  "bolls": 19,
+  "name": "Salmos",
+  "abbr": "Sl",
+  "test": "AT",
+  "group": "Livros Sapienciais",
+  "la": "Psalmi",
+  "en": "Psalms",
+  "aliases": [
+   "salmos",
+   "sl",
+   "sal",
+   "salmo",
+   "ps",
+   "psalm"
+  ]
+ },
+ {
+  "id": "pr",
+  "slug": "proverbios",
+  "bolls": 20,
+  "name": "Provérbios",
+  "abbr": "Pr",
+  "test": "AT",
+  "group": "Livros Sapienciais",
+  "la": "Proverbia",
+  "en": "Proverbs",
+  "aliases": [
+   "proverbios",
+   "pr",
+   "prov",
+   "pv"
+  ]
+ },
+ {
+  "id": "ecl",
+  "slug": "eclesiastes",
+  "bolls": 21,
+  "name": "Eclesiastes",
+  "abbr": "Ecl",
+  "test": "AT",
+  "group": "Livros Sapienciais",
+  "la": "Ecclesiastes",
+  "en": "Ecclesiastes",
+  "aliases": [
+   "eclesiastes",
+   "ecl",
+   "ec",
+   "coelet"
+  ]
+ },
+ {
+  "id": "ct",
+  "slug": "cantico-dos-canticos",
+  "bolls": 22,
+  "name": "Cântico dos Cânticos",
+  "abbr": "Ct",
+  "test": "AT",
+  "group": "Livros Sapienciais",
+  "la": "Canticum Canticorum",
+  "en": "Canticle of Canticles (Song of Songs)",
+  "aliases": [
+   "cantico",
+   "canticos",
+   "ct",
+   "cant",
+   "cantico dos canticos"
+  ]
+ },
+ {
+  "id": "sb",
+  "slug": "sabedoria",
+  "bolls": 70,
+  "name": "Sabedoria",
+  "abbr": "Sb",
+  "test": "AT",
+  "group": "Livros Sapienciais",
+  "la": "Sapientia",
+  "en": "Wisdom",
+  "aliases": [
+   "sabedoria",
+   "sb",
+   "sab",
+   "wis"
+  ],
+  "deutero": true
+ },
+ {
+  "id": "eclo",
+  "slug": "eclesiastico",
+  "bolls": 71,
+  "name": "Eclesiástico",
+  "abbr": "Eclo",
+  "test": "AT",
+  "group": "Livros Sapienciais",
+  "la": "Ecclesiasticus",
+  "en": "Ecclesiasticus (Sirach)",
+  "aliases": [
+   "eclesiastico",
+   "eclo",
+   "sir",
+   "siracida",
+   "ben sira"
+  ],
+  "deutero": true
+ },
+ {
+  "id": "is",
+  "slug": "isaias",
+  "bolls": 23,
+  "name": "Isaías",
+  "abbr": "Is",
+  "test": "AT",
+  "group": "Livros Proféticos",
+  "la": "Isaias",
+  "en": "Isaias (Isaiah)",
+  "aliases": [
+   "isaias",
+   "is",
+   "isa"
+  ]
+ },
+ {
+  "id": "jr",
+  "slug": "jeremias",
+  "bolls": 24,
+  "name": "Jeremias",
+  "abbr": "Jr",
+  "test": "AT",
+  "group": "Livros Proféticos",
+  "la": "Ieremias",
+  "en": "Jeremias (Jeremiah)",
+  "aliases": [
+   "jeremias",
+   "jr",
+   "jer"
+  ]
+ },
+ {
+  "id": "lm",
+  "slug": "lamentacoes",
+  "bolls": 25,
+  "name": "Lamentações",
+  "abbr": "Lm",
+  "test": "AT",
+  "group": "Livros Proféticos",
+  "la": "Lamentationes",
+  "en": "Lamentations",
+  "aliases": [
+   "lamentacoes",
+   "lm",
+   "lam"
+  ]
+ },
+ {
+  "id": "br",
+  "slug": "baruc",
+  "bolls": 73,
+  "name": "Baruc",
+  "abbr": "Br",
+  "test": "AT",
+  "group": "Livros Proféticos",
+  "la": "Baruch",
+  "en": "Baruch",
+  "aliases": [
+   "baruc",
+   "br",
+   "bar",
+   "baruch"
+  ],
+  "deutero": true
+ },
+ {
+  "id": "ez",
+  "slug": "ezequiel",
+  "bolls": 26,
+  "name": "Ezequiel",
+  "abbr": "Ez",
+  "test": "AT",
+  "group": "Livros Proféticos",
+  "la": "Ezechiel",
+  "en": "Ezechiel (Ezekiel)",
+  "aliases": [
+   "ezequiel",
+   "ez",
+   "eze"
+  ]
+ },
+ {
+  "id": "dn",
+  "slug": "daniel",
+  "bolls": 27,
+  "name": "Daniel",
+  "abbr": "Dn",
+  "test": "AT",
+  "group": "Livros Proféticos",
+  "la": "Daniel",
+  "en": "Daniel",
+  "aliases": [
+   "daniel",
+   "dn",
+   "dan"
+  ]
+ },
+ {
+  "id": "os",
+  "slug": "oseias",
+  "bolls": 28,
+  "name": "Oseias",
+  "abbr": "Os",
+  "test": "AT",
+  "group": "Livros Proféticos",
+  "la": "Osee",
+  "en": "Osee (Hosea)",
+  "aliases": [
+   "oseias",
+   "os",
+   "ose"
+  ]
+ },
+ {
+  "id": "jl",
+  "slug": "joel",
+  "bolls": 29,
+  "name": "Joel",
+  "abbr": "Jl",
+  "test": "AT",
+  "group": "Livros Proféticos",
+  "la": "Ioel",
+  "en": "Joel",
+  "aliases": [
+   "joel",
+   "jl"
+  ]
+ },
+ {
+  "id": "am",
+  "slug": "amos",
+  "bolls": 30,
+  "name": "Amós",
+  "abbr": "Am",
+  "test": "AT",
+  "group": "Livros Proféticos",
+  "la": "Amos",
+  "en": "Amos",
+  "aliases": [
+   "amos",
+   "am"
+  ]
+ },
+ {
+  "id": "ab",
+  "slug": "abdias",
+  "bolls": 31,
+  "name": "Abdias",
+  "abbr": "Ab",
+  "test": "AT",
+  "group": "Livros Proféticos",
+  "la": "Abdias",
+  "en": "Abdias (Obadiah)",
+  "aliases": [
+   "abdias",
+   "ab",
+   "abd"
+  ]
+ },
+ {
+  "id": "jn",
+  "slug": "jonas",
+  "bolls": 32,
+  "name": "Jonas",
+  "abbr": "Jn",
+  "test": "AT",
+  "group": "Livros Proféticos",
+  "la": "Ionas",
+  "en": "Jonas (Jonah)",
+  "aliases": [
+   "jonas",
+   "jn",
+   "jon"
+  ]
+ },
+ {
+  "id": "mq",
+  "slug": "miqueias",
+  "bolls": 33,
+  "name": "Miqueias",
+  "abbr": "Mq",
+  "test": "AT",
+  "group": "Livros Proféticos",
+  "la": "Michaeas",
+  "en": "Micheas (Micah)",
+  "aliases": [
+   "miqueias",
+   "mq",
+   "miq"
+  ]
+ },
+ {
+  "id": "na",
+  "slug": "naum",
+  "bolls": 34,
+  "name": "Naum",
+  "abbr": "Na",
+  "test": "AT",
+  "group": "Livros Proféticos",
+  "la": "Nahum",
+  "en": "Nahum",
+  "aliases": [
+   "naum",
+   "na",
+   "nah"
+  ]
+ },
+ {
+  "id": "hab",
+  "slug": "habacuc",
+  "bolls": 35,
+  "name": "Habacuc",
+  "abbr": "Hab",
+  "test": "AT",
+  "group": "Livros Proféticos",
+  "la": "Habacuc",
+  "en": "Habacuc (Habakkuk)",
+  "aliases": [
+   "habacuc",
+   "hab",
+   "habacuque"
+  ]
+ },
+ {
+  "id": "sf",
+  "slug": "sofonias",
+  "bolls": 36,
+  "name": "Sofonias",
+  "abbr": "Sf",
+  "test": "AT",
+  "group": "Livros Proféticos",
+  "la": "Sophonias",
+  "en": "Sophonias (Zephaniah)",
+  "aliases": [
+   "sofonias",
+   "sf",
+   "sof"
+  ]
+ },
+ {
+  "id": "ag",
+  "slug": "ageu",
+  "bolls": 37,
+  "name": "Ageu",
+  "abbr": "Ag",
+  "test": "AT",
+  "group": "Livros Proféticos",
+  "la": "Aggaeus",
+  "en": "Aggeus (Haggai)",
+  "aliases": [
+   "ageu",
+   "ag"
+  ]
+ },
+ {
+  "id": "zc",
+  "slug": "zacarias",
+  "bolls": 38,
+  "name": "Zacarias",
+  "abbr": "Zc",
+  "test": "AT",
+  "group": "Livros Proféticos",
+  "la": "Zacharias",
+  "en": "Zacharias (Zechariah)",
+  "aliases": [
+   "zacarias",
+   "zc",
+   "zac"
+  ]
+ },
+ {
+  "id": "ml",
+  "slug": "malaquias",
+  "bolls": 39,
+  "name": "Malaquias",
+  "abbr": "Ml",
+  "test": "AT",
+  "group": "Livros Proféticos",
+  "la": "Malachias",
+  "en": "Malachias (Malachi)",
+  "aliases": [
+   "malaquias",
+   "ml",
+   "mal"
+  ]
+ },
+ {
+  "id": "mt",
+  "slug": "mateus",
+  "bolls": 40,
+  "name": "Mateus",
+  "abbr": "Mt",
+  "test": "NT",
+  "group": "Evangelhos",
+  "la": "Matthaeus",
+  "en": "Matthew",
+  "aliases": [
+   "mateus",
+   "mt",
+   "mat"
+  ]
+ },
+ {
+  "id": "mc",
+  "slug": "marcos",
+  "bolls": 41,
+  "name": "Marcos",
+  "abbr": "Mc",
+  "test": "NT",
+  "group": "Evangelhos",
+  "la": "Marcus",
+  "en": "Mark",
+  "aliases": [
+   "marcos",
+   "mc",
+   "mar",
+   "mr"
+  ]
+ },
+ {
+  "id": "lc",
+  "slug": "lucas",
+  "bolls": 42,
+  "name": "Lucas",
+  "abbr": "Lc",
+  "test": "NT",
+  "group": "Evangelhos",
+  "la": "Lucas",
+  "en": "Luke",
+  "aliases": [
+   "lucas",
+   "lc",
+   "luc"
+  ]
+ },
+ {
+  "id": "jo",
+  "slug": "joao",
+  "bolls": 43,
+  "name": "João",
+  "abbr": "Jo",
+  "test": "NT",
+  "group": "Evangelhos",
+  "la": "Ioannes",
+  "en": "John",
+  "aliases": [
+   "joao",
+   "jo",
+   "joh"
+  ]
+ },
+ {
+  "id": "at",
+  "slug": "atos-dos-apostolos",
+  "bolls": 44,
+  "name": "Atos dos Apóstolos",
+  "abbr": "At",
+  "test": "NT",
+  "group": "Atos dos Apóstolos",
+  "la": "Actus Apostolorum",
+  "en": "Acts",
+  "aliases": [
+   "atos",
+   "at",
+   "act",
+   "atos dos apostolos"
+  ]
+ },
+ {
+  "id": "rm",
+  "slug": "romanos",
+  "bolls": 45,
+  "name": "Romanos",
+  "abbr": "Rm",
+  "test": "NT",
+  "group": "Cartas de São Paulo",
+  "la": "Ad Romanos",
+  "en": "Romans",
+  "aliases": [
+   "romanos",
+   "rm",
+   "rom"
+  ]
+ },
+ {
+  "id": "1cor",
+  "slug": "1-corintios",
+  "bolls": 46,
+  "name": "1 Coríntios",
+  "abbr": "1Cor",
+  "test": "NT",
+  "group": "Cartas de São Paulo",
+  "la": "I ad Corinthios",
+  "en": "1 Corinthians",
+  "aliases": [
+   "1corintios",
+   "1cor",
+   "1co",
+   "1 corintios"
+  ]
+ },
+ {
+  "id": "2cor",
+  "slug": "2-corintios",
+  "bolls": 47,
+  "name": "2 Coríntios",
+  "abbr": "2Cor",
+  "test": "NT",
+  "group": "Cartas de São Paulo",
+  "la": "II ad Corinthios",
+  "en": "2 Corinthians",
+  "aliases": [
+   "2corintios",
+   "2cor",
+   "2co",
+   "2 corintios"
+  ]
+ },
+ {
+  "id": "gl",
+  "slug": "galatas",
+  "bolls": 48,
+  "name": "Gálatas",
+  "abbr": "Gl",
+  "test": "NT",
+  "group": "Cartas de São Paulo",
+  "la": "Ad Galatas",
+  "en": "Galatians",
+  "aliases": [
+   "galatas",
+   "gl",
+   "gal"
+  ]
+ },
+ {
+  "id": "ef",
+  "slug": "efesios",
+  "bolls": 49,
+  "name": "Efésios",
+  "abbr": "Ef",
+  "test": "NT",
+  "group": "Cartas de São Paulo",
+  "la": "Ad Ephesios",
+  "en": "Ephesians",
+  "aliases": [
+   "efesios",
+   "ef",
+   "efe"
+  ]
+ },
+ {
+  "id": "fl",
+  "slug": "filipenses",
+  "bolls": 50,
+  "name": "Filipenses",
+  "abbr": "Fl",
+  "test": "NT",
+  "group": "Cartas de São Paulo",
+  "la": "Ad Philippenses",
+  "en": "Philippians",
+  "aliases": [
+   "filipenses",
+   "fl",
+   "fp",
+   "fil"
+  ]
+ },
+ {
+  "id": "cl",
+  "slug": "colossenses",
+  "bolls": 51,
+  "name": "Colossenses",
+  "abbr": "Cl",
+  "test": "NT",
+  "group": "Cartas de São Paulo",
+  "la": "Ad Colossenses",
+  "en": "Colossians",
+  "aliases": [
+   "colossenses",
+   "cl",
+   "col"
+  ]
+ },
+ {
+  "id": "1ts",
+  "slug": "1-tessalonicenses",
+  "bolls": 52,
+  "name": "1 Tessalonicenses",
+  "abbr": "1Ts",
+  "test": "NT",
+  "group": "Cartas de São Paulo",
+  "la": "I ad Thessalonicenses",
+  "en": "1 Thessalonians",
+  "aliases": [
+   "1tessalonicenses",
+   "1ts",
+   "1tes",
+   "1 tessalonicenses"
+  ]
+ },
+ {
+  "id": "2ts",
+  "slug": "2-tessalonicenses",
+  "bolls": 53,
+  "name": "2 Tessalonicenses",
+  "abbr": "2Ts",
+  "test": "NT",
+  "group": "Cartas de São Paulo",
+  "la": "II ad Thessalonicenses",
+  "en": "2 Thessalonians",
+  "aliases": [
+   "2tessalonicenses",
+   "2ts",
+   "2tes",
+   "2 tessalonicenses"
+  ]
+ },
+ {
+  "id": "1tm",
+  "slug": "1-timoteo",
+  "bolls": 54,
+  "name": "1 Timóteo",
+  "abbr": "1Tm",
+  "test": "NT",
+  "group": "Cartas de São Paulo",
+  "la": "I ad Timotheum",
+  "en": "1 Timothy",
+  "aliases": [
+   "1timoteo",
+   "1tm",
+   "1tim",
+   "1 timoteo"
+  ]
+ },
+ {
+  "id": "2tm",
+  "slug": "2-timoteo",
+  "bolls": 55,
+  "name": "2 Timóteo",
+  "abbr": "2Tm",
+  "test": "NT",
+  "group": "Cartas de São Paulo",
+  "la": "II ad Timotheum",
+  "en": "2 Timothy",
+  "aliases": [
+   "2timoteo",
+   "2tm",
+   "2tim",
+   "2 timoteo"
+  ]
+ },
+ {
+  "id": "tt",
+  "slug": "tito",
+  "bolls": 56,
+  "name": "Tito",
+  "abbr": "Tt",
+  "test": "NT",
+  "group": "Cartas de São Paulo",
+  "la": "Ad Titum",
+  "en": "Titus",
+  "aliases": [
+   "tito",
+   "tt",
+   "tit"
+  ]
+ },
+ {
+  "id": "fm",
+  "slug": "filemon",
+  "bolls": 57,
+  "name": "Filêmon",
+  "abbr": "Fm",
+  "test": "NT",
+  "group": "Cartas de São Paulo",
+  "la": "Ad Philemonem",
+  "en": "Philemon",
+  "aliases": [
+   "filemon",
+   "fm",
+   "flm"
+  ]
+ },
+ {
+  "id": "hb",
+  "slug": "hebreus",
+  "bolls": 58,
+  "name": "Hebreus",
+  "abbr": "Hb",
+  "test": "NT",
+  "group": "Cartas de São Paulo",
+  "la": "Ad Hebraeos",
+  "en": "Hebrews",
+  "aliases": [
+   "hebreus",
+   "hb",
+   "heb"
+  ]
+ },
+ {
+  "id": "tg",
+  "slug": "tiago",
+  "bolls": 59,
+  "name": "Tiago",
+  "abbr": "Tg",
+  "test": "NT",
+  "group": "Cartas Católicas",
+  "la": "Iacobi",
+  "en": "James",
+  "aliases": [
+   "tiago",
+   "tg",
+   "tia"
+  ]
+ },
+ {
+  "id": "1pd",
+  "slug": "1-pedro",
+  "bolls": 60,
+  "name": "1 Pedro",
+  "abbr": "1Pd",
+  "test": "NT",
+  "group": "Cartas Católicas",
+  "la": "I Petri",
+  "en": "1 Peter",
+  "aliases": [
+   "1pedro",
+   "1pd",
+   "1pe",
+   "1 pedro"
+  ]
+ },
+ {
+  "id": "2pd",
+  "slug": "2-pedro",
+  "bolls": 61,
+  "name": "2 Pedro",
+  "abbr": "2Pd",
+  "test": "NT",
+  "group": "Cartas Católicas",
+  "la": "II Petri",
+  "en": "2 Peter",
+  "aliases": [
+   "2pedro",
+   "2pd",
+   "2pe",
+   "2 pedro"
+  ]
+ },
+ {
+  "id": "1jo",
+  "slug": "1-joao",
+  "bolls": 62,
+  "name": "1 João",
+  "abbr": "1Jo",
+  "test": "NT",
+  "group": "Cartas Católicas",
+  "la": "I Ioannis",
+  "en": "1 John",
+  "aliases": [
+   "1joao",
+   "1jo",
+   "1 joao"
+  ]
+ },
+ {
+  "id": "2jo",
+  "slug": "2-joao",
+  "bolls": 63,
+  "name": "2 João",
+  "abbr": "2Jo",
+  "test": "NT",
+  "group": "Cartas Católicas",
+  "la": "II Ioannis",
+  "en": "2 John",
+  "aliases": [
+   "2joao",
+   "2jo",
+   "2 joao"
+  ]
+ },
+ {
+  "id": "3jo",
+  "slug": "3-joao",
+  "bolls": 64,
+  "name": "3 João",
+  "abbr": "3Jo",
+  "test": "NT",
+  "group": "Cartas Católicas",
+  "la": "III Ioannis",
+  "en": "3 John",
+  "aliases": [
+   "3joao",
+   "3jo",
+   "3 joao"
+  ]
+ },
+ {
+  "id": "jd",
+  "slug": "judas",
+  "bolls": 65,
+  "name": "Judas",
+  "abbr": "Jd",
+  "test": "NT",
+  "group": "Cartas Católicas",
+  "la": "Iudae",
+  "en": "Jude",
+  "aliases": [
+   "judas",
+   "jd",
+   "jud"
+  ]
+ },
+ {
+  "id": "ap",
+  "slug": "apocalipse",
+  "bolls": 66,
+  "name": "Apocalipse",
+  "abbr": "Ap",
+  "test": "NT",
+  "group": "Apocalipse",
+  "la": "Apocalypsis",
+  "en": "Apocalypse (Revelation)",
+  "aliases": [
+   "apocalipse",
+   "ap",
+   "apoc",
+   "apo",
+   "rev"
+  ]
+ }
+]

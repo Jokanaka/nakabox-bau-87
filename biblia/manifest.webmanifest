@@ -1,0 +1,23 @@
+{
+  "name": "Bíblia Católica",
+  "short_name": "Bíblia",
+  "description": "Bíblia Católica Apostólica Romana completa (73 livros), com Vulgata Latina, planos de leitura, orações, Santo Rosário e liturgia do dia.",
+  "lang": "pt-BR",
+  "start_url": "./index.html#/inicio",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FFFCF7",
+  "theme_color": "#7B1E3B",
+  "categories": ["books", "education", "lifestyle"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Ler a Bíblia", "url": "./index.html#/biblia", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Santo Rosário", "url": "./index.html#/rosario", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Liturgia de hoje", "url": "./index.html#/liturgia", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
