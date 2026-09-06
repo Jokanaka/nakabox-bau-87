@@ -1,11 +1,13 @@
 /* Service worker — Bíblia Católica
    Shell: precache. Data (data/*.json): cache-first, immutable per version. */
-const SHELL_CACHE = 'bc-v5-shell';   // casca do app: mude a cada versão do código
+const SHELL_CACHE = 'bc-v6-shell';   // casca do app: mude a cada versão do código
 const DATA_CACHE = 'bc-v4-data';     // textos: mude só quando os dados forem regenerados
+const VOICE_CACHE = 'bc-voice-v1';   // runtime do narrador offline (wasm de terceiros)
 const SHELL = [
   './', './index.html', './css/app.css', './manifest.webmanifest',
   './js/app.js', './js/util.js', './js/store.js', './js/data.js', './js/search.js', './js/reader.js',
-  './js/features.js', './js/liturgy.js', './js/audio.js', './js/cloudtts.js', './js/prayers.js', './js/rosary.js', './js/plans.js', './js/share.js',
+  './js/features.js', './js/liturgy.js', './js/audio.js', './js/cloudtts.js', './js/piper-worker.js',
+  './js/vendor/piper/piper-tts-web.js', './js/vendor/piper/piper-o91UDS6e.js', './js/vendor/piper/voices_static-D_OtJDHM.js', './js/vendor/piper/ort-esm.mjs', './js/vendor/piper/ort.wasm.min.js', './js/prayers.js', './js/rosary.js', './js/plans.js', './js/share.js',
   './data/books.json', './data/lectionary.json',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png'
 ];
@@ -16,7 +18,7 @@ self.addEventListener('install', (e) => {
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== SHELL_CACHE && k !== DATA_CACHE).map((k) => caches.delete(k))))
+    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== SHELL_CACHE && k !== DATA_CACHE && k !== VOICE_CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -25,6 +27,19 @@ self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+  // runtime do narrador offline (onnxruntime e piper-wasm nos CDNs): guarda para uso sem internet
+  if ((url.hostname === 'cdnjs.cloudflare.com' || url.hostname === 'cdn.jsdelivr.net') && /onnxruntime-web|piper-wasm/.test(url.pathname)) {
+    e.respondWith(
+      caches.open(VOICE_CACHE).then(async (c) => {
+        const hit = await c.match(req);
+        if (hit) return hit;
+        const res = await fetch(req);
+        if (res.ok) c.put(req, res.clone());
+        return res;
+      })
+    );
+    return;
+  }
   if (url.origin !== location.origin) return;
   if (url.pathname.includes('/data/')) {
     e.respondWith(

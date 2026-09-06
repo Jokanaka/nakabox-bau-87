@@ -6,7 +6,7 @@ const SHOT = '/tmp/claude-0/-home-user-nakabox-bau-87/972f22bb-545c-5ad0-ac6c-c8
 fs.mkdirSync(SHOT, { recursive: true });
 const errors = [];
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' }).catch(async () => chromium.launch());
-const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: 'pt-BR' });
+const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, locale: 'pt-BR', serviceWorkers: 'block' });
 const page = await ctx.newPage();
 // síntese de voz falsa e determinística (o Chromium sem áudio não tem vozes): cada fala dura 400 ms
 await page.addInitScript(() => {
@@ -17,7 +17,7 @@ await page.addInitScript(() => {
   Object.defineProperty(window, 'speechSynthesis', { value: synth, configurable: true });
   window.SpeechSynthesisUtterance = class { constructor(t) { this.text = t; this.lang = ''; this.rate = 1; this.pitch = 1; this.voice = null; } };
 });
-page.on('console', (m) => { if ((m.type() === 'error' || m.type() === 'warning') && !(m.location && (m.location().url || '').includes('texttospeech.googleapis.com'))) errors.push(`[console.${m.type()}] ${m.text()}`); });
+page.on('console', (m) => { if ((m.type() === 'error' || m.type() === 'warning') && !(m.location && (m.location().url || '').includes('texttospeech.googleapis.com')) && !m.text().includes('Service Worker registration blocked')) errors.push(`[console.${m.type()}] ${m.text()}`); });
 page.on('pageerror', (e) => errors.push(`[pageerror] ${e.message}`));
 page.on('requestfailed', (r) => errors.push(`[requestfailed] ${r.url()} ${r.failure()?.errorText}`));
 page.on('response', (r) => { if (r.status() >= 400 && !r.url().includes('texttospeech.googleapis.com')) errors.push(`[http ${r.status()}] ${r.url()}`); });
@@ -182,14 +182,26 @@ await step('19-about', async () => {
   await page.waitForSelector('.card h3', { timeout: 5000 });
 });
 await step('20-sw', async () => {
-  await page.goto(BASE + '#/inicio');
-  await page.waitForTimeout(1500);
-  const sw = await page.evaluate(async () => { const r = await navigator.serviceWorker.getRegistration(); return r ? (r.active ? 'active' : 'registered') : 'none'; });
-  console.log('   service worker:', sw);
+  // o service worker fica bloqueado no teste (para os mocks de rede valerem); confere só que o arquivo é servido e coerente
+  const sw = await page.evaluate(async () => { const r = await fetch('sw.js'); const t = await r.text(); return { status: r.status, shell: (t.match(/SHELL_CACHE = '([^']+)'/) || [])[1], files: (t.match(/'\.\/js\/[^']+'/g) || []).length }; });
+  if (sw.status !== 200 || !sw.shell || sw.files < 15) throw new Error('sw.js: ' + JSON.stringify(sw));
+  console.log('   service worker:', sw.shell, sw.files, 'arquivos na casca');
 });
 // Google Cloud Text-to-Speech simulado: lista de vozes e um WAV curto de silêncio
 const wav = (() => { const sr = 8000, n = 8000; const b = Buffer.alloc(44 + n, 128); b.write('RIFF', 0); b.writeUInt32LE(36 + n, 4); b.write('WAVE', 8); b.write('fmt ', 12); b.writeUInt32LE(16, 16); b.writeUInt16LE(1, 20); b.writeUInt16LE(1, 22); b.writeUInt32LE(sr, 24); b.writeUInt32LE(sr, 28); b.writeUInt16LE(1, 32); b.writeUInt16LE(8, 34); b.write('data', 36); b.writeUInt32LE(n, 40); return b.toString('base64'); })();
 const cloudCalls = { voices: 0, synth: 0 };
+// Narrador offline (Piper): runtime e modelo servidos dos arquivos locais em vez dos CDNs
+const PIPER_DIR = '/tmp/claude-0/-home-user-nakabox-bau-87/972f22bb-545c-5ad0-ac6c-c883efe8c07c/scratchpad/piper';
+const piperCalls = { files: [] };
+await page.route(/cdnjs\.cloudflare\.com\/ajax\/libs\/onnxruntime-web|cdn\.jsdelivr\.net\/npm\/@diffusionstudio\/piper-wasm|huggingface\.co/, async (route) => {
+  const u = new URL(route.request().url());
+  const name = u.pathname.split('/').pop();
+  piperCalls.files.push(name);
+  const local = name.startsWith('ort') ? `${PIPER_DIR}/ort/${name}` : `${PIPER_DIR}/${name}`;
+  if (name === 'voices.json' || !fs.existsSync(local)) return route.fulfill({ status: 404, body: '' });
+  const type = name.endsWith('.js') ? 'application/javascript' : name.endsWith('.wasm') ? 'application/wasm' : name.endsWith('.json') ? 'application/json' : 'application/octet-stream';
+  return route.fulfill({ status: 200, contentType: type, headers: { 'Access-Control-Allow-Origin': '*' }, body: fs.readFileSync(local) });
+});
 await page.route('https://texttospeech.googleapis.com/**', async (route) => {
   const url = new URL(route.request().url());
   if (url.searchParams.get('key') !== 'CHAVE-TESTE') return route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error: { message: 'API key not valid. Please pass a valid API key.' } }) });
@@ -324,6 +336,29 @@ await step('20g-audio-narration-intro', async () => {
   await page.click('#player-root [data-act=next]');
   await page.waitForFunction(() => document.querySelector('#chapter .verse.speaking')?.dataset.v === '1', null, { timeout: 5000 });
   await page.click('#player-root [data-act=stop]');
+});
+await step('20h-audio-offline', async () => {
+  await page.goto(BASE + '#/biblia/jo/3');
+  await page.waitForSelector('#chapter .verse', { timeout: 15000 });
+  await page.click('[data-act=font]'); await page.keyboard.press('Escape');
+  await page.click('[data-act=tts]');
+  await page.waitForSelector('#player-root .player', { timeout: 5000 });
+  await page.click('#player-root [data-act=cfg]');
+  await page.waitForSelector('[data-act=local-on]', { timeout: 5000 });
+  await page.click('[data-act=local-on]');
+  await page.waitForFunction(() => /Voz pronta|Erro/.test(document.querySelector('#au-local-state')?.textContent || ''), null, { timeout: 120000 });
+  const lstate = await page.$eval('#au-local-state', (el) => el.textContent);
+  if (!lstate.includes('Voz pronta')) throw new Error('narrador offline: ' + lstate);
+  await page.screenshot({ path: `${SHOT}/20h-audio-offline-sheet.png` });
+  await page.click('[data-act=ok]');
+  await page.waitForFunction(() => !document.querySelector('.sheet'), null, { timeout: 3000 });
+  await page.waitForFunction(() => { const e = document.querySelector('#player-root .p-engine'); return e && !e.hidden && e.title === 'Narrador offline'; }, null, { timeout: 30000 });
+  await page.waitForFunction(() => document.querySelector('#chapter .verse.speaking')?.dataset.v === '2', null, { timeout: 120000 });
+  const ended = await page.evaluate(() => new Promise((res) => { const a = document.querySelector('audio') || null; res(a ? a.duration : -1); }));
+  await page.screenshot({ path: `${SHOT}/20h-audio-offline-bar.png` });
+  await page.click('#player-root [data-act=stop]');
+  if (!piperCalls.files.some((f) => f.endsWith('.onnx')) || !piperCalls.files.some((f) => f.startsWith('ort-wasm'))) throw new Error('runtime/modelo não foram carregados: ' + piperCalls.files.join(','));
+  await page.evaluate(() => import('./js/store.js').then((m) => { m.store.setSetting('localVoiceOn', false); }));
 });
 await step('21-desktop', async () => {
   await page.setViewportSize({ width: 1200, height: 800 });
