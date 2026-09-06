@@ -344,10 +344,11 @@ def extract_chapter(pdf_path, chapter, lex, expected_count=None, pages=None):
 
 
 class Lexicon:
-    def __init__(self, uni, freq, spell=None):
+    def __init__(self, uni, freq, spell=None, min_freq=5):
         self.uni = uni
         self.freq = freq
         self.spell = spell
+        self.min_freq = min_freq
         self.cache = {}
         self.lower_uni = {}
         for w, c in uni.items():
@@ -361,7 +362,7 @@ class Lexicon:
         r = False
         if w in self.uni or w.lower() in self.lower_uni:
             r = True
-        elif w.lower() in self.freq and self.freq[w.lower()] >= 5:
+        elif w.lower() in self.freq and self.freq[w.lower()] >= self.min_freq:
             r = True
         elif self.spell is not None:
             try:

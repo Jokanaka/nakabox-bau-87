@@ -11,8 +11,8 @@ from modernize import Modernizer
 books = json.load(open('books.json'))
 lx = pickle.load(open('lex.pkl', 'rb'))
 lex = Lexicon(lx['uni'], lx['freq'])
-fixer = Fixer(lex, lx['bi'])
 mod = Modernizer()
+fixer = Fixer(lex, lx['bi'], spell=mod.d)
 vul = json.load(open('VULG.json'))
 vc = collections.defaultdict(dict)
 for v in vul:
@@ -57,6 +57,7 @@ def title_case(t):
 
 
 def finish(t):
+    t = re.sub(r"\bE['’´`](?=\s)", 'É', t)      # "E' fama" (É composto na tipografia antiga)
     t = mod.text(t)
     t = re.sub(r'\s+', ' ', t).strip()
     # capitalise first letter of a verse if it starts with a lowercase letter after a sentence end? keep as is (verses may continue sentences)

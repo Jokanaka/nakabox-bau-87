@@ -170,7 +170,7 @@ function guidedRosary(kind) {
     const s = steps[i];
     const pct = Math.round(i * 100 / (steps.length - 1));
     const beads = s.mystery ? `<div class="beads">${Array.from({ length: 10 }, (_, k) => `<span class="bead ${s.n && k + 1 < s.n ? 'on' : ''} ${s.n === k + 1 ? 'cur' : ''}"></span>`).join('')}</div>` : '';
-    $('#ros', el).innerHTML = `${topbar({ title: m.name, right: `<button class="icon-btn" data-act="x">${icon('close')}</button>` })}
+    $('#ros', el).innerHTML = `${topbar({ title: m.name, right: `<button class="icon-btn" data-act="x" aria-label="Fechar">${icon('close')}</button>` })}
       <div class="rosary-step">
         <div class="ring" style="--p:${pct}%"><div>${pct}%</div></div>
         <div class="kind">${esc(s.kind)}</div>
@@ -219,7 +219,6 @@ async function readingVerses(r) {
   const { getChapter } = await import('./data.js');
   const ver = store.settings.version;
   const segs = r.v ? parseSpec(r.c, r.v) : [{ c: r.c, a: 1, b: 60 }];
-  if (r.b === 'sl') for (const sg of segs) if (sg.b !== Infinity) sg.b += 2; // Vulgata conta o título do Salmo como versículo
   const out = [];
   const cache = new Map();
   for (const sg of segs) {
@@ -262,7 +261,7 @@ export async function renderLiturgy(view, dateISO) {
       const r = readings[k];
       const link = r.b ? `#/biblia/${r.b}/${r.c}${r.v1 ? '/' + r.v1 : ''}` : '';
       return `<div class="reading"><a class="row" ${link ? `href="${link}"` : ''}><div class="grow"><div class="kind">${label}</div><div class="ref">${esc(r.disp || r.raw)}</div></div>${link ? `<span class="chev">${icon('chevR')}</span>` : ''}</a><div class="reading-text" data-k="${k}"></div></div>`;
-    }).join('') + (readings.note ? `<p class="small muted" style="margin-top:8px">${esc(readings.note)}</p>` : '') + `<p class="small muted" style="margin-top:10px">Numeração dos Salmos conforme a Vulgata (entre parênteses, a numeração hebraica). Texto: ${esc(version(store.settings.version).name)}.</p>`;
+    }).join('') + (readings.note ? `<p class="small muted" style="margin-top:8px">${esc(readings.note)}</p>` : '') + `<p class="small muted" style="margin-top:10px">Salmos numerados conforme a Vulgata (entre parênteses, a numeração hebraica); o título do Salmo conta como versículo. Texto: ${esc(version(store.settings.version).name)}.</p>`;
     // texto das leituras
     for (const [k] of parts) {
       const r = readings[k];

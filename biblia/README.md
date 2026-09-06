@@ -63,7 +63,7 @@ Os scripts em `tools/` documentam como o texto foi produzido:
 2. `dl_vols.sh` — baixa os volumes da edição de 1950 (archive.org, PDFs com camada de texto OCR).
 3. `volmap2.py` + `run_vols.py` (ou `dl_pdf.sh` + `run_all.py`) — localiza cada capítulo e extrai os versículos (`ocr_extract.py`),
    validando a contagem de versículos pela Vulgata.
-4. `ocr_fix.py` — corrige erros típicos de OCR com léxico, bigramas e confusões aprendidas por alinhamento (`learn_conf.py` → `learned_conf.json`); `modernize.py` — atualiza a ortografia de 1950 (êle → ele, tôda → toda).
+4. `ocr_fix.py` — corrige erros típicos de OCR com léxico, bigramas, dicionário hunspell (`pt_BR`), confusões aprendidas por alinhamento (`learn_conf.py` → `learned_conf.json`) e junção de palavras partidas por espaços espúrios ("anunciar ás" → "anunciarás"); `modernize.py` — atualiza a ortografia de 1950 (êle → ele, tôda → toda).
 5. `assemble.py` — junta transcrição e OCR, gera `data/figueiredo/*.json` e `data/books.json`.
 6. `build_versions.py` — Vulgata e Douay-Rheims; `build_lectionary.py` — leituras da Missa.
 7. `validate.py` — mede a taxa de erro do OCR contra capítulos transcritos (referência); `e2e.mjs` — testes de navegador (Playwright).

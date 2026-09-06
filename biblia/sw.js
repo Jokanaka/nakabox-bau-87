@@ -1,6 +1,6 @@
 /* Service worker — Bíblia Católica
    Shell: precache. Data (data/*.json): cache-first, immutable per version. */
-const VERSION = 'bc-v2';
+const VERSION = 'bc-v3';
 const SHELL_CACHE = VERSION + '-shell';
 const DATA_CACHE = VERSION + '-data';
 const SHELL = [

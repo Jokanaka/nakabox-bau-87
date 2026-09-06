@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 import json,os,re,pickle,sys,collections
 from ocr_extract import extract_chapter, Lexicon
-from ocr_fix import Fixer
+import importlib
+Fixer=importlib.import_module(os.environ.get('FIXMOD','ocr_fix')).Fixer
 lx=pickle.load(open('lex.pkl','rb')); lex=Lexicon(lx['uni'],lx['freq'])
-fixer=Fixer(lex,lx['bi'])
+try:
+    from spylls.hunspell import Dictionary
+    fixer=Fixer(lex,lx['bi'],spell=Dictionary.from_files('pt_BR'))
+except TypeError:
+    fixer=Fixer(lex,lx['bi'])
 USEFIX=True
 vul=json.load(open('VULG.json'))
 books={b['slug']:b for b in json.load(open('books.json'))}

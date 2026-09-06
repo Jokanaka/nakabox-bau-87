@@ -287,7 +287,7 @@ async function openCompare(b, chapter, v1, v2) {
 export function openBookPicker(curBook, curChapter) {
   const ver = store.settings.version;
   const { el, close } = openModal(`
-    ${topbar({ title: 'Livros', back: true, right: `<button class="icon-btn" data-act="close">${icon('close')}</button>` })}
+    ${topbar({ title: 'Livros', back: true, right: `<button class="icon-btn" data-act="close" aria-label="Fechar">${icon('close')}</button>` })}
     <div class="section" style="padding-bottom:8px"><div class="search-box">${icon('search')}<input id="bk-q" placeholder="Livro ou referência (ex.: Jo 3,16)" autocomplete="off"></div></div>
     <div class="picker-tabs chips"><button class="chip on" data-t="">Todos</button><button class="chip" data-t="AT">Antigo Testamento</button><button class="chip" data-t="NT">Novo Testamento</button><span class="chip" style="opacity:.7">${esc(version(ver).short)}</span></div>
     <div id="bk-list"></div>`);
