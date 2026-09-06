@@ -109,7 +109,7 @@ export async function renderReader(view, { book: bid, chapter, verse, verseEnd, 
   cont.innerHTML = html.join('');
   current.title = ch.title || '';
   store.pushHistory(b.id, chapter);
-  if (audio.consumeAutoplay(`${b.id}.${chapter}`)) setTimeout(() => startTTS(1), 400);   // continuação automática da leitura em voz
+  if (audio.consumeAutoplay(`${b.id}.${chapter}`)) setTimeout(() => startTTS(1).catch(() => {}), 400);   // continuação automática da leitura em voz
   cont.addEventListener('click', (e) => {
     const p = e.target.closest('.verse');
     if (!p || p.classList.contains('empty-v')) return;
@@ -235,7 +235,7 @@ function updateVerseSheet(b, chapter, ch) {
   $('[data-act=share]', el).onclick = () => openShareImage(text, ref);
   $('[data-act=sharetxt]', el).onclick = async () => { const ok = await shareText(`"${text}" (${ref}) — Bíblia Católica`); if (!ok) copyText(`"${text}" (${ref})`); };
   $('[data-act=compare]', el).onclick = () => openCompare(b, chapter, v1, v2);
-  $('[data-act=listen]', el).onclick = () => { sheetRef.close(); startTTS(v1); };
+  $('[data-act=listen]', el).onclick = () => { sheetRef.close(); startTTS(v1).catch(() => {}); };
   $('[data-act=clear]', el).onclick = () => sheetRef.close();
 }
 
@@ -354,19 +354,17 @@ export function openFontSheet() {
 
 // ---------- Áudio (leitura em voz alta, motor em audio.js) ----------
 function ttsLang() { const l = version(store.settings.version).lang; return l === 'la' ? 'it-IT' : l; }
-function toggleTTS() { if (audio.isActive()) stopTTS(); else startTTS(1); }
+function toggleTTS() { if (audio.isActive()) stopTTS(); else startTTS(1).catch(() => {}); }
 function setTtsButton(on) { const btn = $('[data-act=tts]'); if (btn) { btn.innerHTML = on ? icon('stop') : icon('play'); btn.classList.toggle('active', on); } }
 function clearSpeaking() { $$('#chapter .verse.speaking').forEach((x) => x.classList.remove('speaking')); }
-function startTTS(fromVerse) {
+async function startTTS(fromVerse) {
   const b = book(current.book);
-  const items = $$('#chapter .verse:not(.empty-v)').map((p) => ({ v: +p.dataset.v, label: `Versículo ${p.dataset.v}`, text: p.textContent.replace(/^\d+\s*/, '') }));
-  const from = Math.max(0, items.findIndex((x) => x.v >= fromVerse));
-  if (from === 0 && fromVerse <= 1 && store.settings.ttsStyle !== 'normal') {
-    const head = b.id === 'sl' ? `Salmo ${current.chapter}` : `${bookName(b, store.settings.version)}, capítulo ${current.chapter}`;
-    items.unshift({ kind: 'intro', label: 'Introdução', text: `${head}.${current.title ? ' ' + current.title : ''}` });
-  }
-  const ok = audio.play({
-    title: `${bookName(b, store.settings.version)} ${current.chapter}`, items, lang: ttsLang(), from,
+  const chapter = current.chapter;
+  const domItems = $$('#chapter .verse:not(.empty-v)').map((p) => ({ v: +p.dataset.v, label: `Versículo ${p.dataset.v}`, text: p.textContent.replace(/^\d+\s*/, '') }));
+  const head = b.id === 'sl' ? `Salmo ${chapter}` : `${bookName(b, store.settings.version)}, capítulo ${chapter}`;
+  const introText = `${head}.${current.title ? ' ' + current.title : ''}`;
+  const common = {
+    title: `${bookName(b, store.settings.version)} ${chapter}`, lang: ttsLang(),
     onItem: (i, it) => { clearSpeaking(); if (!it.v) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } const p = $(`#v${it.v}`); if (p) { p.classList.add('speaking'); p.scrollIntoView({ block: 'center', behavior: 'smooth' }); } },
     onEnd: (completed) => {
       clearSpeaking(); setTtsButton(false);
@@ -375,8 +373,27 @@ function startTTS(fromVerse) {
         if (next) { audio.requestAutoplay(`${next.book}.${next.chapter}`); go(next.book, next.chapter); }
       }
     },
-  });
-  if (ok) setTtsButton(true);
+  };
+  // narração gravada (voz neural) quando existir para este capítulo e na versão em português
+  if (store.settings.recordedOn !== false && store.settings.version === 'figueiredo') {
+    try {
+      await audio.loadAudioManifest();
+      if (audio.recordedAvailable(b.id, chapter)) {
+        const rec = await audio.recordedChapter(b.id, chapter);
+        if (rec && current.book === b.id && current.chapter === chapter) {
+          const textOf = new Map(domItems.map((x) => [x.v, x.text]));
+          const items = [{ kind: 'intro', label: 'Introdução', text: introText }, ...rec.marks.v.map(([v]) => ({ v, label: `Versículo ${v}`, text: textOf.get(v) || '' }))];
+          const from = fromVerse <= 1 ? 0 : Math.max(0, items.findIndex((x) => x.v && x.v >= fromVerse));
+          if (audio.play({ ...common, items, from, recorded: rec })) setTtsButton(true);
+          return;
+        }
+      }
+    } catch { /* usa as outras vozes */ }
+  }
+  const items = domItems.slice();
+  const from = Math.max(0, items.findIndex((x) => x.v >= fromVerse));
+  if (from === 0 && fromVerse <= 1 && store.settings.ttsStyle !== 'normal') items.unshift({ kind: 'intro', label: 'Introdução', text: introText });
+  if (audio.play({ ...common, items, from })) setTtsButton(true);
 }
 export function stopTTS() { audio.stop(); }
 

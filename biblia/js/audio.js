@@ -20,6 +20,7 @@ const I = {
   timer: '<svg viewBox="0 0 24 24"><path d="M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm0 2a6 6 0 1 1 0 12 6 6 0 0 1 0-12zm-1 2h2v4.6l3 1.8-1 1.7-4-2.4z"/></svg>',
   cloud: '<svg viewBox="0 0 24 24"><path d="M6.5 19a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 17.5 9a4.5 4.5 0 0 1 .5 9.97V19z"/></svg>',
   chip: '<svg viewBox="0 0 24 24"><path d="M7 7h10v10H7zm2 2v6h6V9zM4 9h2v2H4zm0 4h2v2H4zm14-4h2v2h-2zm0 4h2v2h-2zM9 4h2v2H9zm4 0h2v2h-2zM9 18h2v2H9zm4 0h2v2h-2z"/></svg>',
+  mic: '<svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11z"/></svg>',
 };
 const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 const fmtNum = (x) => (+x || 1).toFixed(2).replace(/\.?0+$/, '').replace('.', ',');
@@ -233,6 +234,95 @@ const localEngine = {
 };
 export function localVoiceState() { return localEngine.state(); }
 export function localVoicePrepare(listener) { if (listener) localEngine.listeners.add(listener); localEngine.reset(); localEngine.ensure(); return () => localEngine.listeners.delete(listener); }
+// ---------- narração gravada (MP3 por capítulo com voz neural, gerado de antemão) ----------
+let manifest = null;
+let manifestPromise = null;
+export function loadAudioManifest() {
+  if (manifest) return Promise.resolve(manifest);
+  if (!manifestPromise) {
+    manifestPromise = fetch('data/audio.json', { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : null)).catch(() => null)
+      .then((m) => { manifest = m && m.books ? m : { books: {} }; return manifest; });
+  }
+  return manifestPromise;
+}
+export function recordedAvailable(book, chapter) { return !!(manifest && manifest.base && manifest.books[book] && +chapter >= 1 && +chapter <= manifest.books[book]); }
+export function recordedCount() { return manifest ? Object.values(manifest.books).reduce((a, b) => a + b, 0) : 0; }
+export function recordedBooks() { return manifest ? Object.keys(manifest.books) : []; }
+async function fetchJsonFrom(urls) {
+  let err = null;
+  for (const u of urls) {
+    try { const r = await fetch(u); if (r.ok) return await r.json(); err = new Error(`HTTP ${r.status}`); } catch (e) { err = e; }
+  }
+  throw err || new Error('sem áudio');
+}
+export async function recordedChapter(book, chapter) {
+  await loadAudioManifest();
+  if (!recordedAvailable(book, chapter)) return null;
+  const rel = `${book}/${chapter}`;
+  const bases = [manifest.base, manifest.fallback].filter(Boolean);
+  const marks = await fetchJsonFrom(bases.map((b) => `${b}${rel}.json`));
+  if (!marks || !Array.isArray(marks.v)) return null;
+  return { url: `${manifest.base}${rel}.mp3`, alt: manifest.fallback ? `${manifest.fallback}${rel}.mp3` : null, marks };
+}
+const recEngine = {
+  kind: 'gravado', pausable: true, rec: null, token: null, triedAlt: false,
+  unlock() { cloudEngine.unlock(); },
+  start(rec, fromIdx) {
+    const token = {}; this.token = token; this.rec = rec; this.triedAlt = false;
+    const a = mediaEl();
+    a.onended = null; a.onerror = null; a.ontimeupdate = null; a.onloadedmetadata = null;
+    a.src = rec.url;
+    this.setRate();
+    const startAt = this.itemStart(fromIdx);
+    const begin = () => {
+      if (this.token !== token) return;
+      try { if (startAt > 0) a.currentTime = startAt; } catch { /* ignora */ }
+      a.play().then(() => { if (this.token === token) { st.errors = 0; setStatus(''); updateBar(); } }).catch((e) => { if (this.token === token) this.onFail(e); });
+    };
+    setStatus('Carregando a narração…');
+    if (a.readyState >= 1) begin(); else a.onloadedmetadata = begin;
+    a.ontimeupdate = () => { if (this.token === token) this.sync(); };
+    a.onended = () => { if (this.token === token) finish(true); };
+    a.onerror = () => { if (this.token === token) this.onFail(new Error('não foi possível carregar o áudio')); };
+  },
+  itemStart(idx) {
+    const it = st.items[idx];
+    if (!it || it.kind === 'intro' || !this.rec) return 0;
+    const m = this.rec.marks.v.find((x) => x[0] === it.v);
+    return m ? m[1] : 0;
+  },
+  sync() {
+    if (!this.rec) return;
+    const t = mediaEl().currentTime;
+    const v = this.rec.marks.v;
+    let idx = 0;
+    for (let i = 0; i < v.length; i++) { if (t >= v[i][1] - 0.05) idx = i + 1; else break; }
+    idx = Math.min(idx, st.items.length - 1);
+    if (idx !== st.idx) { st.idx = idx; const it = st.items[idx]; if (it && st.onItem) { try { st.onItem(idx, it); } catch { /* ignora */ } } updateBar(); }
+  },
+  seek(idx) {
+    st.idx = idx;
+    const a = mediaEl();
+    try { a.currentTime = this.itemStart(idx); } catch { /* ignora */ }
+    const it = st.items[idx]; if (it && st.onItem) { try { st.onItem(idx, it); } catch { /* ignora */ } }
+    updateBar();
+    if (!st.paused) a.play().catch(() => {});
+  },
+  onFail(e) {
+    if (this.token === null) return;
+    const a = mediaEl();
+    if (this.rec && this.rec.alt && !this.triedAlt) { this.triedAlt = true; a.src = this.rec.alt; a.play().catch((e2) => this.onFail(e2)); return; }
+    const msg = (e && e.message) || 'erro';
+    const opts = st.fallback;
+    stop({ silent: true });
+    toast(`Narração gravada indisponível (${msg}). Usando outra voz.`, 4000);
+    if (opts) play(opts);
+  },
+  cancel() { this.token = null; this.rec = null; try { const a = mediaEl(); a.pause(); a.ontimeupdate = null; a.onended = null; a.onerror = null; a.onloadedmetadata = null; } catch { /* ignora */ } },
+  pause() { try { mediaEl().pause(); } catch { /* ignora */ } },
+  resume() { try { mediaEl().play().catch(() => {}); } catch { /* ignora */ } },
+  setRate() { try { mediaEl().playbackRate = clamp(+store.settings.ttsRate || 1, 0.5, 2); } catch { /* ignora */ } },
+};
 function chooseEngine(lang) {
   if (cloud.cloudReady(lang)) return cloudEngine;
   if (store.settings.localVoiceOn && String(lang).toLowerCase().startsWith('pt') && localSupported() && !localEngine.failed) return localEngine;
@@ -242,7 +332,17 @@ export function engineName() { return st.active && st.engine ? st.engine.kind : 
 
 // ---------- fila ----------
 // items: [{ text, label?, kind? }] — onItem(i, item) ao começar cada item; onEnd(completed) ao terminar ou parar
-export function play({ title = '', items = [], lang = 'pt-BR', from = 0, onItem = null, onEnd = null } = {}) {
+export function play({ title = '', items = [], lang = 'pt-BR', from = 0, onItem = null, onEnd = null, recorded = null } = {}) {
+  if (recorded && items.length) {
+    stop({ silent: true });
+    recEngine.unlock();
+    Object.assign(st, { title, items, lang, idx: clamp(from, 0, items.length - 1), onItem, onEnd, active: true, paused: false, pausedInPlace: false, errors: 0, engine: recEngine, status: '', fallback: { title, items, lang, from, onItem, onEnd } });
+    document.body.classList.add('has-player');
+    renderBar();
+    const it = st.items[st.idx]; if (it && onItem) { try { onItem(st.idx, it); } catch { /* ignora */ } }
+    recEngine.start(recorded, st.idx);
+    return true;
+  }
   const engine = chooseEngine(lang);
   if (engine === sysEngine && !has) { toast('Seu navegador não tem leitura em voz'); return false; }
   const list = items.filter((x) => x && String(x.text || '').trim());
@@ -342,6 +442,7 @@ export function resume() {
 export function toggle() { if (!st.active) return; if (st.paused) resume(); else pause(); }
 export function skip(delta) {
   if (!st.active) return;
+  if (st.engine === recEngine) { st.paused = false; st.pausedInPlace = false; recEngine.seek(clamp(st.idx + delta, 0, st.items.length - 1)); return; }
   st.idx = clamp(st.idx + delta, 0, st.items.length - 1);
   st.paused = false; st.pausedInPlace = false;
   clearTimeout(st.gap);
@@ -351,7 +452,7 @@ export function skip(delta) {
 function teardown() {
   const onEnd = st.onEnd;
   const engine = st.engine;
-  st.active = false; st.paused = false; st.pausedInPlace = false; st.onEnd = null; st.onItem = null; st.items = []; st.status = '';
+  st.active = false; st.paused = false; st.pausedInPlace = false; st.onEnd = null; st.onItem = null; st.items = []; st.status = ''; st.fallback = null;
   clearTimeout(st.watchdog); clearTimeout(st.restart); clearTimeout(st.gap);
   stopNudge();
   if (engine) engine.cancel(); else sysEngine.cancel();
@@ -372,6 +473,7 @@ function finish(completed) {
 // mudança de voz/velocidade/tom/estilo durante a leitura: recomeça o trecho atual com os novos valores
 function restartCurrent() {
   if (!st.active || st.paused) return;
+  if (st.engine === recEngine) { recEngine.setRate(); return; }
   clearTimeout(st.restart);
   st.restart = setTimeout(() => {
     if (!st.active || st.paused) return;
@@ -489,7 +591,7 @@ function updateBar() {
   $('.p-title', r).textContent = st.title || 'Leitura';
   $('.p-pos', r).textContent = `${st.status || (it.label ? it.label : `${st.idx + 1} de ${st.items.length}`)} · `;
   $('.p-rate', r).textContent = fmtRate(store.settings.ttsRate);
-  const eng = $('.p-engine', r); eng.hidden = !(st.engine === cloudEngine || st.engine === localEngine); eng.innerHTML = st.engine === localEngine ? I.chip : I.cloud; eng.title = st.engine === localEngine ? 'Narrador offline' : 'Narrador na nuvem';
+  const eng = $('.p-engine', r); eng.hidden = !(st.engine === cloudEngine || st.engine === localEngine || st.engine === recEngine); eng.innerHTML = st.engine === recEngine ? I.mic : st.engine === localEngine ? I.chip : I.cloud; eng.title = st.engine === recEngine ? 'Narração gravada' : st.engine === localEngine ? 'Narrador offline' : 'Narrador na nuvem';
   const tg = $('[data-act=toggle]', r);
   tg.innerHTML = st.paused ? icon('play') : I.pause;
   tg.setAttribute('aria-label', st.paused ? 'Continuar' : 'Pausar');
@@ -574,6 +676,9 @@ export function openAudioSheet() {
     <div class="chips" id="au-timer-chips">${mins.map((m) => `<button class="chip" data-min="${m}">${m ? `${m} min` : 'Desligado'}</button>`).join('')}<button class="chip" data-act="attime">No horário…</button></div>
     <div class="row" id="au-time-row" style="margin-top:10px" hidden><input type="time" id="au-time" class="input" value="${esc(s.ttsTimerTime || '22:00')}" aria-label="Horário para parar"><button class="btn sm primary" data-act="settime">Parar nesse horário</button></div>
     <p class="small muted" id="au-timer-state" style="margin-top:8px"></p>
+    <div class="section-title" style="margin-top:16px">Narrador gravado (voz Alex)</div>
+    <p class="small muted">Narração já gravada com uma voz neural masculina, em estilo de história, pronta para tocar sem baixar nada. <span id="au-rec-state">${recordedCount() ? `${recordedCount()} capítulos disponíveis` : 'Carregando a lista…'}</span></p>
+    <div class="setting"><span>Usar narração gravada quando existir</span><button class="switch ${s.recordedOn !== false ? 'on' : ''}" data-act="rec-on" aria-label="Usar narração gravada"></button></div>
     <div class="section-title" style="margin-top:16px">Narrador masculino grátis (no aparelho)</div>
     <p class="small muted">Voz masculina brasileira "Faber", gerada no próprio celular, sem conta nem chave. Baixa cerca de 90 MB uma única vez (use Wi-Fi) e precisa de um aparelho razoavelmente recente; soa mais natural que a maioria das vozes do celular, mas menos que a da nuvem.</p>
     <div class="setting"><span>Usar narrador offline</span><button class="switch ${s.localVoiceOn ? 'on' : ''}" data-act="local-on" aria-label="Usar narrador offline"></button></div>
@@ -615,6 +720,9 @@ export function openAudioSheet() {
     const end = setTimer('time', v);
     if (end) toast(`A leitura para às ${fmtClock(end)}`);
   };
+  // narração gravada
+  loadAudioManifest().then(() => { const x = $('#au-rec-state', el); if (x) x.textContent = recordedCount() ? `${recordedCount()} capítulos disponíveis (${recordedBooks().length} livros)` : 'Ainda sem capítulos gravados.'; });
+  $('[data-act=rec-on]', el).onclick = (e) => { const on = store.settings.recordedOn === false; store.setSetting('recordedOn', on); e.currentTarget.classList.toggle('on', on); toast(on ? 'Narração gravada ligada' : 'Narração gravada desligada'); };
   // narrador offline
   const localState = (x) => {
     const el2 = $('#au-local-state', el); if (!el2) return;

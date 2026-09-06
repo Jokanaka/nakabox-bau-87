@@ -202,6 +202,16 @@ await page.route(/cdnjs\.cloudflare\.com\/ajax\/libs\/onnxruntime-web|cdn\.jsdel
   const type = name.endsWith('.js') ? 'application/javascript' : name.endsWith('.wasm') ? 'application/wasm' : name.endsWith('.json') ? 'application/json' : 'application/octet-stream';
   return route.fulfill({ status: 200, contentType: type, headers: { 'Access-Control-Allow-Origin': '*' }, body: fs.readFileSync(local) });
 });
+// Narração gravada: manifesto e capítulo Mt 1 servidos dos arquivos gerados localmente
+const AUDIO_DIR = '/tmp/claude-0/-home-user-nakabox-bau-87/972f22bb-545c-5ad0-ac6c-c883efe8c07c/scratchpad/audio_out';
+const recCalls = [];
+await page.route('**/data/audio.json', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ voice: 'pm_alex', base: 'https://cdn.jsdelivr.net/gh/jokanaka/nakabox-bau-87@test/', fallback: '', books: { mt: 1 } }) }));
+await page.route(/cdn\.jsdelivr\.net\/gh\/jokanaka\/nakabox-bau-87@test\//, (route) => {
+  const u = new URL(route.request().url()); const rel = u.pathname.split('@test/')[1]; recCalls.push(rel + (route.request().headers()['range'] ? ' [range]' : ''));
+  const local = `${AUDIO_DIR}/${rel}`;
+  if (!fs.existsSync(local)) return route.fulfill({ status: 404, body: '' });
+  return route.fulfill({ status: 200, contentType: rel.endsWith('.json') ? 'application/json' : 'audio/mpeg', headers: { 'Access-Control-Allow-Origin': '*', 'Accept-Ranges': 'bytes' }, body: fs.readFileSync(local) });
+});
 await page.route('https://texttospeech.googleapis.com/**', async (route) => {
   const url = new URL(route.request().url());
   if (url.searchParams.get('key') !== 'CHAVE-TESTE') return route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error: { message: 'API key not valid. Please pass a valid API key.' } }) });
@@ -359,6 +369,30 @@ await step('20h-audio-offline', async () => {
   await page.click('#player-root [data-act=stop]');
   if (!piperCalls.files.some((f) => f.endsWith('.onnx')) || !piperCalls.files.some((f) => f.startsWith('ort-wasm'))) throw new Error('runtime/modelo não foram carregados: ' + piperCalls.files.join(','));
   await page.evaluate(() => import('./js/store.js').then((m) => { m.store.setSetting('localVoiceOn', false); }));
+});
+await step('20i-audio-recorded', async () => {
+  await page.goto(BASE + '#/biblia/mt/1');
+  await page.waitForSelector('#chapter .verse', { timeout: 15000 });
+  await page.click('[data-act=tts]');
+  await page.waitForSelector('#player-root .player', { timeout: 5000 });
+  await page.waitForFunction(() => { const e = document.querySelector('#player-root .p-engine'); return e && !e.hidden && e.title === 'Narração gravada'; }, null, { timeout: 15000 });
+  await page.waitForFunction(() => document.querySelector('#player-root .p-pos')?.textContent.includes('Introdução'), null, { timeout: 15000 });
+  await page.click('#player-root [data-act=next]');
+  await page.waitForFunction(() => document.querySelector('#chapter .verse.speaking')?.dataset.v === '1', null, { timeout: 5000 });
+  await page.click('#player-root [data-act=next]');
+  await page.waitForFunction(() => document.querySelector('#chapter .verse.speaking')?.dataset.v === '2', null, { timeout: 5000 });
+  await page.click('#player-root [data-act=toggle]');
+  await page.waitForFunction(() => document.querySelector('#player-root [data-act=toggle]')?.getAttribute('aria-label') === 'Continuar', null, { timeout: 3000 });
+  await page.click('#player-root [data-act=toggle]');
+  await page.waitForFunction(() => document.querySelector('#player-root [data-act=toggle]')?.getAttribute('aria-label') === 'Pausar', null, { timeout: 3000 });
+  // "Ouvir" a partir do versículo 5 pela folha do versículo
+  await page.click('#chapter .verse[data-v="5"]');
+  await page.waitForSelector('.sheet [data-act=listen]', { timeout: 5000 });
+  await page.click('.sheet [data-act=listen]');
+  await page.waitForFunction(() => document.querySelector('#chapter .verse.speaking')?.dataset.v === '5', null, { timeout: 8000 });
+  await page.screenshot({ path: `${SHOT}/20i-audio-recorded.png` });
+  await page.click('#player-root [data-act=stop]');
+  if (!recCalls.some((r) => r.startsWith('mt/1.json')) || !recCalls.some((r) => r.startsWith('mt/1.mp3'))) throw new Error('áudio gravado não foi pedido: ' + recCalls.join(','));
 });
 await step('21-desktop', async () => {
   await page.setViewportSize({ width: 1200, height: 800 });
