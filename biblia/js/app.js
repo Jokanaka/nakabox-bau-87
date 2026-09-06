@@ -3,6 +3,7 @@ import { $, $$, esc, icon, toast, fmtDate, todayISO, parseISO, copyText } from '
 import { store, parseRefKey } from './store.js';
 import { loadBooks, books, book, VERSIONS, version, refString, refLong, getVerses, verseOfTheDay, dataUrls, parseRef } from './data.js';
 import { renderReader, renderSearch, applySettings, openBookPicker, openFontSheet, stopTTS } from './reader.js';
+import { openAudioSheet } from './audio.js';
 import { renderPlans, renderPlanDetail, renderPrayers, renderPrayer, renderRosary, renderLiturgy } from './features.js';
 import { PLANS, planDays, nextDay, planProgress } from './plans.js';
 import { liturgicalDay, readingsFor } from './liturgy.js';
@@ -202,7 +203,7 @@ function renderSettings(v) {
       <div class="setting"><span>Fonte da leitura</span><div class="seg" data-k="fontFamily"><button data-v="serif" class="${s.fontFamily === 'serif' ? 'on' : ''}">Serifa</button><button data-v="sans" class="${s.fontFamily === 'sans' ? 'on' : ''}">Sem serifa</button></div></div>
       <div class="setting"><span>Tamanho do texto</span><div class="row"><button class="btn sm" data-act="minus">A−</button><b id="fs">${s.fontSize}</b><button class="btn sm" data-act="plus">A+</button></div></div>
       <div class="setting"><span>Números dos versículos</span><button class="switch ${s.showVerseNumbers ? 'on' : ''}" data-act="vn"></button></div>
-      <div class="setting"><span>Velocidade da voz</span><div class="seg" data-k="ttsRate"><button data-v="0.85" class="${s.ttsRate == 0.85 ? 'on' : ''}">Lenta</button><button data-v="1" class="${s.ttsRate == 1 ? 'on' : ''}">Normal</button><button data-v="1.2" class="${s.ttsRate == 1.2 ? 'on' : ''}">Rápida</button></div></div>
+      <div class="setting"><span>Leitura em voz alta</span><button class="btn sm" data-act="audio">Voz, velocidade e temporizador</button></div>
     </div></div>
     <div class="section" style="padding-top:0"><div class="section-title">Versão padrão</div><div class="list">${VERSIONS.map((ver) => `<button class="list-item" data-ver="${ver.id}"><div class="grow"><div class="title">${esc(ver.name)} ${ver.id === s.version ? '✓' : ''}</div><div class="sub">${esc(ver.desc)}</div></div></button>`).join('')}</div></div>`;
   $('[data-act=back]', v).onclick = () => history.back();
@@ -210,6 +211,7 @@ function renderSettings(v) {
   $('[data-act=minus]', v).onclick = () => { store.setSetting('fontSize', Math.max(13, s.fontSize - 1)); $('#fs', v).textContent = s.fontSize; applySettings(); };
   $('[data-act=plus]', v).onclick = () => { store.setSetting('fontSize', Math.min(32, s.fontSize + 1)); $('#fs', v).textContent = s.fontSize; applySettings(); };
   $('[data-act=vn]', v).onclick = (e) => { store.setSetting('showVerseNumbers', !s.showVerseNumbers); e.currentTarget.classList.toggle('on', s.showVerseNumbers); };
+  $('[data-act=audio]', v).onclick = () => openAudioSheet();
   $$('[data-ver]', v).forEach((b) => b.onclick = () => { store.setSetting('version', b.dataset.ver); renderSettings(v); });
 }
 

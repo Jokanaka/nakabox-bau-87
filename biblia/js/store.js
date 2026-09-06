@@ -11,6 +11,11 @@ const DEFAULTS = {
     showVerseNumbers: true,
     version: 'figueiredo',
     ttsRate: 1,
+    ttsPitch: 1,
+    ttsVoice: '',        // voiceURI da voz escolhida ('' = automática)
+    ttsContinue: true,   // continuar lendo no próximo capítulo
+    ttsTimerMin: 15,
+    ttsTimerTime: '22:00',
   },
   last: { book: 'gn', chapter: 1 },
   highlights: {},   // "gn.1.1" -> color

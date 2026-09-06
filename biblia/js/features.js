@@ -8,6 +8,7 @@ import { PRAYERS, PRAYER_GROUPS, prayer as getPrayer, prayersByGroup } from './p
 import { MYSTERIES, mysteryOfDay, rosarySteps, chapletSteps } from './rosary.js';
 import { liturgicalDay, readingsFor, upcoming, SEASON_KEYS } from './liturgy.js';
 import { shareText } from './share.js';
+import * as audio from './audio.js';
 
 // ---------- Planos ----------
 export function renderPlans(view) {
@@ -107,7 +108,7 @@ export function renderPrayer(view, id) {
     $$('[data-l]', view).forEach((b) => b.onclick = () => { latin = b.dataset.l === '1'; render(); });
     $('[data-act=copy]', view).onclick = () => copyText((latin ? p.latin : p.text));
     $('[data-act=share]', view).onclick = async () => { const ok = await shareText(`${p.name}\n\n${latin ? p.latin : p.text}\n\n— Bíblia Católica`); if (!ok) copyText(p.text); };
-    $('[data-act=listen]', view).onclick = () => speak(latin ? p.latin : p.text, latin ? 'it-IT' : 'pt-BR');
+    $('[data-act=listen]', view).onclick = () => speak(latin ? p.latin : p.text, latin ? 'it-IT' : 'pt-BR', p.name);
   };
   render();
 }
@@ -119,14 +120,10 @@ function refLink(ref) {
   const id = { Mt: 'mt', Mc: 'mc', Lc: 'lc', Jo: 'jo', Is: 'is', Sl: 'sl' }[abbr] || abbr.toLowerCase();
   return `${id}/${m[2]}${m[3] ? '/' + m[3] : ''}`;
 }
-let speaking = false;
-export function speak(text, lang = 'pt-BR') {
-  if (!('speechSynthesis' in window)) { toast('Leitura em voz não disponível'); return; }
-  if (speaking) { speechSynthesis.cancel(); speaking = false; return; }
-  const u = new SpeechSynthesisUtterance(text); u.lang = lang; u.rate = store.settings.ttsRate || 1;
-  const v = speechSynthesis.getVoices().find((x) => x.lang.replace('_', '-').toLowerCase().startsWith(lang.slice(0, 2)));
-  if (v) u.voice = v;
-  u.onend = () => { speaking = false; }; speaking = true; speechSynthesis.speak(u);
+export function speak(text, lang = 'pt-BR', title = 'Oração') {
+  if (audio.isActive()) { audio.stop(); return; }
+  const items = String(text || '').split(/\n+/).map((t) => t.trim()).filter(Boolean).map((t) => ({ text: t }));
+  audio.play({ title, items, lang });
 }
 
 // ---------- Rosário ----------
@@ -246,7 +243,7 @@ export async function renderLiturgy(view, dateISO) {
         </div>
       </div>
     </div>
-    <div class="section" style="padding-top:0"><div class="section-title">Leituras da Missa</div><div class="card" id="readings"><div class="skel"></div><div class="skel" style="width:70%"></div></div></div>
+    <div class="section" style="padding-top:0"><div class="row" style="align-items:center"><div class="section-title grow">Leituras da Missa</div><button class="btn sm" data-act="listen-readings" hidden>${icon('play')} Ouvir</button></div><div class="card" id="readings"><div class="skel"></div><div class="skel" style="width:70%"></div></div></div>
     <div class="section" style="padding-top:0"><div class="section-title">Próximas celebrações</div><div class="list cal-list" id="upc"></div></div>`;
   $('[data-act=prev]', view).onclick = () => { location.hash = `#/liturgia/${todayISO(addDays(date, -1))}`; };
   $('[data-act=next]', view).onclick = () => { location.hash = `#/liturgia/${todayISO(addDays(date, 1))}`; };
@@ -271,6 +268,21 @@ export async function renderLiturgy(view, dateISO) {
         const vs = await readingVerses(r);
         if (vs.length) holder.innerHTML = vs.map((x) => `<span class="rv"><sup>${x.c !== r.c ? x.c + ',' : ''}${x.v}</sup>${esc(x.t)}</span>`).join(' ');
       } catch { /* sem texto */ }
+    }
+    const lb = $('[data-act=listen-readings]', view);
+    if (lb && $('#readings .reading-text .rv', view)) {
+      lb.hidden = false;
+      lb.onclick = () => {
+        if (audio.isActive()) { audio.stop(); return; }
+        const items = [];
+        $$('#readings .reading', view).forEach((r) => {
+          const kind = $('.kind', r)?.textContent || '';
+          const ref = $('.ref', r)?.textContent || '';
+          items.push({ text: `${kind}. ${ref}.`, label: kind });
+          $$('.rv', r).forEach((x) => items.push({ text: x.textContent.replace(/^\d+(?:,\d+)?\s*/, ''), label: `${kind} · ${ref}` }));
+        });
+        audio.play({ title: `Leituras · ${lit.name}`, items, lang: store.settings.version === 'vulgata' ? 'it-IT' : store.settings.version === 'drb' ? 'en-US' : 'pt-BR' });
+      };
     }
   }
   const up = upcoming(addDays(date, 1), 10);

@@ -6,11 +6,11 @@ import { openSheet, openModal, topbar, closeAll } from './ui.js';
 import { makeVerseImage, shareImage, shareText } from './share.js';
 import { ensureIndex, search, highlightText } from './search.js';
 import { plan as getPlan, planDays } from './plans.js';
+import * as audio from './audio.js';
 
 const HL_COLORS = ['amarelo', 'verde', 'azul', 'rosa', 'laranja', 'roxo'];
 let selected = new Set();
 let current = { book: 'gn', chapter: 1 };
-let tts = { active: false, idx: 0, verses: [], paused: false };
 
 export function applySettings() {
   const s = store.settings;
@@ -108,6 +108,7 @@ export async function renderReader(view, { book: bid, chapter, verse, verseEnd, 
   }
   cont.innerHTML = html.join('');
   store.pushHistory(b.id, chapter);
+  if (audio.consumeAutoplay(`${b.id}.${chapter}`)) setTimeout(() => startTTS(1), 400);   // continuação automática da leitura em voz
   cont.addEventListener('click', (e) => {
     const p = e.target.closest('.verse');
     if (!p || p.classList.contains('empty-v')) return;
@@ -350,38 +351,29 @@ export function openFontSheet() {
   $('[data-act=vn]', el).onclick = (e) => { store.setSetting('showVerseNumbers', !s.showVerseNumbers); e.currentTarget.classList.toggle('on', s.showVerseNumbers); apply(); };
 }
 
-// ---------- Áudio (síntese de voz) ----------
-function ttsLang() { return version(store.settings.version).lang === 'la' ? 'it-IT' : version(store.settings.version).lang; }
-function toggleTTS(view) { if (tts.active) stopTTS(); else startTTS(1); }
+// ---------- Áudio (leitura em voz alta, motor em audio.js) ----------
+function ttsLang() { const l = version(store.settings.version).lang; return l === 'la' ? 'it-IT' : l; }
+function toggleTTS() { if (audio.isActive()) stopTTS(); else startTTS(1); }
+function setTtsButton(on) { const btn = $('[data-act=tts]'); if (btn) { btn.innerHTML = on ? icon('stop') : icon('play'); btn.classList.toggle('active', on); } }
+function clearSpeaking() { $$('#chapter .verse.speaking').forEach((x) => x.classList.remove('speaking')); }
 function startTTS(fromVerse) {
-  if (!('speechSynthesis' in window)) { toast('Seu navegador não tem leitura em voz'); return; }
-  stopTTS();
-  const ps = $$('#chapter .verse:not(.empty-v)');
-  tts.verses = ps.map((p) => ({ v: +p.dataset.v, text: p.textContent.replace(/^\d+\s*/, '') }));
-  tts.idx = Math.max(0, tts.verses.findIndex((x) => x.v >= fromVerse));
-  tts.active = true;
-  const btn = $('[data-act=tts]'); if (btn) { btn.innerHTML = icon('stop'); btn.classList.add('active'); }
-  speakNext();
+  const b = book(current.book);
+  const items = $$('#chapter .verse:not(.empty-v)').map((p) => ({ v: +p.dataset.v, label: `Versículo ${p.dataset.v}`, text: p.textContent.replace(/^\d+\s*/, '') }));
+  const from = Math.max(0, items.findIndex((x) => x.v >= fromVerse));
+  const ok = audio.play({
+    title: `${bookName(b, store.settings.version)} ${current.chapter}`, items, lang: ttsLang(), from,
+    onItem: (i, it) => { clearSpeaking(); const p = $(`#v${it.v}`); if (p) { p.classList.add('speaking'); p.scrollIntoView({ block: 'center', behavior: 'smooth' }); } },
+    onEnd: (completed) => {
+      clearSpeaking(); setTtsButton(false);
+      if (completed && store.settings.ttsContinue) {
+        const next = nextChapter(current.book, current.chapter);
+        if (next) { audio.requestAutoplay(`${next.book}.${next.chapter}`); go(next.book, next.chapter); }
+      }
+    },
+  });
+  if (ok) setTtsButton(true);
 }
-function speakNext() {
-  if (!tts.active || tts.idx >= tts.verses.length) { stopTTS(); return; }
-  const cur = tts.verses[tts.idx];
-  $$('#chapter .verse.speaking').forEach((x) => x.classList.remove('speaking'));
-  const p = $(`#v${cur.v}`); if (p) { p.classList.add('speaking'); p.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
-  const u = new SpeechSynthesisUtterance(cur.text);
-  u.lang = ttsLang(); u.rate = store.settings.ttsRate || 1;
-  const voice = speechSynthesis.getVoices().find((v) => v.lang.replace('_', '-').toLowerCase().startsWith(u.lang.toLowerCase().slice(0, 2)));
-  if (voice) u.voice = voice;
-  u.onend = () => { tts.idx++; speakNext(); };
-  u.onerror = () => { tts.idx++; speakNext(); };
-  speechSynthesis.speak(u);
-}
-export function stopTTS() {
-  if ('speechSynthesis' in window) speechSynthesis.cancel();
-  tts.active = false;
-  $$('#chapter .verse.speaking').forEach((x) => x.classList.remove('speaking'));
-  const btn = $('[data-act=tts]'); if (btn) { btn.innerHTML = icon('play'); btn.classList.remove('active'); }
-}
+export function stopTTS() { audio.stop(); }
 
 // ---------- Busca ----------
 export function renderSearch(view, { q = '' } = {}) {

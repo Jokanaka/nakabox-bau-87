@@ -58,6 +58,7 @@ def title_case(t):
 
 def finish(t):
     t = re.sub(r"\bE['’´`](?=\s)", 'É', t)      # "E' fama" (É composto na tipografia antiga)
+    t = re.sub(r'(?<=[a-zà-ÿ])([:;,])(?=[A-Za-zÀ-ÿ])', r'\1 ', t)   # "bom:Porque" -> "bom: Porque"
     t = mod.text(t)
     t = re.sub(r'\s+', ' ', t).strip()
     # capitalise first letter of a verse if it starts with a lowercase letter after a sentence end? keep as is (verses may continue sentences)
