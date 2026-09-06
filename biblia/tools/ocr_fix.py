@@ -70,6 +70,9 @@ def char_cleanup(t):
     t = re.sub(r"l\\[fI]", 'M', t)                        # l\fas -> Mas
     t = re.sub(r"(?<![A-Za-zÀ-ÿ])<\s*l\s*:", 'a', t)      # <l: -> a
     t = t.replace('\\', ' ')
+    # parentheses holding only OCR junk, e.g. "(. ' í)" for a footnote mark "(5)"
+    t = re.sub(r'\(\s*[^A-Za-zÀ-ÿ()]{0,5}\s*\)', ' ', t)
+    t = re.sub(r'\(\s*[^A-Za-zÀ-ÿ()]{0,5}[íìlI!|]\s*\)', ' ', t)
     # stray symbols
     t = re.sub(r'[■•·¬~^`´¨§¦†‡°º<>{}]', ' ', t)
     t = t.replace('$', 's')

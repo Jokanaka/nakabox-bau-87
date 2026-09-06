@@ -63,8 +63,70 @@ def finish(t):
     return t
 
 
+
+# Latin verse lengths (Vulgate) used to split verses whose number the OCR lost
+VLEN = collections.defaultdict(dict)
+for v in vul:
+    VLEN[v['book']][(v['chapter'], v['verse'])] = len(v['text'])
+
+def split_inline(vs, exp):
+    """Verse numbers that survived inside the previous verse's text ("... seguem. 14 E, tornei" or "…, 1 40 Kebon")."""
+    done = 0
+    for n in range(1, exp):
+        if n not in vs or (n + 1) in vs:
+            continue
+        t = vs[n]
+        digits = str(n + 1)
+        numpat = r"[\'’\.\s]?".join(re.escape(d) for d in digits)   # tolerate "2'1", "2 1", "2.1"
+        m = re.search(r'(?:[.:;,!?]|\s\d)\s+(' + numpat + r')\s+(?=[A-ZÀ-Ú"“(])', t)
+        if not m or m.start() < 8:
+            continue
+        head = t[:m.start() + 1].rstrip()
+        head = re.sub(r'\s\d$', '', head)          # drop the stray footnote digit
+        vs[n] = head.strip()
+        vs[n + 1] = t[m.end():].strip()
+        done += 1
+    return done
+
+
+def split_merged(vs, exp, bolls, c):
+    """vs: {verse_no: text}. When verses i..j are missing and i-1 is present, split the text of i-1
+    proportionally to the Vulgate lengths at punctuation boundaries. Returns number of splits done."""
+    done = split_inline(vs, exp)
+    i = 2
+    while i <= exp:
+        if i in vs or (i - 1) not in vs:
+            i += 1; continue
+        j = i
+        while j + 1 <= exp and (j + 1) not in vs: j += 1
+        T = vs[i - 1]
+        lens = [VLEN[bolls].get((c, k), 0) for k in range(i - 1, j + 1)]
+        if not all(lens) or len(T) < 1.2 * sum(lens):
+            i = j + 1; continue
+        parts = []
+        rest = T; consumed = 0
+        ok = True
+        for k in range(len(lens) - 1):
+            remaining = sum(lens[k:])
+            target = len(rest) * lens[k] / remaining
+            # candidate boundaries: after . : ; ! ? followed by space
+            cands = [m.end() for m in re.finditer(r'[.:;!?]\s+', rest)]
+            cands = [p for p in cands if abs(p - target) <= 0.35 * len(rest) and 10 < p < len(rest) - 10]
+            if not cands: ok = False; break
+            p = min(cands, key=lambda x: abs(x - target))
+            parts.append(rest[:p].strip()); rest = rest[p:].strip()
+        if not ok:
+            i = j + 1; continue
+        parts.append(rest)
+        for k, txt in enumerate(parts):
+            vs[i - 1 + k] = txt[:1].upper() + txt[1:] if k else txt
+        done += len(parts) - 1
+        i = j + 1
+    return done
+
 report = []
 catalog = []
+tot_split = 0
 tot_tr = tot_ocr = 0
 for b in books:
     slug = b['slug']
@@ -113,6 +175,8 @@ for b in books:
                 report.append((slug, c, 'NO TEXT'))
             else:
                 vs = {int(k): v for k, v in o['verses'].items()}
+                nsplit = split_merged(vs, exp, b['bolls'], c)
+                tot_split += nsplit
                 mx = max(max(vs) if vs else 0, exp)
                 arr = []
                 for i in range(1, mx + 1):
@@ -125,6 +189,8 @@ for b in books:
                     entry['title'] = finish(title_case(fixer.fix_text(o['title'])))
                 entry['src'] = 'ocr'
                 missing = [i for i in range(1, exp + 1) if not arr[i - 1]]
+                if nsplit:
+                    entry['split'] = nsplit
                 if missing or len(vs) != exp:
                     entry['warn'] = 1
                     report.append((slug, c, f'verses {len(vs)}/{exp} missing={missing[:6]} {o.get("warnings", [])[:3]}'))
@@ -135,7 +201,7 @@ for b in books:
     catalog.append({k: b[k] for k in ('id', 'slug', 'name', 'abbr', 'test', 'group', 'la', 'en', 'aliases')} | {'deutero': bool(b.get('deutero')), 'chapters': nch, 'verses': [vc[b['bolls']][c] for c in range(1, nch + 1)]})
 
 json.dump(catalog, open(f'{OUT}/books.json', 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
-print('transcribed chapters', tot_tr, 'ocr chapters', tot_ocr, 'problems', len(report))
+print('transcribed chapters', tot_tr, 'ocr chapters', tot_ocr, 'problems', len(report), 'verses split by proportion', tot_split)
 with open('assemble_report.txt', 'w') as f:
     for r in report:
         f.write(f'{r[0]} {r[1]} {r[2]}\n')

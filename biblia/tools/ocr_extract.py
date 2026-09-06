@@ -192,6 +192,9 @@ def parse_verse_start(t, exp):
     m = re.match(r'^(\d{1,3})([A-Za-zÀ-ÿ].*)$', t)
     if m:
         cands.append((m.group(1), m.group(2)))
+    m = re.match(r'^\d\s+(' + DIGC + r'{1,3})\s+(.*)$', t)   # stray footnote digit before the verse number: "1 40 Kebon"
+    if m:
+        cands.append((m.group(1), m.group(2)))
     for tok, rest in cands:
         n = norm_int(tok)
         if n is None or n not in accept:
@@ -312,6 +315,10 @@ def extract_chapter(pdf_path, chapter, lex, expected_count=None, pages=None):
         else:
             buf = buf.rstrip() + ' ' + t.lstrip()
     flush()
+    if heading and 1 not in verses and 2 in verses and len(heading.split()) >= 3:
+        verses[1] = clean_text(heading)   # verse 1 whose number the OCR lost
+        heading = None
+        warnings.append('heading->v1')
     tj = ''
     for tp in title_parts:
         if tj.rstrip().endswith(('-', '\u00ad')):

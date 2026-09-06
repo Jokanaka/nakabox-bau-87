@@ -1,7 +1,7 @@
 // Telas: planos de leitura, orações, rosário, liturgia
 import { $, $$, esc, icon, toast, copyText, fmtDate, todayISO, parseISO, addDays, norm } from './util.js';
 import { store } from './store.js';
-import { book, refString, refLong, getVerses } from './data.js';
+import { book, refString, refLong, getVerses, version } from './data.js';
 import { openSheet, openModal, topbar, confirm } from './ui.js';
 import { PLANS, plan as getPlan, planDays, planProgress, nextDay } from './plans.js';
 import { PRAYERS, PRAYER_GROUPS, prayer as getPrayer, prayersByGroup } from './prayers.js';
@@ -193,6 +193,43 @@ function guidedRosary(kind) {
 }
 
 // ---------- Liturgia ----------
+// referência de versículos -> segmentos [{c, a, b}] (b = Infinity: até o fim do capítulo)
+// aceita "1-2, 6-7", "13-18b", "23—3:9", "2-3; 2:2-4", "8 and 10" (formato da API) e "1-5.9-11", "23–3,6" (formato brasileiro)
+function parseSpec(c0, spec) {
+  const segs = [];
+  let c = c0;
+  const s = String(spec || '')
+    .replace(/(\d),(\d)/g, '$1:$2')       // "3,6" -> "3:6" (capítulo,versículo)
+    .replace(/(\d[a-d]*)\.(\d)/g, '$1, $2') // "1-5.9-11" -> "1-5, 9-11"
+    .replace(/\s+(?:and|e)\s+/g, ', ');
+  for (const raw of s.split(/[;,]/)) {
+    const p = raw.trim().replace(/(\d)[a-d]{1,2}\b/g, '$1');
+    if (!p) continue;
+    const m = p.match(/^(?:(\d+):)?(\d+)(?:\s*[-–—]\s*(?:(\d+):)?(\d+))?$/);
+    if (!m) continue;
+    if (m[1]) c = +m[1];
+    const a = +m[2];
+    if (m[3]) { segs.push({ c, a, b: Infinity }); c = +m[3]; segs.push({ c, a: 1, b: +m[4] }); }
+    else segs.push({ c, a, b: m[4] ? Math.max(a, +m[4]) : a });
+  }
+  return segs;
+}
+// texto de uma leitura na versão escolhida: [{c, v, t}]
+async function readingVerses(r) {
+  const { getChapter } = await import('./data.js');
+  const ver = store.settings.version;
+  const segs = r.v ? parseSpec(r.c, r.v) : [{ c: r.c, a: 1, b: 60 }];
+  if (r.b === 'sl') for (const sg of segs) if (sg.b !== Infinity) sg.b += 2; // Vulgata conta o título do Salmo como versículo
+  const out = [];
+  const cache = new Map();
+  for (const sg of segs) {
+    if (!cache.has(sg.c)) cache.set(sg.c, await getChapter(ver, r.b, sg.c));
+    const ch = cache.get(sg.c);
+    if (!ch) continue;
+    ch.verses.forEach((t, i) => { const v = i + 1; if (t && v >= sg.a && v <= sg.b && !out.some((x) => x.c === sg.c && x.v === v)) out.push({ c: sg.c, v, t }); });
+  }
+  return out;
+}
 export async function renderLiturgy(view, dateISO) {
   const date = dateISO ? parseISO(dateISO) : new Date();
   const iso = todayISO(date);
@@ -224,8 +261,18 @@ export async function renderLiturgy(view, dateISO) {
     box.innerHTML = parts.map(([k, label]) => {
       const r = readings[k];
       const link = r.b ? `#/biblia/${r.b}/${r.c}${r.v1 ? '/' + r.v1 : ''}` : '';
-      return `<a class="reading row" ${link ? `href="${link}"` : ''}><div class="grow"><div class="kind">${label}</div><div class="ref">${esc(r.disp || r.raw)}</div></div>${link ? `<span class="chev">${icon('chevR')}</span>` : ''}</a>`;
-    }).join('') + (readings.note ? `<p class="small muted" style="margin-top:8px">${esc(readings.note)}</p>` : '') + `<p class="small muted" style="margin-top:10px">Numeração dos Salmos conforme a Vulgata (entre parênteses, a numeração hebraica).</p>`;
+      return `<div class="reading"><a class="row" ${link ? `href="${link}"` : ''}><div class="grow"><div class="kind">${label}</div><div class="ref">${esc(r.disp || r.raw)}</div></div>${link ? `<span class="chev">${icon('chevR')}</span>` : ''}</a><div class="reading-text" data-k="${k}"></div></div>`;
+    }).join('') + (readings.note ? `<p class="small muted" style="margin-top:8px">${esc(readings.note)}</p>` : '') + `<p class="small muted" style="margin-top:10px">Numeração dos Salmos conforme a Vulgata (entre parênteses, a numeração hebraica). Texto: ${esc(version(store.settings.version).name)}.</p>`;
+    // texto das leituras
+    for (const [k] of parts) {
+      const r = readings[k];
+      const holder = box.querySelector(`.reading-text[data-k="${k}"]`);
+      if (!r.b || !holder) continue;
+      try {
+        const vs = await readingVerses(r);
+        if (vs.length) holder.innerHTML = vs.map((x) => `<span class="rv"><sup>${x.c !== r.c ? x.c + ',' : ''}${x.v}</sup>${esc(x.t)}</span>`).join(' ');
+      } catch { /* sem texto */ }
+    }
   }
   const up = upcoming(addDays(date, 1), 10);
   $('#upc', view).innerHTML = up.map((u) => `<a class="list-item" href="#/liturgia/${todayISO(u.date)}"><div class="date"><b>${u.date.getDate()}</b><span>${esc(fmtDate(u.date, { month: 'short' })).replace('.', '')}</span></div><div class="grow"><div class="title">${esc(u.name)}</div><div class="sub">${u.rank === 'S' ? 'Solenidade' : u.rank === 'F' ? 'Festa' : 'Memória'} · ${esc(u.season)}</div></div><span class="chev">${icon('chevR')}</span></a>`).join('');

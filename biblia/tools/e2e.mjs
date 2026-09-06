@@ -148,6 +148,7 @@ await step('15-liturgy', async () => {
   await page.goto(BASE + '#/liturgia');
   await page.waitForSelector('#readings .reading, #readings p', { timeout: 15000 });
   await page.waitForSelector('#upc .list-item', { timeout: 5000 });
+  await page.waitForFunction(() => document.querySelector('#readings .reading-text .rv'), null, { timeout: 20000 });
 });
 await step('16-liturgy-christmas', async () => {
   await page.goto(BASE + '#/liturgia/2026-12-25');
