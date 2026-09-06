@@ -74,6 +74,7 @@ async function renderHome(v) {
       <div class="date">${esc(cap(fmtDate(now)))}</div>
       <h1>${greet}! ✝</h1>
       <a class="lit" href="#/liturgia"><span class="lit-dot" style="background:${lit.colorHex}"></span>${esc(lit.name)} · Ano ${lit.cycle}</a>
+      ${lit.memorial ? `<div class="small muted" style="margin-top:2px">🕯️ ${esc(lit.memorial.n)}</div>` : ''}
     </div>
     <div class="section">
       <div class="card accent" id="votd">

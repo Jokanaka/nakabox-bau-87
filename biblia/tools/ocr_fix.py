@@ -19,6 +19,7 @@ CONF = [
 CONF_D = {}
 for s, d in CONF:
     CONF_D.setdefault(s, []).append(d)
+
 MAX_SRC = 2
 
 # real-word confusions decided by bigram context: token -> alternative
@@ -34,6 +35,22 @@ REALWORD = {
 }
 # tokens that must never be changed by the real-word pass
 REALWORD_SAFE = {'e', 'é', 'a', 'à', 'as', 'às', 'o', 'ó', 'da', 'dá', 'se', 'nos', 'nós', 'vos', 'vós', 'por', 'pôr', 'para', 'pára', 'aí', 'ai', 'pôs', 'pós', 'êle', 'ele'}
+
+# learned from aligning OCR output with the transcription (learn_conf.py)
+LEARNED_WORDS = {}
+try:
+    import os, json as _json
+    _lp = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'learned_conf.json')
+    if os.path.exists(_lp):
+        _L = _json.load(open(_lp, encoding='utf-8'))
+        for _s, _d, _n in _L.get('chars', []):
+            if _s and _d not in CONF_D.get(_s, []):
+                CONF_D.setdefault(_s, []).append(_d)
+        LEARNED_WORDS = _L.get('words', {})
+        for _x, _y in _L.get('real', {}).items():
+            REALWORD.setdefault(_x.lower(), _y.lower())
+except Exception:
+    pass
 
 TOKEN_RE = re.compile(r"[A-Za-zÀ-ÿ0-9$!|]+(?:['’-][A-Za-zÀ-ÿ0-9]+)*|\S")
 
@@ -97,6 +114,9 @@ class Fixer:
     def fix_word(self, w):
         if w in self.cache:
             return self.cache[w]
+        if w in LEARNED_WORDS:
+            self.cache[w] = LEARNED_WORDS[w]
+            return LEARNED_WORDS[w]
         res = w
         if not re.search(r'[A-Za-zÀ-ÿ]', w) or self.lex.known(w):
             self.cache[w] = w

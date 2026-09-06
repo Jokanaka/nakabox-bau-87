@@ -160,8 +160,8 @@ function guidedRosary(kind) {
   const steps = rosarySteps(kind);
   let i = 0;
   const m = MYSTERIES[kind];
-  const { el, close } = openModal(`<div id="ros"></div>`);
   let wake = null;
+  const { el, close } = openModal(`<div id="ros"></div>`, { onClose: () => { if (wake) { try { wake.release(); } catch { /* */ } wake = null; } } });
   if (navigator.wakeLock) navigator.wakeLock.request('screen').then((w) => { wake = w; }).catch(() => {});
   const render = () => {
     const s = steps[i];
@@ -187,8 +187,6 @@ function guidedRosary(kind) {
     const ref = $('[data-act=ref]', el); if (ref) ref.onclick = () => close();
   };
   render();
-  const origClose = close;
-  el.addEventListener('remove', () => { if (wake) wake.release(); });
 }
 
 // ---------- Liturgia ----------
