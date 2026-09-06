@@ -56,11 +56,23 @@ await step('00-simple-mode', async () => {
   await page.click('[data-act=tts]');
   await page.waitForSelector('#player-root .player', { timeout: 5000 });
   await page.click('#player-root [data-act=cfg]');
-  await page.waitForSelector('#au-rec-voice', { timeout: 5000 });
-  if (await page.$('#au-key') || await page.$('#au-pitch')) throw new Error('modo simples não deveria mostrar nuvem/tom da voz');
-  if (!await page.$('#au-voice')) throw new Error('modo simples deveria mostrar a voz do aparelho');
+  await page.waitForSelector('.sheet [data-act=voice]', { timeout: 5000 });
+  if (await page.$('#au-key') || await page.$('#au-pitch') || await page.$('#au-voice')) throw new Error('modo simples não deveria mostrar nuvem/tom/seletor antigo');
   await page.waitForFunction(() => /ainda não tem narração gravada/.test(document.querySelector('#au-now')?.textContent || '') && /Lendo agora/.test(document.querySelector('#au-now')?.textContent || ''), null, { timeout: 5000 });
   await page.screenshot({ path: `${SHOT}/00-simple-sheet.png` });
+  // botão único "Voz": vozes gravadas + vozes do celular
+  await page.click('.sheet [data-act=voice]');
+  await page.waitForSelector('.voice-row[data-kind=rec][data-id=alex]', { timeout: 5000 });
+  await page.waitForFunction(() => document.querySelectorAll('.voice-row[data-kind=rec]').length === 3 && document.querySelector('.voice-row[data-kind=dev][data-id=""]') && document.querySelector('.voice-row[data-kind=rec][data-id=alex].on'), null, { timeout: 5000 });
+  if (!/ainda não tem Gênesis 1/.test(await page.$eval('.voice-row[data-id=alex] .vdesc', (el) => el.textContent))) throw new Error('descrição do Alex: ' + await page.$eval('.voice-row[data-id=alex] .vdesc', (el) => el.textContent));
+  await page.waitForTimeout(350);   // fim da animação da folha
+  await page.screenshot({ path: `${SHOT}/00-voice-picker.png` });
+  await page.click('.sheet [data-act=ok]');
+  await page.waitForFunction(() => !document.querySelector('.sheet'), null, { timeout: 3000 });
+  // em Gênesis 1 (sem gravação) quem lê é a voz do celular: o botão mostra a voz que está lendo de fato
+  if (!/Celular|teste/.test(await page.$eval('#player-root .p-voice', (el) => el.textContent))) throw new Error('botão Voz na barra: ' + await page.$eval('#player-root .p-voice', (el) => el.textContent));
+  await page.click('#player-root [data-act=cfg]');
+  await page.waitForSelector('[data-act=advanced]', { timeout: 5000 });
   await page.click('[data-act=advanced]');
   await page.waitForSelector('#au-key', { timeout: 5000 });
   await page.click('[data-act=ok]');
@@ -427,22 +439,37 @@ await step('20i-audio-recorded', async () => {
   await page.click('[data-act=tts]');
   await page.waitForSelector('#player-root .player', { timeout: 5000 });
   await page.click('#player-root [data-act=cfg]');
-  await page.waitForSelector('#au-rec-voice', { timeout: 5000 });
-  await page.waitForFunction(() => document.querySelectorAll('#au-rec-voice option').length === 3 && document.querySelector('#au-rec-state')?.textContent.includes('Alex: 1'), null, { timeout: 5000 });
+  await page.waitForSelector('.sheet [data-act=voice]', { timeout: 5000 });
   const title = await page.$eval('#player-root .p-engine', (el) => el.title);
   if (!title.includes('Alex')) throw new Error('nome da voz na barra: ' + title);
   if (!/Mateus 1 tem narração gravada \(Alex, Santa\)/.test(await page.$eval('#au-now', (el) => el.textContent))) throw new Error('lendo agora: ' + await page.$eval('#au-now', (el) => el.textContent));
-  // troca para Santa: a leitura recomeça no versículo atual com a voz nova
-  await page.selectOption('#au-rec-voice', 'santa');
-  await page.waitForFunction(() => (document.querySelector('#player-root .p-engine')?.title || '').includes('Santa'), null, { timeout: 8000 });
+  await page.click('[data-act=ok]');
+  // botão Voz na barra: troca para Santa no meio da leitura (recomeça no versículo atual)
+  await page.click('#player-root [data-act=voice]');
+  await page.waitForSelector('.voice-row[data-id=santa] [data-act=pick]', { timeout: 5000 });
+  if (!/lê Mateus 1/.test(await page.$eval('.voice-row[data-id=santa] .vdesc', (el) => el.textContent))) throw new Error('descrição da Santa: ' + await page.$eval('.voice-row[data-id=santa] .vdesc', (el) => el.textContent));
+  await page.click('.voice-row[data-id=santa] [data-act=pick]');
+  await page.waitForFunction(() => (document.querySelector('#player-root .p-engine')?.title || '').includes('Santa') && /Santa/.test(document.querySelector('#player-root .p-voice')?.textContent || ''), null, { timeout: 8000 });
   await page.waitForFunction(() => document.querySelector('#chapter .verse.speaking'), null, { timeout: 8000 });
   if (!recCalls.some((r) => r.startsWith('santa/mt/1.mp3'))) throw new Error('áudio da Santa não foi pedido: ' + recCalls.join(','));
   // Dora ainda não tem o capítulo: avisa e continua com a Santa
-  await page.selectOption('#au-rec-voice', 'dora');
-  await page.waitForFunction(() => /Dora ainda não narra este capítulo/.test(document.querySelector('#toast')?.textContent || ''), null, { timeout: 5000 });
+  await page.click('#player-root [data-act=voice]');
+  await page.waitForSelector('.voice-row[data-id=dora] [data-act=pick]', { timeout: 5000 });
+  await page.click('.voice-row[data-id=dora] [data-act=pick]');
+  await page.waitForFunction(() => /Dora vai ler os capítulos já gravados/.test(document.querySelector('#toast')?.textContent || ''), null, { timeout: 5000 });
   if (!(await page.$eval('#player-root .p-engine', (el) => el.title)).includes('Santa')) throw new Error('a voz deveria continuar Santa');
+  // voz do celular no meio da narração gravada, e volta para o Alex (gravada) a partir do versículo atual
+  await page.click('#player-root [data-act=voice]');
+  await page.waitForSelector('.voice-row[data-kind=dev][data-id=""] [data-act=pick]', { timeout: 5000 });
+  await page.click('.voice-row[data-kind=dev][data-id=""] [data-act=pick]');
+  await page.waitForFunction(() => document.querySelector('#player-root .p-engine')?.hidden === true && document.querySelector('#chapter .verse.speaking'), null, { timeout: 8000 });
+  await page.click('#player-root [data-act=voice]');
+  await page.waitForSelector('.voice-row[data-id=alex] [data-act=pick]', { timeout: 5000 });
+  await page.waitForTimeout(350);   // fim da animação da folha
+  await page.screenshot({ path: `${SHOT}/20i-voice-picker.png` });
+  await page.click('.voice-row[data-id=alex] [data-act=pick]');
+  await page.waitForFunction(() => (document.querySelector('#player-root .p-engine')?.title || '').includes('Alex') && document.querySelector('#chapter .verse.speaking'), null, { timeout: 8000 });
   await page.screenshot({ path: `${SHOT}/20i-voice-switch.png` });
-  await page.click('[data-act=ok]');
   await page.click('#player-root [data-act=stop]');
 });
 await step('22-progress', async () => {

@@ -401,6 +401,17 @@ select.input { width: 100%; appearance: auto; -webkit-appearance: menulist; font
 .au-help ol { padding-left: 20px; margin: 10px 0; display: grid; gap: 6px; }
 .au-help code { font-size: 12px; background: var(--surface-2); padding: 1px 4px; border-radius: 4px; }
 .player .p-engine svg { width: 14px; height: 14px; fill: var(--accent); vertical-align: -2px; }
+.player .p-voice { display: inline-flex; align-items: center; gap: 4px; margin-left: 4px; border: 1px solid var(--border); background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 12px; line-height: 1; border-radius: 999px; padding: 3px 9px; cursor: pointer; max-width: 42vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-ui); }
+.player .p-voice svg { width: 12px; height: 12px; fill: currentColor; flex: none; }
+/* seletor único de voz */
+.voice-row { display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--border); }
+.voice-row .vmain { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 11px 6px; border: 0; background: transparent; text-align: left; cursor: pointer; color: var(--text); font-family: var(--font-ui); }
+.voice-row .vname { font-weight: 700; font-size: 16px; }
+.voice-row .vdesc { font-size: 12px; color: var(--muted); line-height: 1.35; }
+.voice-row.on .vmain { color: var(--accent); }
+.voice-row.on .vname::after { content: " ✓"; }
+.voice-row .vplay { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); display: grid; place-items: center; cursor: pointer; flex: none; }
+.voice-row .vplay svg { width: 18px; height: 18px; fill: var(--accent); }
 #au-key { flex: 1; min-width: 0; font-family: ui-monospace, monospace; font-size: 13px; }
 .au-help { padding: 20px 18px calc(24px + env(safe-area-inset-bottom)); }
 .au-help h3 { margin-bottom: 8px; }
