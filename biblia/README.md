@@ -17,7 +17,8 @@ Não há etapa de build: é HTML, CSS e JavaScript puro (módulos ES).
 
 - **Leitor**: livro/capítulo, três versões (Figueiredo em português, Vulgata Clementina em latim, Douay-Rheims em inglês),
   tamanho de fonte, serifa/sem serifa, temas claro/sépia/escuro, deslizar para mudar de capítulo.
-- **Leitura em voz alta** (voz do sistema) com barra de controle, escolha da voz, velocidade, tom, continuação automática no próximo capítulo e temporizador para parar (em N minutos ou num horário); também nas orações e nas leituras da Missa.
+- **Leitura em voz alta** com barra de controle, escolha da voz (preferindo a masculina do aparelho), estilo "narração" (pausas entre frases e versículos, apresentação do capítulo), velocidade, tom, continuação automática no próximo capítulo, temporizador para parar (em N minutos ou num horário) e controles na tela de bloqueio; também nas orações e nas leituras da Missa.
+- **Narrador humano na nuvem** (opcional): com a própria chave do Google Cloud Text-to-Speech, o app usa as vozes neurais do Google (Chirp 3 HD, Neural2), masculinas e muito naturais, guardando cada trecho no aparelho para não gastar a cota duas vezes. A chave fica só no aparelho e não entra no backup.
 - **Versículos**: destaques em 6 cores, notas, favoritos, copiar, compartilhar como texto ou imagem, comparar versões.
 - **Busca** em toda a Bíblia ou em um só livro (sem acentos), frases entre aspas e referências (`Jo 3,16`, `Sl 22`).
 - Salmos com a numeração da Vulgata e, no cabeçalho, a numeração hebraica das Bíblias modernas.

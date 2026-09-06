@@ -107,6 +107,7 @@ export async function renderReader(view, { book: bid, chapter, verse, verseEnd, 
     html.push(`<div class="ocr-note">${icon('warn')}<div>Texto extraído por reconhecimento óptico (OCR) da edição de 1950; pode conter pequenos erros. <a href="https://bibliatraduzida.com/edicoes/figueiredo/${esc(b.slug || '')}/${chapter}.pdf" target="_blank" rel="noopener">Ver a página original</a>.</div></div>`);
   }
   cont.innerHTML = html.join('');
+  current.title = ch.title || '';
   store.pushHistory(b.id, chapter);
   if (audio.consumeAutoplay(`${b.id}.${chapter}`)) setTimeout(() => startTTS(1), 400);   // continuação automática da leitura em voz
   cont.addEventListener('click', (e) => {
@@ -360,9 +361,13 @@ function startTTS(fromVerse) {
   const b = book(current.book);
   const items = $$('#chapter .verse:not(.empty-v)').map((p) => ({ v: +p.dataset.v, label: `Versículo ${p.dataset.v}`, text: p.textContent.replace(/^\d+\s*/, '') }));
   const from = Math.max(0, items.findIndex((x) => x.v >= fromVerse));
+  if (from === 0 && fromVerse <= 1 && store.settings.ttsStyle !== 'normal') {
+    const head = b.id === 'sl' ? `Salmo ${current.chapter}` : `${bookName(b, store.settings.version)}, capítulo ${current.chapter}`;
+    items.unshift({ kind: 'intro', label: 'Introdução', text: `${head}.${current.title ? ' ' + current.title : ''}` });
+  }
   const ok = audio.play({
     title: `${bookName(b, store.settings.version)} ${current.chapter}`, items, lang: ttsLang(), from,
-    onItem: (i, it) => { clearSpeaking(); const p = $(`#v${it.v}`); if (p) { p.classList.add('speaking'); p.scrollIntoView({ block: 'center', behavior: 'smooth' }); } },
+    onItem: (i, it) => { clearSpeaking(); if (!it.v) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } const p = $(`#v${it.v}`); if (p) { p.classList.add('speaking'); p.scrollIntoView({ block: 'center', behavior: 'smooth' }); } },
     onEnd: (completed) => {
       clearSpeaking(); setTtsButton(false);
       if (completed && store.settings.ttsContinue) {
