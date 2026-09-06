@@ -1,7 +1,7 @@
 // Leitor da Bíblia: capítulo, seleção de versículos, destaques, notas, áudio, comparação, seletor de livros, busca
 import { $, $$, h, esc, icon, toast, copyText, norm } from './util.js';
 import { store, refKey } from './store.js';
-import { VERSIONS, version, books, book, bookName, groups, nextChapter, prevChapter, loadBook, getChapter, getVerses, refString, refLong, parseRef } from './data.js';
+import { VERSIONS, version, books, book, bookName, groups, nextChapter, prevChapter, loadBook, getChapter, getVerses, refString, refLong, parseRef, psalmHebrew } from './data.js';
 import { openSheet, openModal, topbar, closeAll } from './ui.js';
 import { makeVerseImage, shareImage, shareText } from './share.js';
 import { ensureIndex, search, highlightText } from './search.js';
@@ -89,6 +89,7 @@ export async function renderReader(view, { book: bid, chapter, verse, verseEnd, 
   const html = [];
   html.push(`<h2 class="ch-title">${esc(bookName(b, ver))}${b.deutero ? ' <span class="badge">Deuterocanônico</span>' : ''}</h2>`);
   html.push(`<div class="ch-num">${chapter}</div>`);
+  if (b.id === 'sl' && psalmHebrew(chapter) !== String(chapter)) html.push(`<div class="ch-summary" style="margin-bottom:6px">Salmo ${psalmHebrew(chapter)} na numeração hebraica (Bíblias modernas)</div>`);
   if (ch.title) html.push(`<div class="ch-summary">${esc(ch.title)}</div>`);
   if (ch.heading) html.push(`<p class="heading">${esc(ch.heading)}</p>`);
   ch.verses.forEach((t, i) => {
@@ -99,7 +100,7 @@ export async function renderReader(view, { book: bid, chapter, verse, verseEnd, 
     if (hl) cls.push('hl-' + hl);
     if (store.note(key)) cls.push('has-note');
     if (store.isBookmarked(key)) cls.push('bm');
-    if (!t) { html.push(`<p class="verse empty-v" data-v="${v}"><span class="vn">${v}</span>[versículo não disponível nesta edição]</p>`); return; }
+    if (!t) { html.push(`<p class="verse empty-v" data-v="${v}"><span class="vn">${v}</span>${ch.src === 'ocr' ? '(número não reconhecido pelo OCR; o texto deste versículo está no anterior)' : '[versículo não disponível nesta edição]'}</p>`); return; }
     html.push(`<p class="${cls.join(' ')}" data-v="${v}" id="v${v}"><span class="vn">${v}</span>${esc(t)}</p>`);
   });
   if (ch.src === 'ocr') {
@@ -136,6 +137,11 @@ export async function renderReader(view, { book: bid, chapter, verse, verseEnd, 
       if (dx > 0 && prev) go(prev.book, prev.chapter, plan, day);
     }
   }, { passive: true });
+  // esconde as setas flutuantes quando a barra de navegação do fim do capítulo está visível
+  const fab = $('.fab-nav', view); const chnav = $('.ch-nav', view);
+  if (fab && chnav && 'IntersectionObserver' in window) {
+    new IntersectionObserver((entries) => { fab.style.opacity = entries[0].isIntersecting ? '0' : '1'; fab.style.pointerEvents = entries[0].isIntersecting ? 'none' : ''; }, { threshold: 0.2 }).observe(chnav);
+  }
   // pré-carrega o próximo livro
   if (next && next.book !== b.id) loadBook(ver, next.book).catch(() => {});
 }

@@ -82,6 +82,19 @@ export function dataUrls() {
   return urls;
 }
 
+// Numeração hebraica (Bíblias modernas) correspondente ao Salmo da Vulgata
+export function psalmHebrew(n) {
+  if (n <= 8 || n >= 148) return String(n);
+  if (n === 9) return '9–10';
+  if (n <= 112) return String(n + 1);
+  if (n === 113) return '114–115';
+  if (n === 114) return '116,1-9';
+  if (n === 115) return '116,10-19';
+  if (n <= 145) return String(n + 1);
+  if (n === 146) return '147,1-11';
+  return '147,12-20';
+}
+
 // Referência no estilo católico: "Jo 3,16" / "Gn 1,1-3"
 export function refString(bookId, chapter, v1, v2) {
   const b = book(bookId);

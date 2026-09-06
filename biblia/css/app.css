@@ -235,6 +235,7 @@ hr.sep { border: 0; border-top: 1px solid var(--border); margin: 12px 0; }
 .fab-nav {
   position: fixed; bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + 14px); left: 0; right: 0; pointer-events: none; z-index: 15;
 }
+.fab-nav { transition: opacity .2s; }
 .fab-nav .inner { max-width: 720px; margin: 0 auto; display: flex; justify-content: space-between; padding: 0 14px; }
 .fab-nav button { pointer-events: auto; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow); cursor: pointer; display: grid; place-items: center; }
 .fab-nav button svg { width: 22px; height: 22px; }
