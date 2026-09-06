@@ -16,7 +16,8 @@ Não há etapa de build: é HTML, CSS e JavaScript puro (módulos ES).
 ## Recursos
 
 - **Leitor**: livro/capítulo, três versões (Figueiredo em português, Vulgata Clementina em latim, Douay-Rheims em inglês),
-  tamanho de fonte, serifa/sem serifa, temas claro/sépia/escuro, deslizar para mudar de capítulo, áudio (voz do sistema).
+  tamanho de fonte, serifa/sem serifa, temas claro/sépia/escuro, deslizar para mudar de capítulo.
+- **Leitura em voz alta** (voz do sistema) com barra de controle, escolha da voz, velocidade, tom, continuação automática no próximo capítulo e temporizador para parar (em N minutos ou num horário); também nas orações e nas leituras da Missa.
 - **Versículos**: destaques em 6 cores, notas, favoritos, copiar, compartilhar como texto ou imagem, comparar versões.
 - **Busca** em toda a Bíblia ou em um só livro (sem acentos), frases entre aspas e referências (`Jo 3,16`, `Sl 22`).
 - Salmos com a numeração da Vulgata e, no cabeçalho, a numeração hebraica das Bíblias modernas.
