@@ -384,6 +384,7 @@ function markChapterRead(bid, chapter) {
   }
 }
 async function startTTS(fromVerse) {
+  audio.unlock();   // ainda dentro do toque: no iPhone o áudio só inicia num gesto (antes de qualquer await)
   const b = book(current.book);
   const chapter = current.chapter;
   const domItems = $$('#chapter .verse:not(.empty-v)').map((p) => ({ v: +p.dataset.v, label: `Versículo ${p.dataset.v}`, text: p.textContent.replace(/^\d+\s*/, '') }));

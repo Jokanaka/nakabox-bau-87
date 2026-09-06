@@ -163,6 +163,7 @@ export function guidedMass(lit, readings, texts, iso) {
     const setListen = (playing) => { if (li) li.innerHTML = playing ? `${icon('close')} Parar` : `${icon('play')} Ouvir`; };
     if (li) li.onclick = async () => {
       if (audio.isActive()) { audio.stop(); return; }
+      audio.unlock();   // ainda dentro do toque (iPhone)
       const vs = rd.verses;
       setListen(true);
       const onItem = (idx, it) => { $$('.rv.speaking', el).forEach((x) => x.classList.remove('speaking')); const t = it.v ? $(`.rv[data-v="${it.v}"]`, el) : null; if (t) { t.classList.add('speaking'); t.scrollIntoView({ block: 'center', behavior: 'smooth' }); } };
