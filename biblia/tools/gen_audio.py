@@ -13,11 +13,12 @@ SAMPLE = ('No princípio criou Deus o céu e a terra. E a terra era vazia e vaga
 books = json.load(open(f'{APP}/data/books.json'))
 byid = {b['id']: b for b in books}
 ids = [b['id'] for b in books]
-# ordem: Mateus nas três vozes, depois os outros Evangelhos, Atos e Salmos (cada livro nas três vozes),
+# ordem: Mateus nas três vozes; depois amplitude (Alex em Mc, Lc, Jo, Gn, Sl, At, depois Santa e Dora nos mesmos);
 # depois o resto da Bíblia primeiro em Alex, depois Santa, depois Dora
 plan = [(v, 'mt') for v in VOICES]
-for b in ['mc', 'lc', 'jo', 'at', 'sl']: plan += [(v, b) for v in VOICES]
-rest = [b for b in ids if b not in ('mt', 'mc', 'lc', 'jo', 'at', 'sl')]
+# amplitude primeiro: uma voz (Alex) nos livros mais lidos, depois as outras vozes nos mesmos livros
+for v in VOICES: plan += [(v, b) for b in ['mc', 'lc', 'jo', 'gn', 'sl', 'at']]
+rest = [b for b in ids if b not in ('mt', 'mc', 'lc', 'jo', 'gn', 'sl', 'at')]
 for v in VOICES: plan += [(v, b) for b in rest]
 if len(sys.argv) > 1: plan = [tuple(x.split(':')) for x in sys.argv[1].split(',')]
 k = Kokoro('kokoro-v1.0.onnx', 'voices-v1.0.bin')

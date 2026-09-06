@@ -33,10 +33,11 @@ const step = async (name, fn) => {
 // Narração gravada: manifesto e capítulo Mt 1 servidos dos arquivos gerados localmente
 const AUDIO_DIR = '/tmp/claude-0/-home-user-nakabox-bau-87/972f22bb-545c-5ad0-ac6c-c883efe8c07c/scratchpad/audio_out';
 const recCalls = [];
-await page.route('**/data/audio.json', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ base: 'https://cdn.jsdelivr.net/gh/jokanaka/nakabox-bau-87@test/', fallback: '', voices: { alex: { name: 'Alex', desc: 'masculina', books: { mt: 1 } }, santa: { name: 'Santa', desc: 'masculina, mais grave', books: {} } } }) }));
+await page.route('**/data/audio.json', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ base: 'https://cdn.jsdelivr.net/gh/jokanaka/nakabox-bau-87@test/', fallback: '', voices: { alex: { name: 'Alex', desc: 'masculina', books: { mt: 1 } }, santa: { name: 'Santa', desc: 'masculina, mais grave', books: { mt: 1 } }, dora: { name: 'Dora', desc: 'feminina', books: {} } } }) }));
 await page.route(/cdn\.jsdelivr\.net\/gh\/jokanaka\/nakabox-bau-87@test\//, (route) => {
   const u = new URL(route.request().url()); const rel = u.pathname.split('@test/')[1]; recCalls.push(rel + (route.request().headers()['range'] ? ' [range]' : ''));
-  const local = `${AUDIO_DIR}/${rel}`;
+  let local = `${AUDIO_DIR}/${rel}`;
+  if (!fs.existsSync(local) && rel.startsWith('santa/mt/')) local = `${AUDIO_DIR}/${rel.replace(/^santa\//, 'alex/')}`;   // Santa usa os arquivos do Alex no teste
   if (!fs.existsSync(local)) return route.fulfill({ status: 404, body: '' });
   return route.fulfill({ status: 200, contentType: rel.endsWith('.json') ? 'application/json' : 'audio/mpeg', headers: { 'Access-Control-Allow-Origin': '*', 'Accept-Ranges': 'bytes' }, body: fs.readFileSync(local) });
 });
@@ -56,7 +57,9 @@ await step('00-simple-mode', async () => {
   await page.waitForSelector('#player-root .player', { timeout: 5000 });
   await page.click('#player-root [data-act=cfg]');
   await page.waitForSelector('#au-rec-voice', { timeout: 5000 });
-  if (await page.$('#au-key') || await page.$('#au-voice')) throw new Error('modo simples não deveria mostrar nuvem/voz do aparelho');
+  if (await page.$('#au-key') || await page.$('#au-pitch')) throw new Error('modo simples não deveria mostrar nuvem/tom da voz');
+  if (!await page.$('#au-voice')) throw new Error('modo simples deveria mostrar a voz do aparelho');
+  await page.waitForFunction(() => /ainda não tem narração gravada/.test(document.querySelector('#au-now')?.textContent || '') && /Lendo agora/.test(document.querySelector('#au-now')?.textContent || ''), null, { timeout: 5000 });
   await page.screenshot({ path: `${SHOT}/00-simple-sheet.png` });
   await page.click('[data-act=advanced]');
   await page.waitForSelector('#au-key', { timeout: 5000 });
@@ -425,9 +428,20 @@ await step('20i-audio-recorded', async () => {
   await page.waitForSelector('#player-root .player', { timeout: 5000 });
   await page.click('#player-root [data-act=cfg]');
   await page.waitForSelector('#au-rec-voice', { timeout: 5000 });
-  await page.waitForFunction(() => document.querySelectorAll('#au-rec-voice option').length === 2 && document.querySelector('#au-rec-state')?.textContent.includes('Alex: 1'), null, { timeout: 5000 });
+  await page.waitForFunction(() => document.querySelectorAll('#au-rec-voice option').length === 3 && document.querySelector('#au-rec-state')?.textContent.includes('Alex: 1'), null, { timeout: 5000 });
   const title = await page.$eval('#player-root .p-engine', (el) => el.title);
   if (!title.includes('Alex')) throw new Error('nome da voz na barra: ' + title);
+  if (!/Mateus 1 tem narração gravada \(Alex, Santa\)/.test(await page.$eval('#au-now', (el) => el.textContent))) throw new Error('lendo agora: ' + await page.$eval('#au-now', (el) => el.textContent));
+  // troca para Santa: a leitura recomeça no versículo atual com a voz nova
+  await page.selectOption('#au-rec-voice', 'santa');
+  await page.waitForFunction(() => (document.querySelector('#player-root .p-engine')?.title || '').includes('Santa'), null, { timeout: 8000 });
+  await page.waitForFunction(() => document.querySelector('#chapter .verse.speaking'), null, { timeout: 8000 });
+  if (!recCalls.some((r) => r.startsWith('santa/mt/1.mp3'))) throw new Error('áudio da Santa não foi pedido: ' + recCalls.join(','));
+  // Dora ainda não tem o capítulo: avisa e continua com a Santa
+  await page.selectOption('#au-rec-voice', 'dora');
+  await page.waitForFunction(() => /Dora ainda não narra este capítulo/.test(document.querySelector('#toast')?.textContent || ''), null, { timeout: 5000 });
+  if (!(await page.$eval('#player-root .p-engine', (el) => el.title)).includes('Santa')) throw new Error('a voz deveria continuar Santa');
+  await page.screenshot({ path: `${SHOT}/20i-voice-switch.png` });
   await page.click('[data-act=ok]');
   await page.click('#player-root [data-act=stop]');
 });
