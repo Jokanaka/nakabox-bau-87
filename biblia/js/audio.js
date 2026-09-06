@@ -55,12 +55,13 @@ export function voiceGender(v) {
   if (MALE_RE.test(n)) return 'M';
   return '';
 }
-export function chosenVoice() {
-  const id = store.settings.ttsVoice;
+export function voiceById(id) {
   if (!id) return null;
   const list = voices();
   return list.find((v) => v.voiceURI === id) || list.find((v) => v.name === id) || null;
 }
+export function chosenVoice() { return voiceById(store.settings.ttsVoice); }
+const shortVoiceName = (v) => String((v && v.name) || '').replace(/\s*\(.*?\)\s*/g, ' ').replace(/^(Google|Microsoft|Apple)\s+/i, '').trim().slice(0, 24) || 'Celular';
 // voz para um idioma: a escolhida pelo usuário (se for do mesmo idioma), senão a melhor automática
 // (mesmo idioma exato, masculina se preferida, instalada no aparelho)
 export function pickVoice(lang) {
@@ -304,7 +305,7 @@ export async function playRecordedRange({ title = '', book, chapter, fromV = 1, 
   let until = -1;
   items.forEach((x, i) => { if (x.v <= toV) until = i; });
   if (from < 0 || until < from) return false;
-  return play({ title, items, lang: 'pt-BR', from, recorded: rec, until, onItem, onEnd });
+  return play({ title, items, lang: 'pt-BR', from, recorded: rec, until, onItem, onEnd, ref: { book, chapter } });
 }
 // troca a voz gravada; se estiver lendo com narração gravada, recomeça o versículo atual na voz nova
 // devolve 'switched' (leitura recomeçou na voz nova), 'unavailable' (a voz não tem este capítulo) ou 'saved' (só guardou a preferência)
@@ -322,12 +323,16 @@ export async function setRecordedVoice(voice) {
   } catch { return 'saved'; }
 }
 // toca a amostra de uma voz gravada (para a leitura em andamento)
+let sampleEl = null;
 export function playRecordedSample(voice) {
   const url = recordedSampleUrl(voice);
   if (!url) { toast('Amostra ainda não disponível'); return; }
-  if (st.active) stop();
-  const a = mediaEl();
-  a.onended = null; a.onerror = () => toast('Não foi possível tocar a amostra'); a.ontimeupdate = null;
+  const wasPlaying = st.active && !st.paused;
+  if (wasPlaying) pause();
+  if (!sampleEl) { sampleEl = new Audio(); sampleEl.setAttribute('playsinline', ''); }
+  const a = sampleEl;
+  a.onended = () => { if (wasPlaying && st.active && st.paused) resume(); };
+  a.onerror = () => toast('Não foi possível tocar a amostra');
   a.src = url; a.playbackRate = 1;
   a.play().catch(() => toast('Não foi possível tocar a amostra'));
 }
@@ -341,6 +346,70 @@ export function unlock() {
     speechPrimed = true;
     try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } catch { /* ignora */ }
   }
+}
+// ---------- escolha unificada de voz ----------
+// kind: 'rec' (voz gravada), 'dev' (voz do celular; id '' = automática), 'local' (narrador offline), 'cloud' (nuvem)
+export function voiceChoice() {
+  const s = store.settings;
+  if (s.recordedOn !== false) return { kind: 'rec', id: s.recordedVoice || 'alex' };
+  if (s.cloudOn && cloud.cloudConfigured()) return { kind: 'cloud', id: s.cloudVoice || '' };
+  if (s.localVoiceOn) return { kind: 'local', id: 'faber' };
+  return { kind: 'dev', id: s.ttsVoice || '' };
+}
+function recName(id) { return (recordedVoices().find((v) => v.id === id) || VOICE_INFO[id] || { name: id }).name; }
+// nome curto da voz que está lendo (ou da escolhida, se nada estiver tocando)
+export function voiceLabel() {
+  if (st.active && st.engine) {
+    if (st.engine === recEngine) return st.voiceName || 'Gravada';
+    if (st.engine === cloudEngine) return 'Nuvem';
+    if (st.engine === localEngine) return 'Faber';
+    const v = chosenVoice(); return v ? shortVoiceName(v) : 'Celular';
+  }
+  const c = voiceChoice();
+  if (c.kind === 'rec') return recName(c.id);
+  if (c.kind === 'cloud') return 'Nuvem';
+  if (c.kind === 'local') return 'Faber';
+  const v = chosenVoice(); return v ? shortVoiceName(v) : 'Celular';
+}
+// aplica a voz escolhida; se estiver lendo, troca na hora a partir do versículo atual.
+// devolve { status: 'switched' | 'unavailable' | 'saved', name }
+export async function chooseVoice(kind, id = '') {
+  const name = kind === 'rec' ? recName(id) : kind === 'local' ? 'Faber (narrador offline)' : kind === 'cloud' ? 'do narrador na nuvem' : (id ? `${shortVoiceName(voiceById(id) || { name: 'do celular' })} (celular)` : 'automática do celular');
+  if (kind === 'rec') { store.setSetting('recordedOn', true); store.setSetting('recordedVoice', id); }
+  else {
+    store.setSetting('recordedOn', false);
+    store.setSetting('cloudOn', kind === 'cloud');
+    store.setSetting('localVoiceOn', kind === 'local');
+    if (kind === 'dev') store.setSetting('ttsVoice', id);
+    if (kind === 'local') localEngine.reset();
+    if (kind === 'cloud') cloud.resetCloud();
+  }
+  if (!st.active) return { status: 'saved', name };
+  if (kind === 'rec') {
+    if (st.engine === recEngine) return { status: await setRecordedVoice(id), name };
+    const ref = st.ref, base = st.base;
+    if (ref && base && recordedAvailable(ref.book, ref.chapter, id)) {
+      const curV = (st.items[st.idx] || {}).v;
+      let rec = null;
+      try { rec = await recordedChapter(ref.book, ref.chapter, id); } catch { rec = null; }
+      if (!rec || !st.active) return { status: 'saved', name };
+      const texts = new Map(base.items.filter((x) => x.v).map((x) => [x.v, x.text]));
+      const intro = base.items.find((x) => x.kind === 'intro');
+      const items = [...(intro ? [intro] : []), ...rec.marks.v.map(([v]) => ({ v, label: `Versículo ${v}`, text: texts.get(v) || '' }))];
+      const from = curV ? Math.max(0, items.findIndex((x) => x.v === curV)) : 0;
+      play({ ...base, items, from, recorded: rec });
+      return { status: 'switched', name };
+    }
+    return { status: 'unavailable', name };
+  }
+  if (st.engine === recEngine) {
+    const base = st.base, idx = st.idx;
+    if (!base) return { status: 'saved', name };
+    play({ ...base, from: idx });
+    return { status: 'switched', name };
+  }
+  restartCurrent();
+  return { status: 'switched', name };
 }
 const recEngine = {
   kind: 'gravado', pausable: true, rec: null, token: null, triedAlt: false,
@@ -371,9 +440,14 @@ const recEngine = {
     if (!this.rec) return;
     const t = mediaEl().currentTime;
     const v = this.rec.marks.v;
-    let idx = 0;
-    for (let i = 0; i < v.length; i++) { if (t >= v[i][1] - 0.05) idx = i + 1; else break; }
-    idx = Math.min(idx, st.items.length - 1);
+    let mi = -1;
+    for (let i = 0; i < v.length; i++) { if (t >= v[i][1] - 0.05) mi = i; else break; }
+    let idx = mi < 0 ? st.items.findIndex((x) => x.kind === 'intro') : st.items.findIndex((x) => x.v === v[mi][0]);
+    if (idx < 0) {
+      const last = st.items[st.items.length - 1];
+      if (mi >= 0 && last && last.v && v[mi][0] > last.v) { finish(true); return; }   // passou do último versículo do trecho
+      idx = mi < 0 ? 0 : st.idx;
+    }
     if (st.until != null && idx > st.until) { finish(true); return; }
     if (idx !== st.idx) { st.idx = idx; const it = st.items[idx]; if (it && st.onItem) { try { st.onItem(idx, it); } catch { /* ignora */ } } updateBar(); }
   },
@@ -410,11 +484,11 @@ export function engineName() { return st.active && st.engine ? st.engine.kind : 
 
 // ---------- fila ----------
 // items: [{ text, label?, kind? }] — onItem(i, item) ao começar cada item; onEnd(completed) ao terminar ou parar
-export function play({ title = '', items = [], lang = 'pt-BR', from = 0, onItem = null, onEnd = null, recorded = null, until = null } = {}) {
+export function play({ title = '', items = [], lang = 'pt-BR', from = 0, onItem = null, onEnd = null, recorded = null, until = null, ref = null } = {}) {
   if (recorded && items.length) {
     stop({ silent: true });
     recEngine.unlock();
-    Object.assign(st, { title, items, lang, idx: clamp(from, 0, items.length - 1), onItem, onEnd, active: true, paused: false, pausedInPlace: false, errors: 0, engine: recEngine, status: '', fallback: { title, items: until != null ? items.slice(0, until + 1) : items, lang, from, onItem, onEnd }, voiceName: recorded.voiceName || '', recInfo: { book: recorded.book, chapter: recorded.chapter }, until });
+    Object.assign(st, { title, items, lang, idx: clamp(from, 0, items.length - 1), onItem, onEnd, active: true, paused: false, pausedInPlace: false, errors: 0, engine: recEngine, status: '', fallback: { title, items: until != null ? items.slice(0, until + 1) : items, lang, from, onItem, onEnd }, voiceName: recorded.voiceName || '', recInfo: { book: recorded.book, chapter: recorded.chapter }, until, ref: ref || { book: recorded.book, chapter: recorded.chapter }, base: { title, items, lang, onItem, onEnd, ref: ref || { book: recorded.book, chapter: recorded.chapter } } });
     document.body.classList.add('has-player');
     renderBar();
     const it = st.items[st.idx]; if (it && onItem) { try { onItem(st.idx, it); } catch { /* ignora */ } }
@@ -427,7 +501,7 @@ export function play({ title = '', items = [], lang = 'pt-BR', from = 0, onItem 
   if (!list.length) { toast('Nada para ler'); return false; }
   stop({ silent: true });
   if (engine.unlock) engine.unlock();
-  Object.assign(st, { title, items: list, lang, idx: clamp(from, 0, list.length - 1), onItem, onEnd, active: true, paused: false, pausedInPlace: false, errors: 0, engine, status: '' });
+  Object.assign(st, { title, items: list, lang, idx: clamp(from, 0, list.length - 1), onItem, onEnd, active: true, paused: false, pausedInPlace: false, errors: 0, engine, status: '', ref, base: { title, items: list, lang, onItem, onEnd, ref } });
   document.body.classList.add('has-player');
   renderBar();
   if (engine === sysEngine) startNudge();
@@ -530,7 +604,7 @@ export function skip(delta) {
 function teardown() {
   const onEnd = st.onEnd;
   const engine = st.engine;
-  st.active = false; st.paused = false; st.pausedInPlace = false; st.onEnd = null; st.onItem = null; st.items = []; st.status = ''; st.fallback = null; st.voiceName = ''; st.recInfo = null; st.until = null;
+  st.active = false; st.paused = false; st.pausedInPlace = false; st.onEnd = null; st.onItem = null; st.items = []; st.status = ''; st.fallback = null; st.voiceName = ''; st.recInfo = null; st.until = null; st.ref = null; st.base = null;
   clearTimeout(st.watchdog); clearTimeout(st.restart); clearTimeout(st.gap);
   stopNudge();
   if (engine) engine.cancel(); else sysEngine.cancel();
@@ -647,7 +721,7 @@ function renderBar() {
   const r = root();
   if (!st.active) { r.innerHTML = ''; return; }
   r.innerHTML = `<div class="player" role="region" aria-label="Leitura em voz alta">
-    <div class="p-info"><div class="p-title"></div><div class="p-sub"><span class="p-pos"></span><span class="p-rate"></span><span class="p-engine" hidden title="Narrador na nuvem">${I.cloud}</span><span class="p-timer" hidden></span></div></div>
+    <div class="p-info"><div class="p-title"></div><div class="p-sub"><span class="p-pos"></span><span class="p-rate"></span><span class="p-engine" hidden title="Narrador na nuvem">${I.cloud}</span><span class="p-timer" hidden></span><button class="p-voice" data-act="voice" aria-label="Trocar a voz">${I.mic}<span></span></button></div></div>
     <div class="p-ctl">
       <button data-act="prev" aria-label="Trecho anterior">${I.prev}</button>
       <button data-act="toggle" class="big" aria-label="Pausar">${I.pause}</button>
@@ -659,6 +733,7 @@ function renderBar() {
   $('[data-act=next]', r).onclick = () => skip(1);
   $('[data-act=toggle]', r).onclick = () => toggle();
   $('[data-act=cfg]', r).onclick = () => openAudioSheet();
+  $('[data-act=voice]', r).onclick = () => openVoicePicker();
   $('[data-act=stop]', r).onclick = () => stop();
   updateBar();
 }
@@ -667,8 +742,9 @@ function updateBar() {
   if (!st.active || !r.firstChild) return;
   const it = st.items[st.idx] || {};
   $('.p-title', r).textContent = st.title || 'Leitura';
-  $('.p-pos', r).textContent = `${st.status || (it.label ? it.label : `${st.idx + 1} de ${st.items.length}`)}${st.engine === recEngine && st.voiceName ? ` · ${st.voiceName}` : ''} · `;
+  $('.p-pos', r).textContent = `${st.status || (it.label ? it.label : `${st.idx + 1} de ${st.items.length}`)} · `;
   $('.p-rate', r).textContent = fmtRate(store.settings.ttsRate);
+  const pv = $('.p-voice span', r); if (pv) pv.textContent = voiceLabel();
   const eng = $('.p-engine', r); eng.hidden = !(st.engine === cloudEngine || st.engine === localEngine || st.engine === recEngine); eng.innerHTML = st.engine === recEngine ? I.mic : st.engine === localEngine ? I.chip : I.cloud; eng.title = st.engine === recEngine ? `Narração gravada${st.voiceName ? ' · ' + st.voiceName : ''}` : st.engine === localEngine ? 'Narrador offline' : 'Narrador na nuvem';
   const tg = $('[data-act=toggle]', r);
   tg.innerHTML = st.paused ? icon('play') : I.pause;
@@ -679,12 +755,12 @@ function updateBar() {
 
 // ---------- painel de voz e áudio ----------
 const SAMPLE = 'No princípio criou Deus o céu e a terra. E a terra era vazia e vaga, e as trevas cobriam a face do abismo. E disse Deus: Faça-se a luz. E a luz foi feita.';
-function testDeviceVoice() {
+function testDeviceVoice(id) {
   if (!has) { toast('Seu navegador não tem leitura em voz'); return; }
   const wasPlaying = st.active && !st.paused;
   if (wasPlaying) pause();
   const s = store.settings;
-  const v = chosenVoice() || pickVoice('pt-BR');
+  const v = id === undefined ? (chosenVoice() || pickVoice('pt-BR')) : (id ? voiceById(id) : pickVoice('pt-BR'));
   const u = new SpeechSynthesisUtterance(SAMPLE);
   u.lang = v ? v.lang : 'pt-BR';
   u.rate = clamp(+s.ttsRate || 1, 0.5, 2);
@@ -722,6 +798,73 @@ function cloudHelp() {
   $('[data-act=x]', el).onclick = () => close();
 }
 
+// Seletor único de voz: vozes gravadas, vozes do celular e (no modo avançado) os outros narradores
+export function openVoicePicker() {
+  const s = store.settings;
+  const advanced = s.uiMode === 'avancado';
+  const hm = /^#\/biblia\/([a-z0-9]+)\/(\d+)/.exec(location.hash || '');
+  const cur = st.ref || (hm && book(hm[1]) ? { book: hm[1], chapter: +hm[2] } : null);
+  const curName = cur && book(cur.book) ? `${bookName(book(cur.book), s.version)} ${cur.chapter}` : '';
+  const list = voices();
+  const pt = list.filter((v) => lb(v.lang).startsWith('pt'));
+  const others = list.filter((v) => !lb(v.lang).startsWith('pt'));
+  const gtag = (v) => { const g = voiceGender(v); return g === 'M' ? ' · masculina' : g === 'F' ? ' · feminina' : ''; };
+  const row = (kind, id, name, desc, on, sample) => `<div class="voice-row ${on ? 'on' : ''}" data-kind="${kind}" data-id="${esc(id)}">
+      <button class="vmain" data-act="pick"><span class="vname">${esc(name)}</span><span class="vdesc">${desc}</span></button>
+      ${sample ? `<button class="vplay" data-act="sample" aria-label="Ouvir amostra de ${esc(name)}">${icon('play')}</button>` : ''}
+    </div>`;
+  const recRows = () => {
+    const c = voiceChoice();
+    const vs = recordedVoices();
+    const items = vs.length ? vs : Object.entries(VOICE_INFO).map(([id, v]) => ({ id, name: v.name, desc: v.desc, count: 0, books: {} }));
+    return items.map((v) => {
+      const here = cur ? voiceHas(v, cur.book, cur.chapter) : false;
+      const desc = `${esc(v.desc)} · ${v.count ? `${v.count} ${v.count === 1 ? 'capítulo' : 'capítulos'}` : 'em preparação'}${cur ? (here ? ` · <b>lê ${esc(curName)}</b>` : (v.count ? ` · ainda não tem ${esc(curName)}` : '')) : ''}`;
+      return row('rec', v.id, v.name, desc, c.kind === 'rec' && c.id === v.id, !!recordedSampleUrl(v.id));
+    }).join('');
+  };
+  const c = voiceChoice();
+  const devRows = [
+    row('dev', '', 'Automática', `a melhor voz em português do celular${s.ttsMale ? ', masculina se houver' : ''}`, c.kind === 'dev' && !c.id, true),
+    ...pt.map((v) => row('dev', v.voiceURI, shortVoiceName(v), `${esc(v.lang)}${gtag(v)}${v.localService ? '' : ' · online'}`, c.kind === 'dev' && c.id === v.voiceURI, true)),
+    ...(advanced ? others.map((v) => row('dev', v.voiceURI, shortVoiceName(v), `${esc(v.lang)}${gtag(v)}`, c.kind === 'dev' && c.id === v.voiceURI, true)) : []),
+  ].join('');
+  const extra = advanced ? [
+    localSupported() ? row('local', 'faber', 'Faber (narrador offline)', 'voz masculina gerada no celular; baixa cerca de 90 MB uma vez', c.kind === 'local', false) : '',
+    cloud.cloudConfigured() ? row('cloud', '', 'Narrador na nuvem', 'Google Cloud com a sua chave', c.kind === 'cloud', false) : '',
+  ].join('') : '';
+  const { el, close } = openSheet(`<h3>Voz da leitura</h3>
+    <p class="small muted">Toque numa voz para ler com ela agora. As vozes gravadas leem os capítulos já narrados; nos outros, o app usa a voz do celular.</p>
+    <div class="section-title">Vozes gravadas (humanas)</div><div id="vp-rec">${recRows()}</div>
+    <div class="section-title" style="margin-top:14px">Vozes do celular</div><div id="vp-dev">${devRows}</div>
+    ${extra ? `<div class="section-title" style="margin-top:14px">Outros narradores</div>${extra}` : ''}
+    <div class="row" style="margin-top:14px"><span class="grow"></span><button class="btn primary" data-act="ok">Pronto</button></div>`);
+  const explain = (res) => {
+    if (res.status === 'switched') return `Lendo com a voz ${res.name}`;
+    if (res.status === 'unavailable') {
+      const done = [...new Set(recordedVoices().flatMap((v) => Object.keys(v.books).filter((b) => v.books[b] > 0)))].map((b) => (book(b) ? bookName(book(b), s.version) : b));
+      return `${res.name} vai ler os capítulos já gravados${done.length ? ` (${done.join(', ')})` : ''}. ${curName || 'Este capítulo'} ainda não tem gravação e continua com ${voiceLabel()}.`;
+    }
+    return `Voz escolhida: ${res.name}`;
+  };
+  const bind = () => {
+    $$('.voice-row', el).forEach((r) => {
+      $('[data-act=pick]', r).onclick = async () => {
+        $$('.voice-row', el).forEach((x) => x.classList.toggle('on', x === r));
+        unlock();
+        const res = await chooseVoice(r.dataset.kind, r.dataset.id);
+        toast(explain(res), res.status === 'unavailable' ? 5000 : 2500);
+        close();
+      };
+      const sp = $('[data-act=sample]', r);
+      if (sp) sp.onclick = () => { unlock(); if (r.dataset.kind === 'rec') playRecordedSample(r.dataset.id); else testDeviceVoice(r.dataset.id); };
+    });
+  };
+  bind();
+  loadAudioManifest().then(() => { const x = $('#vp-rec', el); if (x) { x.innerHTML = recRows(); bind(); } });
+  $('[data-act=ok]', el).onclick = () => close();
+}
+
 export function openAudioSheet() {
   const s = store.settings;
   const simple = s.uiMode !== 'avancado';
@@ -738,23 +881,14 @@ export function openAudioSheet() {
   const cv = s.cloudVoices || [];
   const copt = (v) => `<option value="${esc(v.name)}" ${s.cloudVoice === v.name ? 'selected' : ''}>${esc(cloud.describeVoice(v))}</option>`;
   const mins = [0, 5, 10, 15, 30, 45, 60];
-  const recHtml = `
-    <div class="section-title" style="margin-top:${simple ? 4 : 16}px">Narração gravada</div>
-    <p class="small muted">Capítulos já narrados com vozes neurais, em estilo de história, prontos para tocar sem baixar nada e sem custo. <span id="au-rec-state">Carregando a lista…</span></p>
-    ${simple ? '' : `<div class="setting"><span>Usar narração gravada quando existir</span><button class="switch ${s.recordedOn !== false ? 'on' : ''}" data-act="rec-on" aria-label="Usar narração gravada"></button></div>`}
-    <label class="au-label" for="au-rec-voice">Voz da narração</label>
-    <div class="row" style="gap:8px"><select id="au-rec-voice" class="input" aria-label="Voz da narração"></select><button class="btn sm" data-act="rec-sample" aria-label="Ouvir amostra">${icon('play')} Amostra</button></div>
-`;
+  const voiceRowHtml = `<div class="setting"><span>Voz</span><button class="btn sm primary" data-act="voice" id="au-voice-btn">${I.mic} <span>${esc(voiceLabel())}</span> ▾</button></div>
+    <p class="small muted" style="margin:-4px 0 8px">Toque em Voz para escolher entre as vozes gravadas (Alex, Santa, Dora) e as vozes do celular. A troca vale na hora.</p>`;
   const voiceSelect = `<select id="au-voice" class="input" aria-label="Voz do aparelho">
       <option value="">Automática (${s.ttsMale ? 'masculina em português, se houver' : 'português'})</option>
       ${pt.length ? `<optgroup label="Português">${pt.map(opt).join('')}</optgroup>` : ''}
       ${others.length ? `<optgroup label="Outras línguas">${others.map(opt).join('')}</optgroup>` : ''}
     </select>`;
   const nowHtml = `<p class="small" id="au-now" style="margin:0 0 10px;line-height:1.45"></p>`;
-  const deviceSimpleHtml = `
-    <div class="section-title" style="margin-top:16px">Voz do aparelho</div>
-    <p class="small muted">Lê os capítulos que ainda não têm narração gravada e as orações.${list.length ? '' : ' Este navegador não informou vozes; vale a voz padrão do sistema.'}</p>
-    <div class="row" style="gap:8px">${voiceSelect}<button class="btn sm" data-act="test" aria-label="Testar voz do aparelho">${icon('play')} Testar</button></div>`;
   const deviceHtml = `
     <div class="setting"><span>Preferir voz masculina</span><button class="switch ${s.ttsMale ? 'on' : ''}" data-act="male" aria-label="Preferir voz masculina"></button></div>
     <div class="setting"><span>Estilo</span><div class="seg" id="au-style"><button data-v="normal" class="${s.ttsStyle === 'normal' ? 'on' : ''}">Normal</button><button data-v="narracao" class="${s.ttsStyle !== 'normal' ? 'on' : ''}">Narração</button></div></div>
@@ -791,8 +925,8 @@ export function openAudioSheet() {
     : `<div class="row" style="margin-top:14px;gap:8px;flex-wrap:wrap"><button class="btn" data-act="test">${icon('play')} Testar voz do aparelho</button><button class="btn" data-act="cloud-test">${I.cloud} Testar narrador</button><span class="grow"></span><button class="btn primary" data-act="ok">Pronto</button></div>
        <p class="small muted" style="margin-top:10px"><a href="#" data-act="simple">Voltar ao modo simples</a></p>`;
   const { el, close } = openSheet(simple
-    ? `<h3>Voz e áudio</h3>${nowHtml}${recHtml}${deviceSimpleHtml}${rateHtml}${contHtml}${timerHtml}${footer}`
-    : `<h3>Voz e áudio</h3>${nowHtml}${deviceHtml}${rateHtml}${pitchHtml}${contHtml}${timerHtml}${recHtml}${localHtml}${cloudHtml}${footer}`);
+    ? `<h3>Voz e áudio</h3>${nowHtml}${voiceRowHtml}${rateHtml}${contHtml}${timerHtml}${footer}`
+    : `<h3>Voz e áudio</h3>${nowHtml}${voiceRowHtml}${deviceHtml}${rateHtml}${pitchHtml}${contHtml}${timerHtml}${localHtml}${cloudHtml}${footer}`);
   const q = (selector) => $(selector, el);
   const on = (selector, fn) => { const x = q(selector); if (x) x.onclick = fn; return x; };
   const setRate = (x) => {
@@ -803,6 +937,7 @@ export function openAudioSheet() {
     const pr = $('#player-root .p-rate'); if (pr) pr.textContent = fmtRate(r);
     applyRateLive();
   };
+  on('[data-act=voice]', () => { close(); openVoicePicker(); });
   on('[data-act=advanced]', () => { store.setSetting('uiMode', 'avancado'); close(); openAudioSheet(); });
   on('[data-act=simple]', (e) => { e.preventDefault(); store.setSetting('uiMode', 'simples'); close(); openAudioSheet(); });
   on('[data-act=male]', (e) => { store.setSetting('ttsMale', !store.settings.ttsMale); e.currentTarget.classList.toggle('on', store.settings.ttsMale); const o = q('#au-voice option[value=""]'); if (o) o.textContent = `Automática (${store.settings.ttsMale ? 'masculina em português, se houver' : 'português'})`; restartCurrent(); });
@@ -829,14 +964,6 @@ export function openAudioSheet() {
     if (end) toast(`A leitura para às ${fmtClock(end)}`);
   });
   // narração gravada
-  const fillRecVoices = () => {
-    const vs = recordedVoices();
-    const selEl = q('#au-rec-voice'); if (!selEl) return;
-    const cur = store.settings.recordedVoice || 'alex';
-    const items = vs.length ? vs : Object.entries(VOICE_INFO).map(([id, v]) => ({ id, name: v.name, desc: v.desc, count: 0 }));
-    selEl.innerHTML = items.map((v) => `<option value="${esc(v.id)}" ${v.id === cur ? 'selected' : ''}>${esc(v.name)} · ${esc(v.desc)}${v.count ? ` · ${v.count} cap.` : ' · em preparação'}</option>`).join('');
-    const x = q('#au-rec-state'); if (x) x.textContent = recordedCount() ? `${recordedCount()} capítulos gravados (${vs.filter((v) => v.count).map((v) => `${v.name}: ${v.count}`).join(', ')}).` : 'Ainda sem capítulos gravados; a narração está sendo produzida.';
-  };
   const engineLabel = () => {
     if (!st.active || !st.engine) return '';
     if (st.engine === recEngine) return `a voz <b>${esc(st.voiceName || 'gravada')}</b> (narração gravada)`;
@@ -859,21 +986,8 @@ export function openAudioSheet() {
     x.hidden = !parts.length;
     const go = q('[data-act=go-rec]'); if (go) go.onclick = (e) => { e.preventDefault(); close(); location.hash = `#/biblia/${doneIds[0]}/1`; };
   };
-  fillRecVoices(); fillNow();
-  loadAudioManifest().then(() => { fillRecVoices(); fillNow(); });
-  if (q('#au-rec-voice')) q('#au-rec-voice').onchange = async (e) => {
-    const id = e.target.value;
-    const name = (recordedVoices().find((v) => v.id === id) || VOICE_INFO[id] || { name: id }).name;
-    const prev = st.voiceName;
-    const r = await setRecordedVoice(id);
-    if (r === 'switched') toast(`Agora lendo com a voz ${name}`);
-    else if (r === 'unavailable') toast(`${name} ainda não narra este capítulo; continuando com ${prev || 'a voz atual'}.`, 3500);
-    else if (cur && !recordedAvailable(cur.book, cur.chapter)) toast(`${name} vai ler os capítulos já gravados. ${curName} ainda usa a voz do aparelho.`, 4000);
-    else toast(`Voz da narração: ${name}`);
-    fillNow();
-  };
-  on('[data-act=rec-sample]', () => playRecordedSample(q('#au-rec-voice').value));
-  on('[data-act=rec-on]', (e) => { const onv = store.settings.recordedOn === false; store.setSetting('recordedOn', onv); e.currentTarget.classList.toggle('on', onv); toast(onv ? 'Narração gravada ligada' : 'Narração gravada desligada'); });
+  fillNow();
+  loadAudioManifest().then(fillNow);
   // narrador offline
   const localState = (x) => {
     const el2 = q('#au-local-state'); if (!el2) return;

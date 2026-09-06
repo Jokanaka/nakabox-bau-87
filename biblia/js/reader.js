@@ -391,7 +391,7 @@ async function startTTS(fromVerse) {
   const head = b.id === 'sl' ? `Salmo ${chapter}` : `${bookName(b, store.settings.version)}, capítulo ${chapter}`;
   const introText = `${head}.${current.title ? ' ' + current.title : ''}`;
   const common = {
-    title: `${bookName(b, store.settings.version)} ${chapter}`, lang: ttsLang(),
+    title: `${bookName(b, store.settings.version)} ${chapter}`, lang: ttsLang(), ref: { book: b.id, chapter },
     onItem: (i, it) => { clearSpeaking(); if (!it.v) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } const p = $(`#v${it.v}`); if (p) { p.classList.add('speaking'); p.scrollIntoView({ block: 'center', behavior: 'smooth' }); } },
     onEnd: (completed) => {
       clearSpeaking(); setTtsButton(false);

@@ -173,7 +173,7 @@ export function guidedMass(lit, readings, texts, iso) {
       if (sameChapter) {
         try { ok = await audio.playRecordedRange({ title: `${s.title} · ${rd.disp}`, book: rd.b, chapter: rd.c, fromV: vs[0].v, toV: vs[vs.length - 1].v, texts: new Map(vs.map((x) => [x.v, x.t])), onItem, onEnd }); } catch { ok = false; }
       }
-      if (!ok && !audio.play({ title: `${s.title} · ${rd.disp}`, items: vs.map((x) => ({ v: x.v, label: `Versículo ${x.v}`, text: x.t })), lang: 'pt-BR', onItem, onEnd })) setListen(false);
+      if (!ok && !audio.play({ title: `${s.title} · ${rd.disp}`, items: vs.map((x) => ({ v: x.v, label: `Versículo ${x.v}`, text: x.t })), lang: 'pt-BR', onItem, onEnd, ref: sameChapter ? { book: rd.b, chapter: rd.c } : null })) setListen(false);
     };
   };
   render();
