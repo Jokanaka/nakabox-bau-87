@@ -1,1 +1,1 @@
-{"base": "", "fallback": "", "voices": {}}
+{"base": "https://cdn.jsdelivr.net/gh/jokanaka/nakabox-bau-87@16c6a0cf518693be430a9676ace887807b7d76ab/", "fallback": "https://raw.githubusercontent.com/jokanaka/nakabox-bau-87/16c6a0cf518693be430a9676ace887807b7d76ab/", "voices": {"alex": {"name": "Alex", "desc": "masculina", "books": {"mt": 28}}, "dora": {"name": "Dora", "desc": "feminina", "books": {}}, "santa": {"name": "Santa", "desc": "masculina, mais grave", "books": {}}}}
