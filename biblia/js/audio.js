@@ -327,6 +327,17 @@ export function playRecordedSample(voice) {
   a.src = url; a.playbackRate = 1;
   a.play().catch(() => toast('Não foi possível tocar a amostra'));
 }
+const isIOS = typeof navigator !== 'undefined' && (/iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+let speechPrimed = false;
+// Chame no toque do usuário, antes de qualquer await: no iPhone/iPad o áudio e a voz só iniciam dentro de um gesto,
+// então tocamos um silêncio no elemento de áudio (que depois recebe a narração) e "acordamos" a síntese de voz.
+export function unlock() {
+  cloudEngine.unlock();
+  if (isIOS && has && !speechPrimed && !st.active) {
+    speechPrimed = true;
+    try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } catch { /* ignora */ }
+  }
+}
 const recEngine = {
   kind: 'gravado', pausable: true, rec: null, token: null, triedAlt: false,
   unlock() { cloudEngine.unlock(); },
@@ -337,16 +348,14 @@ const recEngine = {
     a.src = rec.url;
     this.setRate();
     const startAt = this.itemStart(fromIdx);
-    const begin = () => {
-      if (this.token !== token) return;
-      try { if (startAt > 0) a.currentTime = startAt; } catch { /* ignora */ }
-      a.play().then(() => { if (this.token === token) { st.errors = 0; setStatus(''); updateBar(); } }).catch((e) => { if (this.token === token) this.onFail(e); });
-    };
+    // o iPhone só começa a baixar o áudio depois do play(): chamamos play já e posicionamos no versículo quando os metadados chegarem
+    const seek = () => { try { if (startAt > 0 && Math.abs(a.currentTime - startAt) > 0.5) a.currentTime = startAt; } catch { /* ignora */ } };
+    if (a.readyState >= 1) seek(); else a.onloadedmetadata = () => { if (this.token === token) seek(); };
     setStatus('Carregando a narração…');
-    if (a.readyState >= 1) begin(); else a.onloadedmetadata = begin;
     a.ontimeupdate = () => { if (this.token === token) this.sync(); };
     a.onended = () => { if (this.token === token) finish(true); };
     a.onerror = () => { if (this.token === token) this.onFail(new Error('não foi possível carregar o áudio')); };
+    a.play().then(() => { if (this.token === token) { st.errors = 0; setStatus(''); updateBar(); } }).catch((e) => { if (this.token === token) this.onFail(e); });
   },
   itemStart(idx) {
     const it = st.items[idx];
@@ -376,11 +385,12 @@ const recEngine = {
     if (this.token === null) return;
     const a = mediaEl();
     if (this.rec && this.rec.alt && !this.triedAlt) { this.triedAlt = true; a.src = this.rec.alt; a.play().catch((e2) => this.onFail(e2)); return; }
-    const msg = (e && e.message) || 'erro';
+    const blocked = e && e.name === 'NotAllowedError';
+    const msg = blocked ? 'o navegador pediu um toque' : ((e && e.message) || 'erro');
     const opts = st.fallback;
     stop({ silent: true });
-    toast(`Narração gravada indisponível (${msg}). Usando outra voz.`, 4000);
-    if (opts) play(opts);
+    toast(blocked ? 'Toque de novo em ouvir para começar a narração.' : `Narração gravada indisponível (${msg}). Usando outra voz.`, 4000);
+    if (opts && !blocked) play(opts);
   },
   cancel() { this.token = null; this.rec = null; try { const a = mediaEl(); a.pause(); a.ontimeupdate = null; a.onended = null; a.onerror = null; a.onloadedmetadata = null; } catch { /* ignora */ } },
   pause() { try { mediaEl().pause(); } catch { /* ignora */ } },
