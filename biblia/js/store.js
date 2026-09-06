@@ -16,6 +16,12 @@ const DEFAULTS = {
     ttsContinue: true,   // continuar lendo no próximo capítulo
     ttsTimerMin: 15,
     ttsTimerTime: '22:00',
+    ttsMale: true,       // preferir voz masculina
+    ttsStyle: 'narracao', // normal | narracao
+    cloudOn: false,      // narrador na nuvem (Google Cloud Text-to-Speech)
+    cloudKey: '',
+    cloudVoice: '',
+    cloudVoices: [],
   },
   last: { book: 'gn', chapter: 1 },
   highlights: {},   // "gn.1.1" -> color
@@ -143,7 +149,7 @@ export const store = {
   rosaryDone() { state.rosary.count = (state.rosary.count || 0) + 1; this.touchStreak(); save(); },
   get rosaryCount() { return state.rosary.count || 0; },
 
-  export() { return JSON.stringify(state, null, 1); },
+  export() { const copy = JSON.parse(JSON.stringify(state)); if (copy.settings) delete copy.settings.cloudKey; return JSON.stringify(copy, null, 1); },
   import(json) {
     const data = JSON.parse(json);
     if (!data || typeof data !== 'object' || !data.settings) throw new Error('Arquivo inválido');

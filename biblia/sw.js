@@ -1,11 +1,11 @@
 /* Service worker — Bíblia Católica
    Shell: precache. Data (data/*.json): cache-first, immutable per version. */
-const SHELL_CACHE = 'bc-v4-shell';   // casca do app: mude a cada versão do código
+const SHELL_CACHE = 'bc-v5-shell';   // casca do app: mude a cada versão do código
 const DATA_CACHE = 'bc-v4-data';     // textos: mude só quando os dados forem regenerados
 const SHELL = [
   './', './index.html', './css/app.css', './manifest.webmanifest',
   './js/app.js', './js/util.js', './js/store.js', './js/data.js', './js/search.js', './js/reader.js',
-  './js/features.js', './js/liturgy.js', './js/audio.js', './js/prayers.js', './js/rosary.js', './js/plans.js', './js/share.js',
+  './js/features.js', './js/liturgy.js', './js/audio.js', './js/cloudtts.js', './js/prayers.js', './js/rosary.js', './js/plans.js', './js/share.js',
   './data/books.json', './data/lectionary.json',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png'
 ];
