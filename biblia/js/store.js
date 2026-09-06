@@ -24,6 +24,7 @@ const DEFAULTS = {
     cloudVoices: [],
     localVoiceOn: false, // narrador offline (Piper, voz masculina Faber)
     recordedOn: true,    // narração gravada (MP3 por capítulo) quando existir
+    recordedVoice: 'alex', // alex | santa | dora
   },
   last: { book: 'gn', chapter: 1 },
   highlights: {},   // "gn.1.1" -> color
