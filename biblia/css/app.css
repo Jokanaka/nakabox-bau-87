@@ -387,6 +387,10 @@ input[type=range] { width: 160px; accent-color: var(--accent); }
 body.has-player .view { padding-bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + 96px); }
 body.has-player .fab-nav { bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + 84px); }
 body.has-player .toast { bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + 90px); }
+/* com uma tela cheia aberta (Missa, seletor de livros…) a barra fica visível por cima dela, colada ao rodapé */
+body.modal-open .player { z-index: 55; bottom: env(safe-area-inset-bottom); }
+body.has-player.modal-open .modal .inner { padding-bottom: calc(env(safe-area-inset-bottom) + 66px); }
+body.has-player.modal-open .missa-nav { bottom: calc(env(safe-area-inset-bottom) + 59px); }
 .au-label { display: block; font-size: 13px; font-weight: 700; color: var(--muted); margin: 10px 0 6px; }
 select.input { width: 100%; appearance: auto; -webkit-appearance: menulist; font-size: 15px; }
 .au-range { align-items: center; gap: 10px; margin-bottom: 4px; }
@@ -400,3 +404,22 @@ select.input { width: 100%; appearance: auto; -webkit-appearance: menulist; font
 #au-key { flex: 1; min-width: 0; font-family: ui-monospace, monospace; font-size: 13px; }
 .au-help { padding: 20px 18px calc(24px + env(safe-area-inset-bottom)); }
 .au-help h3 { margin-bottom: 8px; }
+
+/* ---- progresso de leitura ---- */
+.read-flag { color: var(--gold); font-weight: 700; font-style: normal; }
+.grid-ch button.read { border-color: var(--gold); background: var(--gold-soft); }
+.progress-list .bar { height: 6px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+.progress-list .bar i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }
+.progress-list .done { color: var(--gold); font-weight: 700; }
+/* ---- modo Missa ---- */
+.missa-step .rubric { font-style: italic; margin-bottom: 10px; }
+.missa-dialog { text-align: left; margin: 8px 0; }
+.missa-dialog .line { display: flex; gap: 10px; margin: 8px 0; font-family: var(--font-serif); font-size: 18px; line-height: 1.5; }
+.missa-dialog .who { flex: none; width: 82px; font-family: var(--font-ui); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; padding-top: 5px; }
+.missa-dialog .line.all span:last-child { font-weight: 700; }
+.missa-step .reading-box { text-align: left; margin-top: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px; }
+.missa-step .reading-box .ref { color: var(--accent); }
+.missa-step .reading-text { font-size: 17px; }
+.missa-step .rv.speaking { background: var(--gold-soft); }
+.missa-nav { position: sticky; bottom: 0; background: var(--bg); padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
+.missa-nav .btn.primary { font-size: 17px; padding: 14px 12px; }

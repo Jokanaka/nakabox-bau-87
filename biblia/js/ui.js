@@ -3,34 +3,37 @@ import { $, h, icon } from './util.js';
 
 const root = () => document.getElementById('sheet-root');
 const stack = [];
+// trava a rolagem da página enquanto houver folha/modal e marca no <body> se há uma tela cheia aberta (o player fica por cima dela)
+const syncBody = () => {
+  document.body.style.overflow = stack.length ? 'hidden' : '';
+  document.body.classList.toggle('modal-open', !!root().querySelector('.modal'));
+};
 
 export function openSheet(html, { onClose } = {}) {
   const back = h('<div class="sheet-backdrop"></div>');
   const sheet = h(`<div class="sheet" role="dialog"><div class="grab"></div>${html}</div>`);
   root().append(back, sheet);
-  document.body.style.overflow = 'hidden';
   const close = () => {
     back.remove(); sheet.remove();
     const i = stack.indexOf(close); if (i >= 0) stack.splice(i, 1);
-    if (!stack.length) document.body.style.overflow = '';
+    syncBody();
     if (onClose) onClose();
   };
   back.addEventListener('click', close);
-  stack.push(close);
+  stack.push(close); syncBody();
   return { el: sheet, close };
 }
 
 export function openModal(html, { onClose } = {}) {
   const modal = h(`<div class="modal" role="dialog"><div class="inner">${html}</div></div>`);
   root().append(modal);
-  document.body.style.overflow = 'hidden';
   const close = () => {
     modal.remove();
     const i = stack.indexOf(close); if (i >= 0) stack.splice(i, 1);
-    if (!stack.length) document.body.style.overflow = '';
+    syncBody();
     if (onClose) onClose();
   };
-  stack.push(close);
+  stack.push(close); syncBody();
   return { el: modal, close };
 }
 

@@ -22,22 +22,54 @@ for v in VOICES: plan += [(v, b) for b in rest]
 if len(sys.argv) > 1: plan = [tuple(x.split(':')) for x in sys.argv[1].split(',')]
 k = Kokoro('kokoro-v1.0.onnx', 'voices-v1.0.bin')
 
-def clean(t):
+SPEECH_VERBS = r'(?:disse|dizendo|dizia|disseram|diz|dirá|dir[aá]s|respondeu|responderam|respondendo|perguntou|perguntaram|perguntando|clamou|clamaram|clamando|exclamou|gritou|gritando|falou|falaram|falando|ordenou|ordenando|anunciou|proclamou|jurou|rogou|orou|pediu|chamou|bradou|acrescentou|replicou|declarou|mandou|prometeu|escreveu|cantou|cantaram)'
+SPEECH_RE = re.compile(r'^(.{2,}?\b' + SPEECH_VERBS + r'\b[^:]{0,45}?):\s+(["“]?[A-ZÀ-Ú].+)$', re.S | re.I)
+
+def clean_base(t):
     t = re.sub(r'\s+', ' ', t or '').strip()
     t = re.sub(r'\[[^\]]*\]', '', t)
     t = t.replace('“', '"').replace('”', '"').replace('«', '"').replace('»', '"')
-    t = re.sub(r'\s*:\s*(?=[A-ZÀ-Ú])', '. ', t)
-    t = re.sub(r'(?<=[a-zà-ÿ])\.(?=[A-ZÀ-Ú][a-zà-ÿ])', '. ', t)
     t = re.sub(r'\s+([,.;:!?])', r'\1', t)
-    if t and t[-1] not in '.!?': t += '.'
-    return t
+    return t.strip()
 
-def synth(text, voice):
-    text = clean(text)
+def finish_sent(t):
+    t = t.strip()
+    return t if not t or t[-1] in '.!?' else t + '.'
+
+# divide o texto em trechos com ritmo próprio: narração um pouco mais lenta, falas na velocidade normal,
+# pausa curta antes de cada fala (como quem conta uma história) e respiro entre frases
+def segments(text, base=0.96):
+    t = clean_base(text)
+    if not t: return []
+    sents = [x for x in re.split(r'(?<=[.!?…])\s+(?=["“(]?[A-ZÀ-Ú0-9])', t) if x.strip()]
+    out = []
+    for s in sents:
+        m = SPEECH_RE.match(s)
+        if m:
+            lead, speech = m.group(1).strip(), m.group(2).strip()
+            out.append((lead.rstrip(',.;:') + ',', base, 0.25))
+            out.append((finish_sent(speech), 0.97 if speech.endswith('?') else 1.0, 0.12))
+        else:
+            s2 = re.sub(r'\s*:\s*(?=[A-ZÀ-Ú])', '. ', s)
+            out.append((finish_sent(s2), 0.97 if s2.endswith('?') else base, 0.12))
+    return out
+
+def synth_one(text, voice, speed):
+    text = clean_base(text)
     if not text: return np.zeros(0, dtype=np.float32)
-    s, sr = k.create(text, voice=VOICES[voice], speed=1.0, lang='pt-br')
+    s, sr = k.create(text, voice=VOICES[voice], speed=speed, lang='pt-br')
     assert sr == SR
     return s.astype(np.float32)
+
+def synth(text, voice, base=0.96):
+    parts = []
+    segs = segments(text, base)
+    for i, (t, speed, pause) in enumerate(segs):
+        a = synth_one(t, voice, speed)
+        if not len(a): continue
+        parts.append(a)
+        if i < len(segs) - 1: parts.append(silence(pause))
+    return np.concatenate(parts) if parts else np.zeros(0, dtype=np.float32)
 
 def silence(sec): return np.zeros(int(sec * SR), dtype=np.float32)
 
@@ -63,7 +95,8 @@ for voice, bid in plan:
         t0 = time.time()
         head = f"Salmo {n}" if bid == 'sl' else f"{b['name']}, capítulo {n}"
         intro = f"{head}. {ch.get('title') or ''}".strip()
-        parts = [synth(intro, voice), silence(GAP_INTRO)]
+        intro_audio = np.concatenate([synth_one(head + '.', voice, 0.95), silence(0.5), synth((ch.get('title') or ''), voice, 0.95)]) if ch.get('title') else synth_one(head + '.', voice, 0.95)
+        parts = [intro_audio, silence(GAP_INTRO)]
         marks = {'intro': [0.0, round(len(parts[0]) / SR, 2)], 'v': []}
         pos = sum(len(p) for p in parts) / SR
         for i, t in enumerate(ch['verses']):

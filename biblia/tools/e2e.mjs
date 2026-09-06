@@ -24,10 +24,51 @@ page.on('response', (r) => { if (r.status() >= 400 && !r.url().includes('texttos
 
 const step = async (name, fn) => {
   try { await fn(); console.log('OK  ', name); }
-  catch (e) { console.log('FAIL', name, '-', e.message.split('\n')[0]); errors.push(`[step ${name}] ${e.message.split('\n')[0]}`); }
-  await page.screenshot({ path: `${SHOT}/${name}.png` });
+  catch (e) { const lines = e.message.split('\n').filter((l) => l.trim()).slice(0, 6); console.log('FAIL', name, '-', lines.join(' | ')); errors.push(`[step ${name}] ${lines.join(' | ')}`); }
+  await page.screenshot({ path: `${SHOT}/${name}.png` }).catch(() => {});
+  // nenhum passo deixa áudio tocando para o seguinte (a leitura contínua mudaria de capítulo sozinha)
+  await page.evaluate(() => import('./js/audio.js').then((a) => a.stop())).catch(() => {});
 };
 
+// Narração gravada: manifesto e capítulo Mt 1 servidos dos arquivos gerados localmente
+const AUDIO_DIR = '/tmp/claude-0/-home-user-nakabox-bau-87/972f22bb-545c-5ad0-ac6c-c883efe8c07c/scratchpad/audio_out';
+const recCalls = [];
+await page.route('**/data/audio.json', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ base: 'https://cdn.jsdelivr.net/gh/jokanaka/nakabox-bau-87@test/', fallback: '', voices: { alex: { name: 'Alex', desc: 'masculina', books: { mt: 1 } }, santa: { name: 'Santa', desc: 'masculina, mais grave', books: {} } } }) }));
+await page.route(/cdn\.jsdelivr\.net\/gh\/jokanaka\/nakabox-bau-87@test\//, (route) => {
+  const u = new URL(route.request().url()); const rel = u.pathname.split('@test/')[1]; recCalls.push(rel + (route.request().headers()['range'] ? ' [range]' : ''));
+  const local = `${AUDIO_DIR}/${rel}`;
+  if (!fs.existsSync(local)) return route.fulfill({ status: 404, body: '' });
+  return route.fulfill({ status: 200, contentType: rel.endsWith('.json') ? 'application/json' : 'audio/mpeg', headers: { 'Access-Control-Allow-Origin': '*', 'Accept-Ranges': 'bytes' }, body: fs.readFileSync(local) });
+});
+await page.route('https://texttospeech.googleapis.com/**', async (route) => {
+  const url = new URL(route.request().url());
+  if (url.searchParams.get('key') !== 'CHAVE-TESTE') return route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error: { message: 'API key not valid. Please pass a valid API key.' } }) });
+  if (url.pathname.endsWith('/voices')) { cloudCalls.voices++; return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ voices: [
+    { name: 'pt-BR-Neural2-A', ssmlGender: 'FEMALE', languageCodes: ['pt-BR'] }, { name: 'pt-BR-Chirp3-HD-Charon', ssmlGender: 'MALE', languageCodes: ['pt-BR'] }, { name: 'pt-BR-Neural2-B', ssmlGender: 'MALE', languageCodes: ['pt-BR'] }, { name: 'pt-BR-Standard-A', ssmlGender: 'FEMALE', languageCodes: ['pt-BR'] } ] }) }); }
+  cloudCalls.synth++;
+  return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ audioContent: wav }) });
+});
+await step('00-simple-mode', async () => {
+  await page.goto(BASE + '#/biblia/gn/1');
+  await page.waitForSelector('#chapter .verse', { timeout: 15000 });
+  if (await page.$('[data-act=ver]')) throw new Error('no modo simples o seletor de versão não deve aparecer');
+  await page.click('[data-act=tts]');
+  await page.waitForSelector('#player-root .player', { timeout: 5000 });
+  await page.click('#player-root [data-act=cfg]');
+  await page.waitForSelector('#au-rec-voice', { timeout: 5000 });
+  if (await page.$('#au-key') || await page.$('#au-voice')) throw new Error('modo simples não deveria mostrar nuvem/voz do aparelho');
+  await page.screenshot({ path: `${SHOT}/00-simple-sheet.png` });
+  await page.click('[data-act=advanced]');
+  await page.waitForSelector('#au-key', { timeout: 5000 });
+  await page.click('[data-act=ok]');
+  await page.click('#player-root [data-act=stop]');
+  await page.goto(BASE + '#/biblia/gn/3');
+  await page.waitForSelector('[data-act=ver]', { timeout: 5000 });
+  await page.goto(BASE + '#/mais/config');
+  await page.waitForSelector('[data-k=uiMode] button.on', { timeout: 5000 });
+  const mode = await page.$eval('[data-k=uiMode] button.on', (el) => el.dataset.v);
+  if (mode !== 'avancado') throw new Error('modo: ' + mode);
+});
 await step('01-home', async () => {
   await page.goto(BASE + '#/inicio');
   await page.waitForSelector('.hero h1', { timeout: 15000 });
@@ -202,24 +243,6 @@ await page.route(/cdnjs\.cloudflare\.com\/ajax\/libs\/onnxruntime-web|cdn\.jsdel
   const type = name.endsWith('.js') ? 'application/javascript' : name.endsWith('.wasm') ? 'application/wasm' : name.endsWith('.json') ? 'application/json' : 'application/octet-stream';
   return route.fulfill({ status: 200, contentType: type, headers: { 'Access-Control-Allow-Origin': '*' }, body: fs.readFileSync(local) });
 });
-// Narração gravada: manifesto e capítulo Mt 1 servidos dos arquivos gerados localmente
-const AUDIO_DIR = '/tmp/claude-0/-home-user-nakabox-bau-87/972f22bb-545c-5ad0-ac6c-c883efe8c07c/scratchpad/audio_out';
-const recCalls = [];
-await page.route('**/data/audio.json', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ base: 'https://cdn.jsdelivr.net/gh/jokanaka/nakabox-bau-87@test/', fallback: '', voices: { alex: { name: 'Alex', desc: 'masculina', books: { mt: 1 } }, santa: { name: 'Santa', desc: 'masculina, mais grave', books: {} } } }) }));
-await page.route(/cdn\.jsdelivr\.net\/gh\/jokanaka\/nakabox-bau-87@test\//, (route) => {
-  const u = new URL(route.request().url()); const rel = u.pathname.split('@test/')[1]; recCalls.push(rel + (route.request().headers()['range'] ? ' [range]' : ''));
-  const local = `${AUDIO_DIR}/${rel}`;
-  if (!fs.existsSync(local)) return route.fulfill({ status: 404, body: '' });
-  return route.fulfill({ status: 200, contentType: rel.endsWith('.json') ? 'application/json' : 'audio/mpeg', headers: { 'Access-Control-Allow-Origin': '*', 'Accept-Ranges': 'bytes' }, body: fs.readFileSync(local) });
-});
-await page.route('https://texttospeech.googleapis.com/**', async (route) => {
-  const url = new URL(route.request().url());
-  if (url.searchParams.get('key') !== 'CHAVE-TESTE') return route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error: { message: 'API key not valid. Please pass a valid API key.' } }) });
-  if (url.pathname.endsWith('/voices')) { cloudCalls.voices++; return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ voices: [
-    { name: 'pt-BR-Neural2-A', ssmlGender: 'FEMALE', languageCodes: ['pt-BR'] }, { name: 'pt-BR-Chirp3-HD-Charon', ssmlGender: 'MALE', languageCodes: ['pt-BR'] }, { name: 'pt-BR-Neural2-B', ssmlGender: 'MALE', languageCodes: ['pt-BR'] }, { name: 'pt-BR-Standard-A', ssmlGender: 'FEMALE', languageCodes: ['pt-BR'] } ] }) }); }
-  cloudCalls.synth++;
-  return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ audioContent: wav }) });
-});
 await step('20b-audio-player', async () => {
   await page.goto(BASE + '#/biblia/gn/1');
   await page.waitForSelector('#chapter .verse', { timeout: 15000 });
@@ -375,7 +398,12 @@ await step('20i-audio-recorded', async () => {
   await page.waitForSelector('#chapter .verse', { timeout: 15000 });
   await page.click('[data-act=tts]');
   await page.waitForSelector('#player-root .player', { timeout: 5000 });
-  await page.waitForFunction(() => { const e = document.querySelector('#player-root .p-engine'); return e && !e.hidden && e.title.startsWith('Narração gravada'); }, null, { timeout: 15000 });
+  try {
+    await page.waitForFunction(() => { const e = document.querySelector('#player-root .p-engine'); return e && !e.hidden && e.title.startsWith('Narração gravada'); }, null, { timeout: 15000 });
+  } catch (e) {
+    const diag = await page.evaluate(() => import('./js/audio.js').then(async (a) => { const m = await import('./js/store.js'); return JSON.stringify({ avail: a.recordedAvailable('mt', 1), voice: a.recordedVoiceFor('mt', 1), voices: a.recordedVoices().map((v) => v.id + ':' + v.count), recOn: m.store.settings.recordedOn, ver: m.store.settings.version, recVoice: m.store.settings.recordedVoice, toast: document.querySelector('#toast')?.textContent, engine: a.engineName() }); }));
+    throw new Error('motor gravado não iniciou: ' + diag);
+  }
   await page.waitForFunction(() => document.querySelector('#player-root .p-pos')?.textContent.includes('Introdução'), null, { timeout: 15000 });
   await page.click('#player-root [data-act=next]');
   await page.waitForFunction(() => document.querySelector('#chapter .verse.speaking')?.dataset.v === '1', null, { timeout: 5000 });
@@ -402,6 +430,55 @@ await step('20i-audio-recorded', async () => {
   if (!title.includes('Alex')) throw new Error('nome da voz na barra: ' + title);
   await page.click('[data-act=ok]');
   await page.click('#player-root [data-act=stop]');
+});
+await step('22-progress', async () => {
+  await page.goto(BASE + '#/biblia/gn/2');
+  await page.waitForSelector('#chapter .verse', { timeout: 15000 });
+  await page.waitForTimeout(8300);
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await page.waitForFunction(() => document.querySelector('#read-flag') && !document.querySelector('#read-flag').hidden, null, { timeout: 5000 });
+  const read = await page.evaluate(() => import('./js/store.js').then((m) => m.store.isRead('gn', 2)));
+  if (!read) throw new Error('capítulo não marcado como lido');
+  await page.goto(BASE + '#/mais/progresso');
+  await page.waitForSelector('.progress-list', { timeout: 5000 });
+  const txt = await page.$eval('.progress-list', (el) => el.textContent);
+  if (!txt.includes('Gênesis') || !/[1-9]\/50/.test(txt)) throw new Error('progresso de Gênesis: ' + txt.slice(0, 80));
+  await page.screenshot({ path: `${SHOT}/22-progress-page.png` });
+  await page.goto(BASE + '#/biblia/gn/2');
+  await page.waitForSelector('#chapter .verse', { timeout: 15000 });
+  await page.click('[data-act=pick]');
+  await page.waitForSelector('#bk-list .book-row', { timeout: 5000 });
+  const cnt = await page.$eval('.book-row[data-b="gn"] .cnt', (el) => el.textContent);
+  if (!/\d+\/50/.test(cnt)) throw new Error('contagem no seletor: ' + cnt);
+  await page.keyboard.press('Escape');
+});
+await step('23-missa', async () => {
+  await page.goto(BASE + '#/missa');
+  await page.waitForFunction(() => { const b = document.querySelector('#missa-readings'); return b && !b.textContent.includes('Carregando'); }, null, { timeout: 20000 });
+  await page.click('[data-act=start]');
+  await page.waitForSelector('.missa-step', { timeout: 30000 });
+  let found = false;
+  for (let k = 0; k < 12; k++) {
+    if (await page.$('.missa-step .reading-text .rv')) { found = true; break; }
+    await page.click('#missa [data-act=next]');
+    await page.waitForTimeout(150);
+  }
+  if (!found) throw new Error('nenhuma leitura com texto apareceu');
+  await page.screenshot({ path: `${SHOT}/23-missa-reading.png` });
+  await page.click('#missa [data-act=listen]');
+  await page.waitForSelector('#player-root .player', { timeout: 5000 });
+  await page.waitForFunction(() => document.querySelector('.missa-step .rv.speaking'), null, { timeout: 5000 });
+  if (!/Parar/.test(await page.$eval('#missa [data-act=listen]', (el) => el.textContent))) throw new Error('botão Ouvir não virou Parar');
+  await page.screenshot({ path: `${SHOT}/23-missa-playing.png` });
+  // a barra do player fica por cima da tela da Missa: parar por ela tem de funcionar
+  await page.click('#player-root [data-act=stop]', { timeout: 5000 });
+  await page.waitForFunction(() => /Ouvir/.test(document.querySelector('#missa [data-act=listen]').textContent) && !document.querySelector('.missa-step .rv.speaking'), null, { timeout: 3000 });
+  await page.click('#missa [data-act=listen]');
+  await page.waitForSelector('#player-root .player', { timeout: 5000 });
+  await page.click('#missa [data-act=listen]');   // Parar pelo próprio botão
+  await page.waitForFunction(() => !document.querySelector('#player-root .player'), null, { timeout: 3000 });
+  await page.click('#missa [data-act=x]');
+  await page.waitForFunction(() => !document.querySelector('.modal') && !document.body.classList.contains('modal-open'), null, { timeout: 3000 });
 });
 await step('21-desktop', async () => {
   await page.setViewportSize({ width: 1200, height: 800 });

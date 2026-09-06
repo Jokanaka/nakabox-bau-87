@@ -39,7 +39,7 @@ export async function renderReader(view, { book: bid, chapter, verse, verseEnd, 
   view.innerHTML = `
     ${topbar({ title: '', right: `
       <button class="pill-btn" data-act="pick">${esc(bookName(b, ver))} ${chapter} ${icon('chevD')}</button>
-      <button class="pill-btn ver" data-act="ver">${esc(version(ver).short)}</button>
+      ${s.uiMode === 'avancado' ? `<button class="pill-btn ver" data-act="ver">${esc(version(ver).short)}</button>` : ''}
       <span class="spacer"></span>
       <button class="icon-btn" data-act="font" aria-label="Aparência">${icon('font')}</button>
       <button class="icon-btn" data-act="search" aria-label="Buscar">${icon('search')}</button>
@@ -51,7 +51,7 @@ export async function renderReader(view, { book: bid, chapter, verse, verseEnd, 
     </div>
     <div class="ch-nav">
       <button class="btn nav" data-act="prev" aria-label="Capítulo anterior">${icon('chevL')}</button>
-      <button class="btn primary" data-act="done">${icon('check')} Concluir capítulo</button>
+      <button class="btn primary" data-act="done">${icon('check')} ${store.isRead(b.id, chapter) ? 'Lido · próximo capítulo' : 'Concluir capítulo'}</button>
       <button class="btn nav" data-act="next" aria-label="Próximo capítulo">${icon('chevR')}</button>
     </div>
     <div class="fab-nav"><div class="inner">
@@ -65,7 +65,7 @@ export async function renderReader(view, { book: bid, chapter, verse, verseEnd, 
   $$('[data-act=prev]', view).forEach((el) => { el.disabled = !prev; el.onclick = () => prev && go(prev.book, prev.chapter, plan, day); });
   $$('[data-act=next]', view).forEach((el) => { el.disabled = !next; el.onclick = () => next && go(next.book, next.chapter, plan, day); });
   $('[data-act=pick]', view).onclick = () => openBookPicker(b.id, chapter);
-  $('[data-act=ver]', view).onclick = () => openVersionPicker();
+  { const vb = $('[data-act=ver]', view); if (vb) vb.onclick = () => openVersionPicker(); }
   $('[data-act=font]', view).onclick = () => openFontSheet();
   $('[data-act=search]', view).onclick = () => { location.hash = '#/busca'; };
   $('[data-act=tts]', view).onclick = () => toggleTTS(view);
@@ -89,6 +89,7 @@ export async function renderReader(view, { book: bid, chapter, verse, verseEnd, 
   const html = [];
   html.push(`<h2 class="ch-title">${esc(bookName(b, ver))}${b.deutero ? ' <span class="badge">Deuterocanônico</span>' : ''}</h2>`);
   html.push(`<div class="ch-num">${chapter}</div>`);
+  html.push(`<div class="ch-summary read-flag" id="read-flag" ${store.isRead(b.id, chapter) ? '' : 'hidden'}>✓ Capítulo já lido</div>`);
   if (b.id === 'sl' && psalmHebrew(chapter) !== String(chapter)) html.push(`<div class="ch-summary" style="margin-bottom:6px">Salmo ${psalmHebrew(chapter)} na numeração hebraica (Bíblias modernas)</div>`);
   if (ch.title) html.push(`<div class="ch-summary">${esc(ch.title)}</div>`);
   if (ch.heading) html.push(`<p class="heading">${esc(ch.heading)}</p>`);
@@ -147,6 +148,22 @@ export async function renderReader(view, { book: bid, chapter, verse, verseEnd, 
   const fab = $('.fab-nav', view); const chnav = $('.ch-nav', view);
   if (fab && chnav && 'IntersectionObserver' in window) {
     new IntersectionObserver((entries) => { fab.style.opacity = entries[0].isIntersecting ? '0' : '1'; fab.style.pointerEvents = entries[0].isIntersecting ? 'none' : ''; }, { threshold: 0.2 }).observe(chnav);
+  }
+  // marca o capítulo como lido ao chegar ao fim dele (depois de pelo menos 8 s de leitura)
+  const openedAt = Date.now();
+  const lastVerse = $$('#chapter .verse', view).pop();
+  if (lastVerse && 'IntersectionObserver' in window && !store.isRead(b.id, chapter)) {
+    let visible = false, timer = null;
+    const io = new IntersectionObserver((entries) => { visible = entries[0].isIntersecting; tryMark(); }, { threshold: 0.4 });
+    const tryMark = () => {
+      clearTimeout(timer);
+      if (!visible || store.isRead(b.id, chapter)) return;
+      if (current.book !== b.id || current.chapter !== chapter) { io.disconnect(); return; }
+      const left = 8000 - (Date.now() - openedAt);
+      if (left > 0) { timer = setTimeout(tryMark, left); return; }
+      io.disconnect(); markChapterRead(b.id, chapter);
+    };
+    io.observe(lastVerse);
   }
   // pré-carrega o próximo livro
   if (next && next.book !== b.id) loadBook(ver, next.book).catch(() => {});
@@ -301,7 +318,7 @@ export function openBookPicker(curBook, curChapter) {
       const bs = g.books.filter((b) => !nq || norm(b.name).includes(nq) || norm(b.abbr).includes(nq) || b.aliases.some((a) => norm(a).startsWith(nq)));
       if (!bs.length) return '';
       return `<div class="book-group"><h4>${esc(g.name)}${g.books[0].test === 'AT' && g.name === 'Pentateuco' ? ' · Antigo Testamento' : ''}</h4>
-        ${bs.map((b) => `<button class="book-row ${b.id === curBook ? 'cur' : ''}" data-b="${b.id}"><span class="abbr">${esc(b.abbr)}</span><span>${esc(bookName(b, ver))}${b.deutero ? ' <span class="badge">DC</span>' : ''}</span><span class="cnt">${b.chapters} cap.</span></button>`).join('')}</div>`;
+        ${bs.map((b) => `<button class="book-row ${b.id === curBook ? 'cur' : ''}" data-b="${b.id}"><span class="abbr">${esc(b.abbr)}</span><span>${esc(bookName(b, ver))}${b.deutero ? ' <span class="badge">DC</span>' : ''}</span><span class="cnt">${store.readCountBook(b.id) ? `${store.readCountBook(b.id)}/${b.chapters}` : `${b.chapters} cap.`}</span></button>`).join('')}</div>`;
     }).join('');
     $('#bk-list', el).innerHTML = gs || `<div class="empty">Nenhum livro encontrado</div>`;
     $$('.book-row', el).forEach((row) => row.onclick = () => showChapters(row.dataset.b));
@@ -357,6 +374,15 @@ function ttsLang() { const l = version(store.settings.version).lang; return l ==
 function toggleTTS() { if (audio.isActive()) stopTTS(); else startTTS(1).catch(() => {}); }
 function setTtsButton(on) { const btn = $('[data-act=tts]'); if (btn) { btn.innerHTML = on ? icon('stop') : icon('play'); btn.classList.toggle('active', on); } }
 function clearSpeaking() { $$('#chapter .verse.speaking').forEach((x) => x.classList.remove('speaking')); }
+function markChapterRead(bid, chapter) {
+  if (store.isRead(bid, chapter)) return;
+  store.markRead(bid, chapter, true);
+  toast('Capítulo marcado como lido ✓');
+  if (current.book === bid && current.chapter === chapter) {
+    const f = $('#read-flag'); if (f) f.hidden = false;
+    const d = $('[data-act=done]'); if (d) d.innerHTML = `${icon('check')} Lido · próximo capítulo`;
+  }
+}
 async function startTTS(fromVerse) {
   const b = book(current.book);
   const chapter = current.chapter;
@@ -368,6 +394,7 @@ async function startTTS(fromVerse) {
     onItem: (i, it) => { clearSpeaking(); if (!it.v) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } const p = $(`#v${it.v}`); if (p) { p.classList.add('speaking'); p.scrollIntoView({ block: 'center', behavior: 'smooth' }); } },
     onEnd: (completed) => {
       clearSpeaking(); setTtsButton(false);
+      if (completed) markChapterRead(current.book, current.chapter);
       if (completed && store.settings.ttsContinue) {
         const next = nextChapter(current.book, current.chapter);
         if (next) { audio.requestAutoplay(`${next.book}.${next.chapter}`); go(next.book, next.chapter); }
