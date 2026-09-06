@@ -23,6 +23,7 @@ const DEFAULTS = {
     cloudVoice: '',
     cloudVoices: [],
     localVoiceOn: false, // narrador offline (Piper, voz masculina Faber)
+    recordedOn: true,    // narração gravada (MP3 por capítulo) quando existir
   },
   last: { book: 'gn', chapter: 1 },
   highlights: {},   // "gn.1.1" -> color
