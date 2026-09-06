@@ -27,6 +27,9 @@ Não há etapa de build: é HTML, CSS e JavaScript puro (módulos ES).
 - **Planos de leitura**: Bíblia em 1 e 2 anos, Novo Testamento, Evangelhos, Salmos, Deuterocanônicos, Advento, Quaresma, Semana Santa, novenas etc.
 - **Orações** tradicionais (com latim quando existe), **Santo Rosário** guiado com os mistérios do dia e **Terço da Divina Misericórdia** guiado.
 - **Liturgia**: calendário litúrgico (tempos, ciclos A/B/C e I/II, cores, solenidades e festas, calendário do Brasil) e leituras da Missa.
+- **Modo Missa**: guia passo a passo da celebração (partes do povo conforme o Missal Romano em português, Glória e Credo conforme o dia, aclamação por tempo) com as leituras do dia em texto e áudio; ao terminar cada parte, "Próximo".
+- **Progresso de leitura**: um capítulo é marcado como lido ao chegar ao fim dele ou ao terminar de ouvi-lo; página com percentual da Bíblia, por testamento e por livro; indicação no seletor de capítulos.
+- **Modo simples e avançado**: o simples mostra só o essencial (narração gravada, velocidade, temporizador); o avançado libera vozes do aparelho, narrador offline e na nuvem e as versões em latim e inglês.
 - **Início**: versículo do dia, continuar lendo, plano de hoje, leituras de hoje, sequência de dias.
 - Tudo é guardado só no aparelho (localStorage), com exportação/importação de backup.
 

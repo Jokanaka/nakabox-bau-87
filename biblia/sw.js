@@ -1,6 +1,6 @@
 /* Service worker — Bíblia Católica
    Shell: precache. Data (data/*.json): cache-first, immutable per version. */
-const SHELL_CACHE = 'bc-v7-shell';   // casca do app: mude a cada versão do código
+const SHELL_CACHE = 'bc-v8-shell';   // casca do app: mude a cada versão do código
 const DATA_CACHE = 'bc-v4-data';     // textos: mude só quando os dados forem regenerados
 const VOICE_CACHE = 'bc-voice-v1';   // runtime do narrador offline (wasm de terceiros)
 const AUDIO_CACHE = 'bc-audio-v1';   // narração gravada (últimos capítulos ouvidos)
@@ -8,7 +8,7 @@ const AUDIO_MAX = 40;
 const SHELL = [
   './', './index.html', './css/app.css', './manifest.webmanifest',
   './js/app.js', './js/util.js', './js/store.js', './js/data.js', './js/search.js', './js/reader.js',
-  './js/features.js', './js/liturgy.js', './js/audio.js', './js/cloudtts.js', './js/piper-worker.js',
+  './js/features.js', './js/liturgy.js', './js/audio.js', './js/cloudtts.js', './js/piper-worker.js', './js/missa.js',
   './js/vendor/piper/piper-tts-web.js', './js/vendor/piper/piper-o91UDS6e.js', './js/vendor/piper/voices_static-D_OtJDHM.js', './js/vendor/piper/ort-esm.mjs', './js/vendor/piper/ort.wasm.min.js', './js/prayers.js', './js/rosary.js', './js/plans.js', './js/share.js',
   './data/books.json', './data/lectionary.json', './data/audio.json',
   './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png'

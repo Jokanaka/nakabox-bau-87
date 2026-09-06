@@ -25,6 +25,7 @@ const DEFAULTS = {
     localVoiceOn: false, // narrador offline (Piper, voz masculina Faber)
     recordedOn: true,    // narração gravada (MP3 por capítulo) quando existir
     recordedVoice: 'alex', // alex | santa | dora
+    uiMode: 'simples',   // simples | avancado
   },
   last: { book: 'gn', chapter: 1 },
   highlights: {},   // "gn.1.1" -> color
@@ -109,6 +110,7 @@ export const store = {
     save();
   },
   isRead(book, chapter) { return !!state.readChapters[`${book}.${chapter}`]; },
+  readCountBook(book) { let n = 0; const p = book + '.'; for (const k in state.readChapters) if (k.startsWith(p)) n++; return n; },
   get readChapters() { return state.readChapters; },
 
   // planos

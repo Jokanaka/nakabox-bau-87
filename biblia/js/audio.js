@@ -292,6 +292,19 @@ export async function recordedChapter(book, chapter, voice = null) {
   const info = recordedVoices().find((v) => v.id === vid) || { name: vid };
   return { url: `${manifest.base}${rel}.mp3`, alt: manifest.fallback ? `${manifest.fallback}${rel}.mp3` : null, marks, voice: vid, voiceName: info.name, book, chapter };
 }
+// toca um trecho (versículos fromV..toV) de um capítulo com narração gravada; devolve false se não houver
+export async function playRecordedRange({ title = '', book, chapter, fromV = 1, toV = 999, texts = new Map(), onItem = null, onEnd = null } = {}) {
+  await loadAudioManifest();
+  if (store.settings.recordedOn === false || !recordedAvailable(book, chapter)) return false;
+  const rec = await recordedChapter(book, chapter);
+  if (!rec) return false;
+  const items = rec.marks.v.map(([v]) => ({ v, label: `Versículo ${v}`, text: texts.get(v) || '' }));
+  const from = items.findIndex((x) => x.v >= fromV);
+  let until = -1;
+  items.forEach((x, i) => { if (x.v <= toV) until = i; });
+  if (from < 0 || until < from) return false;
+  return play({ title, items, lang: 'pt-BR', from, recorded: rec, until, onItem, onEnd });
+}
 // troca a voz gravada; se estiver lendo com narração gravada, recomeça o versículo atual na voz nova
 export async function setRecordedVoice(voice) {
   store.setSetting('recordedVoice', voice);
@@ -348,6 +361,7 @@ const recEngine = {
     let idx = 0;
     for (let i = 0; i < v.length; i++) { if (t >= v[i][1] - 0.05) idx = i + 1; else break; }
     idx = Math.min(idx, st.items.length - 1);
+    if (st.until != null && idx > st.until) { finish(true); return; }
     if (idx !== st.idx) { st.idx = idx; const it = st.items[idx]; if (it && st.onItem) { try { st.onItem(idx, it); } catch { /* ignora */ } } updateBar(); }
   },
   seek(idx) {
@@ -382,11 +396,11 @@ export function engineName() { return st.active && st.engine ? st.engine.kind : 
 
 // ---------- fila ----------
 // items: [{ text, label?, kind? }] — onItem(i, item) ao começar cada item; onEnd(completed) ao terminar ou parar
-export function play({ title = '', items = [], lang = 'pt-BR', from = 0, onItem = null, onEnd = null, recorded = null } = {}) {
+export function play({ title = '', items = [], lang = 'pt-BR', from = 0, onItem = null, onEnd = null, recorded = null, until = null } = {}) {
   if (recorded && items.length) {
     stop({ silent: true });
     recEngine.unlock();
-    Object.assign(st, { title, items, lang, idx: clamp(from, 0, items.length - 1), onItem, onEnd, active: true, paused: false, pausedInPlace: false, errors: 0, engine: recEngine, status: '', fallback: { title, items, lang, from, onItem, onEnd }, voiceName: recorded.voiceName || '', recInfo: { book: recorded.book, chapter: recorded.chapter } });
+    Object.assign(st, { title, items, lang, idx: clamp(from, 0, items.length - 1), onItem, onEnd, active: true, paused: false, pausedInPlace: false, errors: 0, engine: recEngine, status: '', fallback: { title, items: until != null ? items.slice(0, until + 1) : items, lang, from, onItem, onEnd }, voiceName: recorded.voiceName || '', recInfo: { book: recorded.book, chapter: recorded.chapter }, until });
     document.body.classList.add('has-player');
     renderBar();
     const it = st.items[st.idx]; if (it && onItem) { try { onItem(st.idx, it); } catch { /* ignora */ } }
@@ -502,7 +516,7 @@ export function skip(delta) {
 function teardown() {
   const onEnd = st.onEnd;
   const engine = st.engine;
-  st.active = false; st.paused = false; st.pausedInPlace = false; st.onEnd = null; st.onItem = null; st.items = []; st.status = ''; st.fallback = null; st.voiceName = ''; st.recInfo = null;
+  st.active = false; st.paused = false; st.pausedInPlace = false; st.onEnd = null; st.onItem = null; st.items = []; st.status = ''; st.fallback = null; st.voiceName = ''; st.recInfo = null; st.until = null;
   clearTimeout(st.watchdog); clearTimeout(st.restart); clearTimeout(st.gap);
   stopNudge();
   if (engine) engine.cancel(); else sysEngine.cancel();
@@ -696,6 +710,7 @@ function cloudHelp() {
 
 export function openAudioSheet() {
   const s = store.settings;
+  const simple = s.uiMode !== 'avancado';
   const list = voices();
   const pt = list.filter((v) => lb(v.lang).startsWith('pt'));
   const others = list.filter((v) => !lb(v.lang).startsWith('pt'));
@@ -705,8 +720,14 @@ export function openAudioSheet() {
   const cv = s.cloudVoices || [];
   const copt = (v) => `<option value="${esc(v.name)}" ${s.cloudVoice === v.name ? 'selected' : ''}>${esc(cloud.describeVoice(v))}</option>`;
   const mins = [0, 5, 10, 15, 30, 45, 60];
-  const { el, close } = openSheet(`
-    <h3>Voz e áudio</h3>
+  const recHtml = `
+    <div class="section-title" style="margin-top:${simple ? 4 : 16}px">Narração gravada</div>
+    <p class="small muted">Capítulos já narrados com vozes neurais, em estilo de história, prontos para tocar sem baixar nada e sem custo. <span id="au-rec-state">Carregando a lista…</span></p>
+    ${simple ? '' : `<div class="setting"><span>Usar narração gravada quando existir</span><button class="switch ${s.recordedOn !== false ? 'on' : ''}" data-act="rec-on" aria-label="Usar narração gravada"></button></div>`}
+    <label class="au-label" for="au-rec-voice">Voz da narração</label>
+    <div class="row" style="gap:8px"><select id="au-rec-voice" class="input" aria-label="Voz da narração"></select><button class="btn sm" data-act="rec-sample" aria-label="Ouvir amostra">${icon('play')} Amostra</button></div>
+    ${simple ? '<p class="small muted" style="margin-top:6px">Nos capítulos que ainda não têm narração gravada, o app usa a voz do próprio celular.</p>' : ''}`;
+  const deviceHtml = `
     <div class="setting"><span>Preferir voz masculina</span><button class="switch ${s.ttsMale ? 'on' : ''}" data-act="male" aria-label="Preferir voz masculina"></button></div>
     <div class="setting"><span>Estilo</span><div class="seg" id="au-style"><button data-v="normal" class="${s.ttsStyle === 'normal' ? 'on' : ''}">Normal</button><button data-v="narracao" class="${s.ttsStyle !== 'normal' ? 'on' : ''}">Narração</button></div></div>
     <p class="small muted" style="margin:-4px 0 8px">Narração: fala mais pausada, com respiro entre as frases e os versículos, e apresenta o capítulo como quem conta uma história.</p>
@@ -716,110 +737,120 @@ export function openAudioSheet() {
       ${pt.length ? `<optgroup label="Português">${pt.map(opt).join('')}</optgroup>` : ''}
       ${others.length ? `<optgroup label="Outras línguas">${others.map(opt).join('')}</optgroup>` : ''}
     </select>
-    <p class="small muted" style="margin-top:6px">${list.length ? 'Para uma voz masculina melhor no aparelho: no Android, em Configurações › Sistema › Idiomas › Saída de conversão de texto em voz, instale as vozes em português do Google e escolha uma masculina; no iPhone, em Ajustes › Acessibilidade › Conteúdo falado › Vozes › Português, baixe a voz "Felipe".' : 'Nenhuma voz encontrada ainda. No Android, instale o "Serviço de conversão de texto em voz do Google" e as vozes em português; no iPhone, as vozes ficam em Ajustes › Acessibilidade › Conteúdo falado.'}</p>
+    <p class="small muted" style="margin-top:6px">${list.length ? 'Para uma voz masculina melhor no aparelho: no Android, em Configurações › Sistema › Idiomas › Saída de conversão de texto em voz, instale as vozes em português do Google e escolha uma masculina; no iPhone, em Ajustes › Acessibilidade › Conteúdo falado › Vozes › Português, baixe a voz "Felipe".' : 'Nenhuma voz encontrada ainda. No Android, instale o "Serviço de conversão de texto em voz do Google" e as vozes em português; no iPhone, as vozes ficam em Ajustes › Acessibilidade › Conteúdo falado.'}</p>`;
+  const rateHtml = `
     <div class="setting"><span>Velocidade</span><b id="au-rate-v">${fmtRate(s.ttsRate)}</b></div>
-    <div class="row au-range"><button class="btn sm" data-act="slower" aria-label="Mais devagar">−</button><input type="range" id="au-rate" min="0.5" max="2" step="0.05" value="${+s.ttsRate || 1}" aria-label="Velocidade da voz"><button class="btn sm" data-act="faster" aria-label="Mais rápido">+</button></div>
+    <div class="row au-range"><button class="btn sm" data-act="slower" aria-label="Mais devagar">−</button><input type="range" id="au-rate" min="0.5" max="2" step="0.05" value="${+s.ttsRate || 1}" aria-label="Velocidade da voz"><button class="btn sm" data-act="faster" aria-label="Mais rápido">+</button></div>`;
+  const pitchHtml = `
     <div class="setting"><span>Tom da voz</span><b id="au-pitch-v">${fmtNum(s.ttsPitch)}</b></div>
-    <div class="row au-range"><span class="small muted">grave</span><input type="range" id="au-pitch" min="0.5" max="2" step="0.05" value="${+s.ttsPitch || 1}" aria-label="Tom da voz"><span class="small muted">agudo</span></div>
-    <div class="setting"><span>Continuar no próximo capítulo</span><button class="switch ${s.ttsContinue ? 'on' : ''}" data-act="cont" aria-label="Continuar no próximo capítulo"></button></div>
+    <div class="row au-range"><span class="small muted">grave</span><input type="range" id="au-pitch" min="0.5" max="2" step="0.05" value="${+s.ttsPitch || 1}" aria-label="Tom da voz"><span class="small muted">agudo</span></div>`;
+  const contHtml = `<div class="setting"><span>Continuar no próximo capítulo</span><button class="switch ${s.ttsContinue ? 'on' : ''}" data-act="cont" aria-label="Continuar no próximo capítulo"></button></div>`;
+  const timerHtml = `
     <div class="section-title" style="margin-top:14px">Parar de ler</div>
     <div class="chips" id="au-timer-chips">${mins.map((m) => `<button class="chip" data-min="${m}">${m ? `${m} min` : 'Desligado'}</button>`).join('')}<button class="chip" data-act="attime">No horário…</button></div>
     <div class="row" id="au-time-row" style="margin-top:10px" hidden><input type="time" id="au-time" class="input" value="${esc(s.ttsTimerTime || '22:00')}" aria-label="Horário para parar"><button class="btn sm primary" data-act="settime">Parar nesse horário</button></div>
-    <p class="small muted" id="au-timer-state" style="margin-top:8px"></p>
-    <div class="section-title" style="margin-top:16px">Narração gravada</div>
-    <p class="small muted">Capítulos já narrados com vozes neurais, em estilo de história, prontos para tocar sem baixar nada. <span id="au-rec-state">Carregando a lista…</span></p>
-    <div class="setting"><span>Usar narração gravada quando existir</span><button class="switch ${s.recordedOn !== false ? 'on' : ''}" data-act="rec-on" aria-label="Usar narração gravada"></button></div>
-    <label class="au-label" for="au-rec-voice">Voz da narração</label>
-    <div class="row" style="gap:8px"><select id="au-rec-voice" class="input" aria-label="Voz da narração"></select><button class="btn sm" data-act="rec-sample" aria-label="Ouvir amostra">${icon('play')} Amostra</button></div>
+    <p class="small muted" id="au-timer-state" style="margin-top:8px"></p>`;
+  const localHtml = `
     <div class="section-title" style="margin-top:16px">Narrador masculino grátis (no aparelho)</div>
-    <p class="small muted">Voz masculina brasileira "Faber", gerada no próprio celular, sem conta nem chave. Baixa cerca de 90 MB uma única vez (use Wi-Fi) e precisa de um aparelho razoavelmente recente; soa mais natural que a maioria das vozes do celular, mas menos que a da nuvem.</p>
+    <p class="small muted">Voz masculina brasileira "Faber", gerada no próprio celular, sem conta nem chave. Baixa cerca de 90 MB uma única vez (use Wi-Fi) e precisa de um aparelho razoavelmente recente; soa mais natural que a maioria das vozes do celular, mas menos que a narração gravada.</p>
     <div class="setting"><span>Usar narrador offline</span><button class="switch ${s.localVoiceOn ? 'on' : ''}" data-act="local-on" aria-label="Usar narrador offline"></button></div>
-    <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="local-prepare">Baixar a voz agora</button><span class="small muted" id="au-local-state"></span></div>
-    <div class="section-title" style="margin-top:16px">Narrador humano na nuvem</div>
-    <p class="small muted">Vozes neurais do Google, masculinas e muito naturais, com a sua chave gratuita do Google Cloud. <a href="#" data-act="cloud-help">Como conseguir a chave</a></p>
+    <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="local-prepare">Baixar a voz agora</button><span class="small muted" id="au-local-state"></span></div>`;
+  const cloudHtml = `
+    <div class="section-title" style="margin-top:16px">Narrador na nuvem (opcional, com conta própria)</div>
+    <p class="small muted">Vozes neurais do Google com a sua própria chave do Google Cloud. Tem cota gratuita mensal, mas exige conta com cartão. <a href="#" data-act="cloud-help">Como conseguir a chave</a></p>
     <div class="setting"><span>Usar narrador na nuvem</span><button class="switch ${s.cloudOn ? 'on' : ''}" data-act="cloud-on" aria-label="Usar narrador na nuvem"></button></div>
     <div class="row" style="gap:8px"><input type="password" id="au-key" class="input" placeholder="Chave da API do Google Cloud" value="${esc(s.cloudKey || '')}" autocomplete="off" spellcheck="false" aria-label="Chave da API"><button class="btn sm" data-act="showkey" aria-label="Mostrar chave">👁</button></div>
     <div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="cloud-check">Verificar chave e listar vozes</button><span class="small muted" id="au-cloud-state">${cv.length ? `${cv.length} vozes disponíveis` : ''}</span></div>
-    <select id="au-cloud-voice" class="input" style="margin-top:8px" aria-label="Voz do narrador" ${cv.length ? '' : 'hidden'}>${cv.map(copt).join('')}</select>
-    <div class="row" style="margin-top:14px;gap:8px;flex-wrap:wrap"><button class="btn" data-act="test">${icon('play')} Testar voz do aparelho</button><button class="btn" data-act="cloud-test">${I.cloud} Testar narrador</button><span class="grow"></span><button class="btn primary" data-act="ok">Pronto</button></div>`);
+    <select id="au-cloud-voice" class="input" style="margin-top:8px" aria-label="Voz do narrador" ${cv.length ? '' : 'hidden'}>${cv.map(copt).join('')}</select>`;
+  const footer = simple
+    ? `<div class="row" style="margin-top:14px;gap:8px"><button class="btn" data-act="advanced">Opções avançadas</button><span class="grow"></span><button class="btn primary" data-act="ok">Pronto</button></div>`
+    : `<div class="row" style="margin-top:14px;gap:8px;flex-wrap:wrap"><button class="btn" data-act="test">${icon('play')} Testar voz do aparelho</button><button class="btn" data-act="cloud-test">${I.cloud} Testar narrador</button><span class="grow"></span><button class="btn primary" data-act="ok">Pronto</button></div>
+       <p class="small muted" style="margin-top:10px"><a href="#" data-act="simple">Voltar ao modo simples</a></p>`;
+  const { el, close } = openSheet(simple
+    ? `<h3>Voz e áudio</h3>${recHtml}${rateHtml}${contHtml}${timerHtml}${footer}`
+    : `<h3>Voz e áudio</h3>${deviceHtml}${rateHtml}${pitchHtml}${contHtml}${timerHtml}${recHtml}${localHtml}${cloudHtml}${footer}`);
+  const q = (selector) => $(selector, el);
+  const on = (selector, fn) => { const x = q(selector); if (x) x.onclick = fn; return x; };
   const setRate = (x) => {
     const r = clamp(Math.round(x * 20) / 20, 0.5, 2);
     store.setSetting('ttsRate', r);
-    $('#au-rate', el).value = r; $('#au-rate-v', el).textContent = fmtRate(r);
+    if (q('#au-rate')) q('#au-rate').value = r;
+    if (q('#au-rate-v')) q('#au-rate-v').textContent = fmtRate(r);
     const pr = $('#player-root .p-rate'); if (pr) pr.textContent = fmtRate(r);
     applyRateLive();
   };
-  $('[data-act=male]', el).onclick = (e) => { store.setSetting('ttsMale', !store.settings.ttsMale); e.currentTarget.classList.toggle('on', store.settings.ttsMale); $('#au-voice option[value=""]', el).textContent = `Automática (${store.settings.ttsMale ? 'masculina em português, se houver' : 'português'})`; restartCurrent(); };
+  on('[data-act=advanced]', () => { store.setSetting('uiMode', 'avancado'); close(); openAudioSheet(); });
+  on('[data-act=simple]', (e) => { e.preventDefault(); store.setSetting('uiMode', 'simples'); close(); openAudioSheet(); });
+  on('[data-act=male]', (e) => { store.setSetting('ttsMale', !store.settings.ttsMale); e.currentTarget.classList.toggle('on', store.settings.ttsMale); const o = q('#au-voice option[value=""]'); if (o) o.textContent = `Automática (${store.settings.ttsMale ? 'masculina em português, se houver' : 'português'})`; restartCurrent(); });
   $$('#au-style button', el).forEach((b) => b.onclick = () => { $$('#au-style button', el).forEach((x) => x.classList.remove('on')); b.classList.add('on'); store.setSetting('ttsStyle', b.dataset.v); restartCurrent(); });
-  $('#au-voice', el).onchange = (e) => { store.setSetting('ttsVoice', e.target.value); restartCurrent(); };
-  $('#au-rate', el).oninput = (e) => setRate(+e.target.value);
-  $('[data-act=slower]', el).onclick = () => setRate((+store.settings.ttsRate || 1) - 0.1);
-  $('[data-act=faster]', el).onclick = () => setRate((+store.settings.ttsRate || 1) + 0.1);
-  $('#au-pitch', el).oninput = (e) => { const p = clamp(+e.target.value, 0.5, 2); store.setSetting('ttsPitch', p); $('#au-pitch-v', el).textContent = fmtNum(p); restartCurrent(); };
-  $('[data-act=cont]', el).onclick = (e) => { store.setSetting('ttsContinue', !store.settings.ttsContinue); e.currentTarget.classList.toggle('on', store.settings.ttsContinue); };
+  if (q('#au-voice')) q('#au-voice').onchange = (e) => { store.setSetting('ttsVoice', e.target.value); restartCurrent(); };
+  if (q('#au-rate')) q('#au-rate').oninput = (e) => setRate(+e.target.value);
+  on('[data-act=slower]', () => setRate((+store.settings.ttsRate || 1) - 0.1));
+  on('[data-act=faster]', () => setRate((+store.settings.ttsRate || 1) + 0.1));
+  if (q('#au-pitch')) q('#au-pitch').oninput = (e) => { const p = clamp(+e.target.value, 0.5, 2); store.setSetting('ttsPitch', p); q('#au-pitch-v').textContent = fmtNum(p); restartCurrent(); };
+  on('[data-act=cont]', (e) => { store.setSetting('ttsContinue', !store.settings.ttsContinue); e.currentTarget.classList.toggle('on', store.settings.ttsContinue); });
   $$('#au-timer-chips [data-min]', el).forEach((c) => c.onclick = () => {
     const m = +c.dataset.min;
-    $('#au-time-row', el).hidden = true;
+    q('#au-time-row').hidden = true;
     if (m) store.setSetting('ttsTimerMin', m);
     setTimer(m ? 'min' : 'off', m);
     toast(m ? `A leitura para em ${m} min` : 'Temporizador desligado');
   });
-  $('[data-act=attime]', el).onclick = () => { const row = $('#au-time-row', el); row.hidden = !row.hidden; if (!row.hidden) $('#au-time', el).focus(); };
-  $('[data-act=settime]', el).onclick = () => {
-    const v = $('#au-time', el).value;
+  on('[data-act=attime]', () => { const row = q('#au-time-row'); row.hidden = !row.hidden; if (!row.hidden) q('#au-time').focus(); });
+  on('[data-act=settime]', () => {
+    const v = q('#au-time').value;
     if (!v) { toast('Escolha um horário'); return; }
     store.setSetting('ttsTimerTime', v);
     const end = setTimer('time', v);
     if (end) toast(`A leitura para às ${fmtClock(end)}`);
-  };
+  });
   // narração gravada
   const fillRecVoices = () => {
     const vs = recordedVoices();
-    const sel = $('#au-rec-voice', el); if (!sel) return;
+    const selEl = q('#au-rec-voice'); if (!selEl) return;
     const cur = store.settings.recordedVoice || 'alex';
-    const list = vs.length ? vs : Object.entries(VOICE_INFO).map(([id, v]) => ({ id, name: v.name, desc: v.desc, count: 0 }));
-    sel.innerHTML = list.map((v) => `<option value="${esc(v.id)}" ${v.id === cur ? 'selected' : ''}>${esc(v.name)} · ${esc(v.desc)}${v.count ? ` · ${v.count} cap.` : ' · em preparação'}</option>`).join('');
-    const x = $('#au-rec-state', el); if (x) x.textContent = recordedCount() ? `${recordedCount()} capítulos gravados (${vs.filter((v) => v.count).map((v) => `${v.name}: ${v.count}`).join(', ')}).` : 'Ainda sem capítulos gravados; a narração está sendo produzida.';
+    const items = vs.length ? vs : Object.entries(VOICE_INFO).map(([id, v]) => ({ id, name: v.name, desc: v.desc, count: 0 }));
+    selEl.innerHTML = items.map((v) => `<option value="${esc(v.id)}" ${v.id === cur ? 'selected' : ''}>${esc(v.name)} · ${esc(v.desc)}${v.count ? ` · ${v.count} cap.` : ' · em preparação'}</option>`).join('');
+    const x = q('#au-rec-state'); if (x) x.textContent = recordedCount() ? `${recordedCount()} capítulos gravados (${vs.filter((v) => v.count).map((v) => `${v.name}: ${v.count}`).join(', ')}).` : 'Ainda sem capítulos gravados; a narração está sendo produzida.';
   };
   fillRecVoices();
   loadAudioManifest().then(fillRecVoices);
-  $('#au-rec-voice', el).onchange = (e) => { setRecordedVoice(e.target.value); toast(`Voz da narração: ${(recordedVoices().find((v) => v.id === e.target.value) || VOICE_INFO[e.target.value] || { name: e.target.value }).name}`); };
-  $('[data-act=rec-sample]', el).onclick = () => playRecordedSample($('#au-rec-voice', el).value);
-  $('[data-act=rec-on]', el).onclick = (e) => { const on = store.settings.recordedOn === false; store.setSetting('recordedOn', on); e.currentTarget.classList.toggle('on', on); toast(on ? 'Narração gravada ligada' : 'Narração gravada desligada'); };
+  if (q('#au-rec-voice')) q('#au-rec-voice').onchange = (e) => { setRecordedVoice(e.target.value); toast(`Voz da narração: ${(recordedVoices().find((v) => v.id === e.target.value) || VOICE_INFO[e.target.value] || { name: e.target.value }).name}`); };
+  on('[data-act=rec-sample]', () => playRecordedSample(q('#au-rec-voice').value));
+  on('[data-act=rec-on]', (e) => { const onv = store.settings.recordedOn === false; store.setSetting('recordedOn', onv); e.currentTarget.classList.toggle('on', onv); toast(onv ? 'Narração gravada ligada' : 'Narração gravada desligada'); });
   // narrador offline
   const localState = (x) => {
-    const el2 = $('#au-local-state', el); if (!el2) return;
+    const el2 = q('#au-local-state'); if (!el2) return;
     el2.textContent = x.s === 'pronto' ? 'Voz pronta ✓' : x.s === 'carregando' ? (x.pct != null ? `Baixando a voz… ${x.pct}%` : 'Preparando a voz…') : x.s === 'erro' ? `Erro: ${x.msg}` : (localSupported() ? '' : 'Este navegador não suporta o narrador offline.');
     el2.style.color = x.s === 'erro' ? 'var(--accent)' : '';
   };
-  localState(localEngine.state());
-  localEngine.listeners.add(localState);
-  $('[data-act=local-on]', el).onclick = (e) => {
-    const on = !store.settings.localVoiceOn;
-    if (on && !localSupported()) { toast('Este navegador não suporta o narrador offline'); return; }
-    store.setSetting('localVoiceOn', on);
-    e.currentTarget.classList.toggle('on', on);
-    if (on) { localEngine.reset(); localEngine.ensure(); toast('Narrador offline ligado: a voz será baixada na primeira leitura'); }
+  if (!simple) { localState(localEngine.state()); localEngine.listeners.add(localState); }
+  on('[data-act=local-on]', (e) => {
+    const onv = !store.settings.localVoiceOn;
+    if (onv && !localSupported()) { toast('Este navegador não suporta o narrador offline'); return; }
+    store.setSetting('localVoiceOn', onv);
+    e.currentTarget.classList.toggle('on', onv);
+    if (onv) { localEngine.reset(); localEngine.ensure(); toast('Narrador offline ligado: a voz será baixada na primeira leitura'); }
     else toast('Narrador offline desligado');
     restartCurrent();
-  };
-  $('[data-act=local-prepare]', el).onclick = () => { if (!localSupported()) { toast('Este navegador não suporta o narrador offline'); return; } localEngine.reset(); localEngine.ensure(); };
+  });
+  on('[data-act=local-prepare]', () => { if (!localSupported()) { toast('Este navegador não suporta o narrador offline'); return; } localEngine.reset(); localEngine.ensure(); });
   // narrador na nuvem
-  const cloudState = (msg, bad) => { const x = $('#au-cloud-state', el); x.textContent = msg; x.style.color = bad ? 'var(--accent)' : ''; };
-  $('[data-act=cloud-help]', el).onclick = (e) => { e.preventDefault(); cloudHelp(); };
-  $('[data-act=showkey]', el).onclick = () => { const k = $('#au-key', el); k.type = k.type === 'password' ? 'text' : 'password'; };
-  $('#au-key', el).onchange = (e) => { store.setSetting('cloudKey', e.target.value.trim()); cloud.resetCloud(); };
-  $('[data-act=cloud-on]', el).onclick = (e) => {
-    const on = !store.settings.cloudOn;
-    if (on && !store.settings.cloudKey) { toast('Cole a chave da API e toque em "Verificar chave"'); return; }
-    if (on && !store.settings.cloudVoice) { toast('Toque em "Verificar chave e listar vozes" primeiro'); return; }
-    store.setSetting('cloudOn', on); cloud.resetCloud();
-    e.currentTarget.classList.toggle('on', on);
-    toast(on ? 'Narrador na nuvem ligado' : 'Usando a voz do aparelho');
+  const cloudState = (msg, bad) => { const x = q('#au-cloud-state'); if (!x) return; x.textContent = msg; x.style.color = bad ? 'var(--accent)' : ''; };
+  on('[data-act=cloud-help]', (e) => { e.preventDefault(); cloudHelp(); });
+  on('[data-act=showkey]', () => { const k = q('#au-key'); k.type = k.type === 'password' ? 'text' : 'password'; });
+  if (q('#au-key')) q('#au-key').onchange = (e) => { store.setSetting('cloudKey', e.target.value.trim()); cloud.resetCloud(); };
+  on('[data-act=cloud-on]', (e) => {
+    const onv = !store.settings.cloudOn;
+    if (onv && !store.settings.cloudKey) { toast('Cole a chave da API e toque em "Verificar chave"'); return; }
+    if (onv && !store.settings.cloudVoice) { toast('Toque em "Verificar chave e listar vozes" primeiro'); return; }
+    store.setSetting('cloudOn', onv); cloud.resetCloud();
+    e.currentTarget.classList.toggle('on', onv);
+    toast(onv ? 'Narrador na nuvem ligado' : 'Usando a voz do aparelho');
     restartCurrent();
-  };
-  $('[data-act=cloud-check]', el).onclick = async () => {
-    const key = $('#au-key', el).value.trim();
+  });
+  on('[data-act=cloud-check]', async () => {
+    const key = q('#au-key').value.trim();
     store.setSetting('cloudKey', key); cloud.resetCloud();
     if (!key) { cloudState('Cole a chave primeiro.', true); return; }
     cloudState('Verificando…');
@@ -828,20 +859,20 @@ export function openAudioSheet() {
       if (!vs.length) throw new Error('nenhuma voz em português nesta conta');
       store.setSetting('cloudVoices', vs);
       if (!vs.some((v) => v.name === store.settings.cloudVoice)) store.setSetting('cloudVoice', cloud.pickDefaultVoice(vs));
-      const sv = $('#au-cloud-voice', el); sv.innerHTML = vs.map(copt).join(''); sv.hidden = false;
+      const sv = q('#au-cloud-voice'); sv.innerHTML = vs.map(copt).join(''); sv.hidden = false;
       cloudState(`Chave válida: ${vs.length} vozes disponíveis ✓`);
       toast('Chave verificada');
     } catch (err) {
       cloudState(`Erro: ${err.message}`, true);
     }
-  };
-  $('#au-cloud-voice', el).onchange = (e) => { store.setSetting('cloudVoice', e.target.value); cloud.resetCloud(); restartCurrent(); };
-  $('[data-act=cloud-test]', el).onclick = () => testCloudVoice();
-  $('[data-act=test]', el).onclick = () => testDeviceVoice();
-  $('[data-act=ok]', el).onclick = () => { localEngine.listeners.delete(localState); close(); };
+  });
+  if (q('#au-cloud-voice')) q('#au-cloud-voice').onchange = (e) => { store.setSetting('cloudVoice', e.target.value); cloud.resetCloud(); restartCurrent(); };
+  on('[data-act=cloud-test]', () => testCloudVoice());
+  on('[data-act=test]', () => testDeviceVoice());
+  on('[data-act=ok]', () => { localEngine.listeners.delete(localState); close(); });
   updateTimerLabels();
   // a lista de vozes pode chegar depois (Android/Chrome)
-  if (has && !list.length) {
+  if (!simple && has && !list.length) {
     const once = () => { speechSynthesis.removeEventListener('voiceschanged', once); if (document.body.contains(el)) { close(); openAudioSheet(); } };
     try { speechSynthesis.addEventListener('voiceschanged', once); } catch { /* ignora */ }
   }

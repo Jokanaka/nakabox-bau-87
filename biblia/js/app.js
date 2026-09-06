@@ -4,6 +4,7 @@ import { store, parseRefKey } from './store.js';
 import { loadBooks, books, book, VERSIONS, version, refString, refLong, getVerses, verseOfTheDay, dataUrls, parseRef } from './data.js';
 import { renderReader, renderSearch, applySettings, openBookPicker, openFontSheet, stopTTS } from './reader.js';
 import { openAudioSheet } from './audio.js';
+import { renderMissa } from './missa.js';
 import { renderPlans, renderPlanDetail, renderPrayers, renderPrayer, renderRosary, renderLiturgy } from './features.js';
 import { PLANS, planDays, nextDay, planProgress } from './plans.js';
 import { liturgicalDay, readingsFor } from './liturgy.js';
@@ -49,6 +50,7 @@ async function route() {
       case 'oracoes': return parts[1] ? renderPrayer(view, parts[1]) : renderPrayers(view);
       case 'rosario': return renderRosary(view);
       case 'liturgia': return renderLiturgy(view, parts[1]);
+      case 'missa': return renderMissa(view, parts[1]);
       case 'mais': return renderMore(view, parts[1]);
       default: location.hash = '#/inicio';
     }
@@ -70,6 +72,7 @@ async function renderHome(v) {
   const streak = store.streak;
   const mine = PLANS.filter((p) => store.plan(p.id) && nextDay(p.id, store.plan(p.id)) >= 0);
   const myst = MYSTERIES[mysteryOfDay(now, lit.season === 'triduo' ? 'quaresma' : lit.season)];
+  const prog = readProgress();
   v.innerHTML = `
     <div class="hero">
       <div class="date">${esc(cap(fmtDate(now)))}</div>
@@ -98,8 +101,10 @@ async function renderHome(v) {
       ${lb ? `<a class="card row" href="#/biblia/${last.book}/${last.chapter}"><div class="ico">${icon('history')}</div><div class="grow"><div class="small muted">Continuar lendo</div><b>${esc(lb.name)} ${last.chapter}</b></div>${icon('chevR')}</a>` : ''}
       ${mine.map((p) => { const st = store.plan(p.id); const nd = nextDay(p.id, st); const d = planDays(p.id)[nd]; const pr = planProgress(p.id, st); return `<a class="card row" href="#/biblia/${d[0].book}/${d[0].chapter}?plan=${p.id}&day=${nd}"><div class="plan-cover" style="background:${p.color};width:44px;height:44px;font-size:20px">${p.emoji}</div><div class="grow"><div class="small muted">${esc(p.name)} · dia ${nd + 1} de ${pr.total}</div><b>${esc(d.map((r) => refString(r.book, r.chapter)).join(' · '))}</b><div class="progress" style="margin-top:6px"><i style="width:${pr.pct}%"></i></div></div>${icon('chevR')}</a>`; }).join('')}
       <div class="card" id="home-readings"><div class="small muted">Leituras da Missa de hoje</div><div class="skel" style="width:60%"></div></div>
+      <a class="card row" href="#/missa"><div class="plan-cover" style="background:var(--accent);width:44px;height:44px;font-size:20px">🕊</div><div class="grow"><div class="small muted">Modo Missa</div><b>Siga a Missa passo a passo, com as leituras de hoje</b></div>${icon('chevR')}</a>
       <a class="card row" href="#/rosario"><div class="plan-cover" style="background:${myst.color};width:44px;height:44px;font-size:20px">📿</div><div class="grow"><div class="small muted">Rosário de hoje</div><b>${esc(myst.name)}</b></div>${icon('chevR')}</a>
       <div class="card streak"><div class="num">${streak.count}</div><div class="grow"><b>${streak.count === 1 ? 'dia seguido' : 'dias seguidos'} com a Palavra</b><div class="small muted">${streak.today ? 'Você já leu hoje. Continue assim!' : 'Leia um capítulo hoje para manter a sequência.'}</div></div>${icon('flame')}</div>
+      <a class="card row" href="#/mais/progresso"><div class="ico">${icon('check')}</div><div class="grow"><div class="small muted">Progresso de leitura</div><b>${prog.read} de ${prog.total} capítulos · ${prog.pct}%</b><div class="progress" style="margin-top:6px"><i style="width:${prog.pct}%"></i></div></div>${icon('chevR')}</a>
     </div></div>`;
   // versículo do dia
   try {
@@ -128,6 +133,7 @@ function renderMore(v, sub) {
   if (sub === 'config') return renderSettings(v);
   if (sub === 'sobre') return renderAbout(v);
   if (sub === 'dados') return renderData(v);
+  if (sub === 'progresso') return renderProgress(v);
   const hl = Object.keys(store.allHighlights()).length, nt = Object.keys(store.allNotes()).length, bm = Object.keys(store.allBookmarks()).length;
   const item = (href, ic, title, sub) => `<a class="list-item" href="${href}"><div class="ico">${icon(ic)}</div><div class="grow"><div class="title">${title}</div>${sub ? `<div class="sub">${sub}</div>` : ''}</div><span class="chev">${icon('chevR')}</span></a>`;
   v.innerHTML = `${topbar({ title: 'Mais' })}
@@ -136,6 +142,7 @@ function renderMore(v, sub) {
       ${item('#/mais/notas', 'note', 'Notas', `${nt} nota${nt === 1 ? '' : 's'}`)}
       ${item('#/mais/favoritos', 'bookmark', 'Favoritos', `${bm} versículo${bm === 1 ? '' : 's'}`)}
       ${item('#/mais/historico', 'history', 'Histórico de leitura', '')}
+      ${item('#/mais/progresso', 'check', 'Progresso de leitura', `${readProgress().pct}% da Bíblia`)}
     </div></div>
     <div class="section"><div class="section-title">Aplicativo</div><div class="list">
       ${item('#/mais/config', 'settings', 'Configurações', 'Tema, fonte, versão padrão')}
@@ -199,14 +206,17 @@ function renderSettings(v) {
   const s = store.settings;
   v.innerHTML = `${topbar({ title: 'Configurações', back: true })}
     <div class="section"><div class="card">
+      <div class="setting"><span>Modo do app</span><div class="seg" data-k="uiMode"><button data-v="simples" class="${s.uiMode !== 'avancado' ? 'on' : ''}">Simples</button><button data-v="avancado" class="${s.uiMode === 'avancado' ? 'on' : ''}">Avançado</button></div></div>
+      <p class="small muted" style="margin:-4px 0 10px">Simples: só o essencial, com a narração gravada, velocidade e temporizador. Avançado: todas as opções, inclusive vozes do aparelho, narrador offline e na nuvem, e as versões em latim e inglês.</p>
       <div class="setting"><span>Tema</span><div class="seg" data-k="theme"><button data-v="auto" class="${s.theme === 'auto' ? 'on' : ''}">Auto</button><button data-v="light" class="${s.theme === 'light' ? 'on' : ''}">Claro</button><button data-v="sepia" class="${s.theme === 'sepia' ? 'on' : ''}">Sépia</button><button data-v="dark" class="${s.theme === 'dark' ? 'on' : ''}">Escuro</button></div></div>
       <div class="setting"><span>Fonte da leitura</span><div class="seg" data-k="fontFamily"><button data-v="serif" class="${s.fontFamily === 'serif' ? 'on' : ''}">Serifa</button><button data-v="sans" class="${s.fontFamily === 'sans' ? 'on' : ''}">Sem serifa</button></div></div>
       <div class="setting"><span>Tamanho do texto</span><div class="row"><button class="btn sm" data-act="minus">A−</button><b id="fs">${s.fontSize}</b><button class="btn sm" data-act="plus">A+</button></div></div>
       <div class="setting"><span>Números dos versículos</span><button class="switch ${s.showVerseNumbers ? 'on' : ''}" data-act="vn"></button></div>
       <div class="setting"><span>Leitura em voz alta</span><button class="btn sm" data-act="audio">Voz, velocidade e temporizador</button></div>
     </div></div>
-    <div class="section" style="padding-top:0"><div class="section-title">Versão padrão</div><div class="list">${VERSIONS.map((ver) => `<button class="list-item" data-ver="${ver.id}"><div class="grow"><div class="title">${esc(ver.name)} ${ver.id === s.version ? '✓' : ''}</div><div class="sub">${esc(ver.desc)}</div></div></button>`).join('')}</div></div>`;
+    ${s.uiMode === 'avancado' ? `<div class="section" style="padding-top:0"><div class="section-title">Versão padrão</div><div class="list">${VERSIONS.map((ver) => `<button class="list-item" data-ver="${ver.id}"><div class="grow"><div class="title">${esc(ver.name)} ${ver.id === s.version ? '✓' : ''}</div><div class="sub">${esc(ver.desc)}</div></div></button>`).join('')}</div></div>` : ''}`;
   $('[data-act=back]', v).onclick = () => history.back();
+  $$('[data-k=uiMode] button', v).forEach((b) => b.addEventListener('click', () => setTimeout(() => renderSettings(v), 0)));
   $$('.seg', v).forEach((seg) => $$('button', seg).forEach((btn) => btn.onclick = () => { $$('button', seg).forEach((x) => x.classList.remove('on')); btn.classList.add('on'); const k = seg.dataset.k; store.setSetting(k, k === 'ttsRate' ? +btn.dataset.v : btn.dataset.v); applySettings(); }));
   $('[data-act=minus]', v).onclick = () => { store.setSetting('fontSize', Math.max(13, s.fontSize - 1)); $('#fs', v).textContent = s.fontSize; applySettings(); };
   $('[data-act=plus]', v).onclick = () => { store.setSetting('fontSize', Math.min(32, s.fontSize + 1)); $('#fs', v).textContent = s.fontSize; applySettings(); };
@@ -276,6 +286,31 @@ function renderAbout(v) {
       <p class="small" style="margin-top:8px"><b>Orações.</b> Textos tradicionais de domínio público, na forma usual no Brasil.</p>
       <p class="small muted" style="margin-top:12px">Este aplicativo não tem fins lucrativos e não coleta dados pessoais: tudo fica guardado no seu aparelho.</p>
     </div></div>`;
+  $('[data-act=back]', v).onclick = () => history.back();
+}
+
+// ---------- Progresso de leitura ----------
+function readProgress() {
+  let total = 0, read = 0;
+  const byBook = [];
+  for (const b of books()) { const n = store.readCountBook(b.id); total += b.chapters; read += n; byBook.push({ b, n }); }
+  return { total, read, pct: total ? Math.round(read * 1000 / total) / 10 : 0, byBook };
+}
+function renderProgress(v) {
+  const p = readProgress();
+  const part = (t) => { const bs = p.byBook.filter((x) => x.b.test === t); const tot = bs.reduce((a, x) => a + x.b.chapters, 0); const rd = bs.reduce((a, x) => a + x.n, 0); return { tot, rd, pct: tot ? Math.round(rd * 100 / tot) : 0 }; };
+  const at = part('AT'), nt = part('NT');
+  v.innerHTML = `${topbar({ title: 'Progresso de leitura', back: true })}
+    <div class="section"><div class="card">
+      <div class="small muted">Capítulos lidos</div><h2 style="margin:4px 0">${p.read} de ${p.total} · ${p.pct}%</h2>
+      <div class="progress" style="margin-top:8px"><i style="width:${p.pct}%"></i></div>
+      <div class="row" style="margin-top:14px;gap:16px">
+        <div class="grow"><div class="small muted">Antigo Testamento</div><b>${at.rd}/${at.tot} · ${at.pct}%</b><div class="progress" style="margin-top:4px"><i style="width:${at.pct}%"></i></div></div>
+        <div class="grow"><div class="small muted">Novo Testamento</div><b>${nt.rd}/${nt.tot} · ${nt.pct}%</b><div class="progress" style="margin-top:4px"><i style="width:${nt.pct}%"></i></div></div>
+      </div>
+      <p class="small muted" style="margin-top:10px">Um capítulo é marcado como lido quando você chega ao fim dele ou termina de ouvi-lo. Também dá para tocar em "Concluir capítulo".</p>
+    </div></div>
+    <div class="section" style="padding-top:0"><div class="section-title">Por livro</div><div class="list progress-list">${p.byBook.map(({ b, n }) => `<a class="list-item" href="#/biblia/${b.id}/${Math.min(b.chapters, n + 1)}"><div class="grow"><div class="row between"><div class="title">${esc(b.name)}</div><span class="small ${n === b.chapters ? 'done' : 'muted'}">${n === b.chapters ? '✓ completo' : `${n}/${b.chapters}`}</span></div><div class="bar" style="margin-top:6px"><i style="width:${Math.round(n * 100 / b.chapters)}%"></i></div></div></a>`).join('')}</div></div>`;
   $('[data-act=back]', v).onclick = () => history.back();
 }
 

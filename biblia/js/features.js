@@ -75,6 +75,7 @@ export function renderPrayers(view) {
   view.innerHTML = `${topbar({ title: 'Orações' })}
     <div class="section" style="padding-bottom:0"><div class="search-box">${icon('search')}<input id="pq" placeholder="Buscar oração" autocomplete="off"></div></div>
     <div class="section"><a class="card accent row between" href="#/rosario"><div><h3>📿 Santo Rosário</h3><div class="muted">Mistérios de hoje e terço guiado</div></div>${icon('chevR')}</a></div>
+    <div class="section" style="padding-top:0"><a class="card row between" href="#/missa"><div><h3>🕊 Modo Missa</h3><div class="muted">Siga a Missa passo a passo, com as leituras do dia</div></div>${icon('chevR')}</a></div>
     <div id="plist">
       ${favs.length ? `<div class="section"><div class="section-title">Favoritas</div><div class="list">${favs.map(item).join('')}</div></div>` : ''}
       ${PRAYER_GROUPS.map((g) => `<div class="section"><div class="section-title">${esc(g.name)}</div><div class="list">${prayersByGroup(g.id).map(item).join('')}</div></div>`).join('')}
@@ -212,7 +213,7 @@ function parseSpec(c0, spec) {
   return segs;
 }
 // texto de uma leitura na versão escolhida: [{c, v, t}]
-async function readingVerses(r) {
+export async function readingVerses(r) {
   const { getChapter } = await import('./data.js');
   const ver = store.settings.version;
   const segs = r.v ? parseSpec(r.c, r.v) : [{ c: r.c, a: 1, b: 60 }];
