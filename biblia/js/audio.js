@@ -4,6 +4,7 @@ import { $, $$, h, esc, icon, toast } from './util.js';
 import { store } from './store.js';
 import { openSheet, openModal } from './ui.js';
 import * as cloud from './cloudtts.js';
+import { book, bookName } from './data.js';
 
 const has = typeof window !== 'undefined' && 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
 const CHUNK = 180; // caracteres por trecho falado (o Chrome corta falas longas)
@@ -306,16 +307,19 @@ export async function playRecordedRange({ title = '', book, chapter, fromV = 1, 
   return play({ title, items, lang: 'pt-BR', from, recorded: rec, until, onItem, onEnd });
 }
 // troca a voz gravada; se estiver lendo com narração gravada, recomeça o versículo atual na voz nova
+// devolve 'switched' (leitura recomeçou na voz nova), 'unavailable' (a voz não tem este capítulo) ou 'saved' (só guardou a preferência)
 export async function setRecordedVoice(voice) {
   store.setSetting('recordedVoice', voice);
-  if (!st.active || st.engine !== recEngine || !st.recInfo || !st.fallback) return;
-  const { book, chapter } = st.recInfo;
+  if (!st.active || st.engine !== recEngine || !st.recInfo || !st.fallback) return 'saved';
+  const { book: bk, chapter } = st.recInfo;
+  if (!recordedAvailable(bk, chapter, voice)) return 'unavailable';
   const idx = st.idx;
   try {
-    const rec = await recordedChapter(book, chapter, voice);
-    if (!rec || !st.active || st.engine !== recEngine) return;
+    const rec = await recordedChapter(bk, chapter, voice);
+    if (!rec || !st.active || st.engine !== recEngine) return 'saved';
     play({ ...st.fallback, from: idx, recorded: rec });
-  } catch { /* mantém a voz atual */ }
+    return 'switched';
+  } catch { return 'saved'; }
 }
 // toca a amostra de uma voz gravada (para a leitura em andamento)
 export function playRecordedSample(voice) {
@@ -721,6 +725,10 @@ function cloudHelp() {
 export function openAudioSheet() {
   const s = store.settings;
   const simple = s.uiMode !== 'avancado';
+  // capítulo aberto no leitor (para dizer se ele tem narração gravada)
+  const hm = /^#\/biblia\/([a-z0-9]+)\/(\d+)/.exec(location.hash || '');
+  const cur = hm && book(hm[1]) ? { book: hm[1], chapter: +hm[2] } : null;
+  const curName = cur ? `${bookName(book(cur.book), s.version)} ${cur.chapter}` : '';
   const list = voices();
   const pt = list.filter((v) => lb(v.lang).startsWith('pt'));
   const others = list.filter((v) => !lb(v.lang).startsWith('pt'));
@@ -736,17 +744,23 @@ export function openAudioSheet() {
     ${simple ? '' : `<div class="setting"><span>Usar narração gravada quando existir</span><button class="switch ${s.recordedOn !== false ? 'on' : ''}" data-act="rec-on" aria-label="Usar narração gravada"></button></div>`}
     <label class="au-label" for="au-rec-voice">Voz da narração</label>
     <div class="row" style="gap:8px"><select id="au-rec-voice" class="input" aria-label="Voz da narração"></select><button class="btn sm" data-act="rec-sample" aria-label="Ouvir amostra">${icon('play')} Amostra</button></div>
-    ${simple ? '<p class="small muted" style="margin-top:6px">Nos capítulos que ainda não têm narração gravada, o app usa a voz do próprio celular.</p>' : ''}`;
+`;
+  const voiceSelect = `<select id="au-voice" class="input" aria-label="Voz do aparelho">
+      <option value="">Automática (${s.ttsMale ? 'masculina em português, se houver' : 'português'})</option>
+      ${pt.length ? `<optgroup label="Português">${pt.map(opt).join('')}</optgroup>` : ''}
+      ${others.length ? `<optgroup label="Outras línguas">${others.map(opt).join('')}</optgroup>` : ''}
+    </select>`;
+  const nowHtml = `<p class="small" id="au-now" style="margin:0 0 10px;line-height:1.45"></p>`;
+  const deviceSimpleHtml = `
+    <div class="section-title" style="margin-top:16px">Voz do aparelho</div>
+    <p class="small muted">Lê os capítulos que ainda não têm narração gravada e as orações.${list.length ? '' : ' Este navegador não informou vozes; vale a voz padrão do sistema.'}</p>
+    <div class="row" style="gap:8px">${voiceSelect}<button class="btn sm" data-act="test" aria-label="Testar voz do aparelho">${icon('play')} Testar</button></div>`;
   const deviceHtml = `
     <div class="setting"><span>Preferir voz masculina</span><button class="switch ${s.ttsMale ? 'on' : ''}" data-act="male" aria-label="Preferir voz masculina"></button></div>
     <div class="setting"><span>Estilo</span><div class="seg" id="au-style"><button data-v="normal" class="${s.ttsStyle === 'normal' ? 'on' : ''}">Normal</button><button data-v="narracao" class="${s.ttsStyle !== 'normal' ? 'on' : ''}">Narração</button></div></div>
     <p class="small muted" style="margin:-4px 0 8px">Narração: fala mais pausada, com respiro entre as frases e os versículos, e apresenta o capítulo como quem conta uma história.</p>
     <label class="au-label" for="au-voice">Voz do aparelho</label>
-    <select id="au-voice" class="input" aria-label="Voz do aparelho">
-      <option value="">Automática (${s.ttsMale ? 'masculina em português, se houver' : 'português'})</option>
-      ${pt.length ? `<optgroup label="Português">${pt.map(opt).join('')}</optgroup>` : ''}
-      ${others.length ? `<optgroup label="Outras línguas">${others.map(opt).join('')}</optgroup>` : ''}
-    </select>
+    ${voiceSelect}
     <p class="small muted" style="margin-top:6px">${list.length ? 'Para uma voz masculina melhor no aparelho: no Android, em Configurações › Sistema › Idiomas › Saída de conversão de texto em voz, instale as vozes em português do Google e escolha uma masculina; no iPhone, em Ajustes › Acessibilidade › Conteúdo falado › Vozes › Português, baixe a voz "Felipe".' : 'Nenhuma voz encontrada ainda. No Android, instale o "Serviço de conversão de texto em voz do Google" e as vozes em português; no iPhone, as vozes ficam em Ajustes › Acessibilidade › Conteúdo falado.'}</p>`;
   const rateHtml = `
     <div class="setting"><span>Velocidade</span><b id="au-rate-v">${fmtRate(s.ttsRate)}</b></div>
@@ -777,8 +791,8 @@ export function openAudioSheet() {
     : `<div class="row" style="margin-top:14px;gap:8px;flex-wrap:wrap"><button class="btn" data-act="test">${icon('play')} Testar voz do aparelho</button><button class="btn" data-act="cloud-test">${I.cloud} Testar narrador</button><span class="grow"></span><button class="btn primary" data-act="ok">Pronto</button></div>
        <p class="small muted" style="margin-top:10px"><a href="#" data-act="simple">Voltar ao modo simples</a></p>`;
   const { el, close } = openSheet(simple
-    ? `<h3>Voz e áudio</h3>${recHtml}${rateHtml}${contHtml}${timerHtml}${footer}`
-    : `<h3>Voz e áudio</h3>${deviceHtml}${rateHtml}${pitchHtml}${contHtml}${timerHtml}${recHtml}${localHtml}${cloudHtml}${footer}`);
+    ? `<h3>Voz e áudio</h3>${nowHtml}${recHtml}${deviceSimpleHtml}${rateHtml}${contHtml}${timerHtml}${footer}`
+    : `<h3>Voz e áudio</h3>${nowHtml}${deviceHtml}${rateHtml}${pitchHtml}${contHtml}${timerHtml}${recHtml}${localHtml}${cloudHtml}${footer}`);
   const q = (selector) => $(selector, el);
   const on = (selector, fn) => { const x = q(selector); if (x) x.onclick = fn; return x; };
   const setRate = (x) => {
@@ -823,9 +837,41 @@ export function openAudioSheet() {
     selEl.innerHTML = items.map((v) => `<option value="${esc(v.id)}" ${v.id === cur ? 'selected' : ''}>${esc(v.name)} · ${esc(v.desc)}${v.count ? ` · ${v.count} cap.` : ' · em preparação'}</option>`).join('');
     const x = q('#au-rec-state'); if (x) x.textContent = recordedCount() ? `${recordedCount()} capítulos gravados (${vs.filter((v) => v.count).map((v) => `${v.name}: ${v.count}`).join(', ')}).` : 'Ainda sem capítulos gravados; a narração está sendo produzida.';
   };
-  fillRecVoices();
-  loadAudioManifest().then(fillRecVoices);
-  if (q('#au-rec-voice')) q('#au-rec-voice').onchange = (e) => { setRecordedVoice(e.target.value); toast(`Voz da narração: ${(recordedVoices().find((v) => v.id === e.target.value) || VOICE_INFO[e.target.value] || { name: e.target.value }).name}`); };
+  const engineLabel = () => {
+    if (!st.active || !st.engine) return '';
+    if (st.engine === recEngine) return `a voz <b>${esc(st.voiceName || 'gravada')}</b> (narração gravada)`;
+    if (st.engine === cloudEngine) return 'o narrador na nuvem';
+    if (st.engine === localEngine) return 'o narrador offline';
+    return 'a <b>voz do aparelho</b>';
+  };
+  // o que está lendo agora e se o capítulo aberto tem narração gravada
+  const fillNow = () => {
+    const x = q('#au-now'); if (!x) return;
+    const vs = recordedVoices();
+    const here = cur ? vs.filter((v) => voiceHas(v, cur.book, cur.chapter)).map((v) => v.name) : [];
+    const doneIds = [...new Set(vs.flatMap((v) => Object.keys(v.books).filter((id) => v.books[id] > 0)))];
+    const doneNames = doneIds.map((id) => (book(id) ? bookName(book(id), s.version) : id));
+    const parts = [];
+    if (st.active) parts.push(`Lendo agora: <b>${esc(st.title)}</b> com ${engineLabel()}.`);
+    if (cur && here.length) parts.push(`${esc(curName)} tem narração gravada (${esc(here.join(', '))}).`);
+    else if (cur && manifest) parts.push(`<b>${esc(curName)}</b> ainda não tem narração gravada, então a leitura usa a voz do aparelho.${doneIds.length ? ` Já gravado: ${esc(doneNames.join(', '))}. <a href="#" data-act="go-rec">Ouvir ${esc(doneNames[0])} 1</a>` : ' Os primeiros capítulos estão sendo produzidos.'}`);
+    x.innerHTML = parts.join(' ');
+    x.hidden = !parts.length;
+    const go = q('[data-act=go-rec]'); if (go) go.onclick = (e) => { e.preventDefault(); close(); location.hash = `#/biblia/${doneIds[0]}/1`; };
+  };
+  fillRecVoices(); fillNow();
+  loadAudioManifest().then(() => { fillRecVoices(); fillNow(); });
+  if (q('#au-rec-voice')) q('#au-rec-voice').onchange = async (e) => {
+    const id = e.target.value;
+    const name = (recordedVoices().find((v) => v.id === id) || VOICE_INFO[id] || { name: id }).name;
+    const prev = st.voiceName;
+    const r = await setRecordedVoice(id);
+    if (r === 'switched') toast(`Agora lendo com a voz ${name}`);
+    else if (r === 'unavailable') toast(`${name} ainda não narra este capítulo; continuando com ${prev || 'a voz atual'}.`, 3500);
+    else if (cur && !recordedAvailable(cur.book, cur.chapter)) toast(`${name} vai ler os capítulos já gravados. ${curName} ainda usa a voz do aparelho.`, 4000);
+    else toast(`Voz da narração: ${name}`);
+    fillNow();
+  };
   on('[data-act=rec-sample]', () => playRecordedSample(q('#au-rec-voice').value));
   on('[data-act=rec-on]', (e) => { const onv = store.settings.recordedOn === false; store.setSetting('recordedOn', onv); e.currentTarget.classList.toggle('on', onv); toast(onv ? 'Narração gravada ligada' : 'Narração gravada desligada'); });
   // narrador offline
