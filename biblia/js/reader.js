@@ -1,7 +1,7 @@
 // Leitor da Bíblia: capítulo, seleção de versículos, destaques, notas, áudio, comparação, seletor de livros, busca
 import { $, $$, h, esc, icon, toast, copyText, norm } from './util.js';
 import { store, refKey } from './store.js';
-import { VERSIONS, version, books, book, bookName, groups, nextChapter, prevChapter, loadBook, getChapter, getVerses, refString, refLong, parseRef } from './data.js';
+import { VERSIONS, version, books, book, bookName, groups, nextChapter, prevChapter, loadBook, getChapter, getVerses, refString, refLong, parseRef, psalmHebrew } from './data.js';
 import { openSheet, openModal, topbar, closeAll } from './ui.js';
 import { makeVerseImage, shareImage, shareText } from './share.js';
 import { ensureIndex, search, highlightText } from './search.js';
@@ -89,6 +89,7 @@ export async function renderReader(view, { book: bid, chapter, verse, verseEnd, 
   const html = [];
   html.push(`<h2 class="ch-title">${esc(bookName(b, ver))}${b.deutero ? ' <span class="badge">Deuterocanônico</span>' : ''}</h2>`);
   html.push(`<div class="ch-num">${chapter}</div>`);
+  if (b.id === 'sl' && psalmHebrew(chapter) !== String(chapter)) html.push(`<div class="ch-summary" style="margin-bottom:6px">Salmo ${psalmHebrew(chapter)} na numeração hebraica (Bíblias modernas)</div>`);
   if (ch.title) html.push(`<div class="ch-summary">${esc(ch.title)}</div>`);
   if (ch.heading) html.push(`<p class="heading">${esc(ch.heading)}</p>`);
   ch.verses.forEach((t, i) => {
@@ -99,7 +100,7 @@ export async function renderReader(view, { book: bid, chapter, verse, verseEnd, 
     if (hl) cls.push('hl-' + hl);
     if (store.note(key)) cls.push('has-note');
     if (store.isBookmarked(key)) cls.push('bm');
-    if (!t) { html.push(`<p class="verse empty-v" data-v="${v}"><span class="vn">${v}</span>[versículo não disponível nesta edição]</p>`); return; }
+    if (!t) { html.push(`<p class="verse empty-v" data-v="${v}"><span class="vn">${v}</span>${ch.src === 'ocr' ? '(número não reconhecido pelo OCR; o texto deste versículo está no anterior)' : '[versículo não disponível nesta edição]'}</p>`); return; }
     html.push(`<p class="${cls.join(' ')}" data-v="${v}" id="v${v}"><span class="vn">${v}</span>${esc(t)}</p>`);
   });
   if (ch.src === 'ocr') {
@@ -126,16 +127,25 @@ export async function renderReader(view, { book: bid, chapter, verse, verseEnd, 
       setTimeout(() => { selected.clear(); $$('.verse.sel', cont).forEach((x) => x.classList.remove('sel')); }, 3500);
     }
   } else window.scrollTo(0, 0);
-  // gesto de deslizar
+  // gesto de deslizar (remove os ouvintes do capítulo anterior antes de registrar os novos)
   let sx = 0, sy = 0;
-  view.addEventListener('touchstart', (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
-  view.addEventListener('touchend', (e) => {
+  if (view._swipe) { view.removeEventListener('touchstart', view._swipe[0]); view.removeEventListener('touchend', view._swipe[1]); }
+  const onStart = (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; };
+  const onEnd = (e) => {
     const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
     if (Math.abs(dx) > 80 && Math.abs(dy) < 60) {
       if (dx < 0 && next) go(next.book, next.chapter, plan, day);
       if (dx > 0 && prev) go(prev.book, prev.chapter, plan, day);
     }
-  }, { passive: true });
+  };
+  view._swipe = [onStart, onEnd];
+  view.addEventListener('touchstart', onStart, { passive: true });
+  view.addEventListener('touchend', onEnd, { passive: true });
+  // esconde as setas flutuantes quando a barra de navegação do fim do capítulo está visível
+  const fab = $('.fab-nav', view); const chnav = $('.ch-nav', view);
+  if (fab && chnav && 'IntersectionObserver' in window) {
+    new IntersectionObserver((entries) => { fab.style.opacity = entries[0].isIntersecting ? '0' : '1'; fab.style.pointerEvents = entries[0].isIntersecting ? 'none' : ''; }, { threshold: 0.2 }).observe(chnav);
+  }
   // pré-carrega o próximo livro
   if (next && next.book !== b.id) loadBook(ver, next.book).catch(() => {});
 }
@@ -277,7 +287,7 @@ async function openCompare(b, chapter, v1, v2) {
 export function openBookPicker(curBook, curChapter) {
   const ver = store.settings.version;
   const { el, close } = openModal(`
-    ${topbar({ title: 'Livros', back: true, right: `<button class="icon-btn" data-act="close">${icon('close')}</button>` })}
+    ${topbar({ title: 'Livros', back: true, right: `<button class="icon-btn" data-act="close" aria-label="Fechar">${icon('close')}</button>` })}
     <div class="section" style="padding-bottom:8px"><div class="search-box">${icon('search')}<input id="bk-q" placeholder="Livro ou referência (ex.: Jo 3,16)" autocomplete="off"></div></div>
     <div class="picker-tabs chips"><button class="chip on" data-t="">Todos</button><button class="chip" data-t="AT">Antigo Testamento</button><button class="chip" data-t="NT">Novo Testamento</button><span class="chip" style="opacity:.7">${esc(version(ver).short)}</span></div>
     <div id="bk-list"></div>`);
@@ -379,11 +389,23 @@ export function renderSearch(view, { q = '' } = {}) {
   view.innerHTML = `
     ${topbar({ title: 'Buscar', back: true })}
     <div class="section" style="padding-bottom:8px"><div class="search-box">${icon('search')}<input id="q" placeholder="Palavra, frase ou referência (Jo 3,16)" value="${esc(q)}" autocomplete="off" enterkeyhint="search"></div></div>
-    <div class="section chips" style="padding-top:0;padding-bottom:8px"><button class="chip on" data-t="">Toda a Bíblia</button><button class="chip" data-t="AT">Antigo Testamento</button><button class="chip" data-t="NT">Novo Testamento</button><span class="chip" style="opacity:.7">${esc(version(ver).short)}</span></div>
+    <div class="section chips" style="padding-top:0;padding-bottom:8px"><button class="chip on" data-t="">Toda a Bíblia</button><button class="chip" data-t="AT">Antigo Testamento</button><button class="chip" data-t="NT">Novo Testamento</button><button class="chip" data-act="pickbook" id="bookchip">Um livro…</button><span class="chip" style="opacity:.7">${esc(version(ver).short)}</span></div>
     <div id="res"><div class="empty">${icon('search')}<div>Busque por palavras (ex.: <i>misericórdia</i>), frases entre aspas ("pão da vida") ou referências (Sl 22).</div></div></div>`;
   $('[data-act=back]', view).onclick = () => history.back();
   let test = '';
+  let onlyBook = null;
   const input = $('#q', view);
+  $('[data-act=pickbook]', view).onclick = () => {
+    const { el, close } = openSheet(`<h3>Buscar em um livro</h3><div class="search-box" style="margin-bottom:10px">${icon('search')}<input id="bq" placeholder="Nome do livro" autocomplete="off"></div><div id="bl" class="list"></div>`);
+    const renderList = (q = '') => {
+      const nq = norm(q);
+      const bs = books().filter((b) => !nq || norm(b.name).includes(nq) || norm(b.abbr).includes(nq));
+      $('#bl', el).innerHTML = `<button class="list-item" data-b=""><div class="grow"><div class="title">Toda a Bíblia</div></div></button>` + bs.map((b) => `<button class="list-item" data-b="${b.id}"><div class="grow"><div class="title">${esc(b.name)}</div><div class="sub">${esc(b.group)}</div></div></button>`).join('');
+      $$('[data-b]', el).forEach((btn) => btn.onclick = () => { onlyBook = btn.dataset.b || null; $('#bookchip', view).textContent = onlyBook ? book(onlyBook).name : 'Um livro…'; $('#bookchip', view).classList.toggle('on', !!onlyBook); close(); run(); });
+    };
+    renderList();
+    $('#bq', el).addEventListener('input', (e) => renderList(e.target.value));
+  };
   const run = async () => {
     const query = input.value.trim();
     const res = $('#res', view);
@@ -394,7 +416,8 @@ export function renderSearch(view, { q = '' } = {}) {
     if (query.length < 2) { res.innerHTML = head; return; }
     res.innerHTML = head + `<div class="section"><div class="skel" style="width:60%"></div><div class="skel"></div><p class="small muted" id="prog">Preparando busca…</p></div>`;
     const idx = await ensureIndex(ver, (d, t) => { const p = $('#prog', view); if (p) p.textContent = `Carregando livros… ${d}/${t}`; });
-    const { results, total, words } = search(idx, query, { testament: test || null });
+    let { results, total, words } = search(idx, query, { testament: test || null, limit: onlyBook ? 5000 : 300 });
+    if (onlyBook) { results = results.filter((r) => r.b === onlyBook); total = results.length; results = results.slice(0, 300); }
     if (!results.length) { res.innerHTML = head + `<div class="empty">Nenhum resultado para “${esc(query)}”</div>`; return; }
     res.innerHTML = head + `<p class="section small muted" style="padding-bottom:4px">${total} resultado${total > 1 ? 's' : ''}${total > results.length ? ` (mostrando ${results.length})` : ''}</p>` +
       results.map((r) => `<div class="result" data-b="${r.b}" data-c="${r.c}" data-v="${r.v}"><div class="ref">${esc(refString(r.b, r.c, r.v))}</div><div class="txt">${highlightText(r.t, words, esc)}</div></div>`).join('');

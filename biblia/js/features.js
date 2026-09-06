@@ -1,11 +1,11 @@
 // Telas: planos de leitura, orações, rosário, liturgia
 import { $, $$, esc, icon, toast, copyText, fmtDate, todayISO, parseISO, addDays, norm } from './util.js';
 import { store } from './store.js';
-import { book, refString, refLong, getVerses } from './data.js';
+import { book, refString, refLong, getVerses, version } from './data.js';
 import { openSheet, openModal, topbar, confirm } from './ui.js';
 import { PLANS, plan as getPlan, planDays, planProgress, nextDay } from './plans.js';
 import { PRAYERS, PRAYER_GROUPS, prayer as getPrayer, prayersByGroup } from './prayers.js';
-import { MYSTERIES, mysteryOfDay, rosarySteps } from './rosary.js';
+import { MYSTERIES, mysteryOfDay, rosarySteps, chapletSteps } from './rosary.js';
 import { liturgicalDay, readingsFor, upcoming, SEASON_KEYS } from './liturgy.js';
 import { shareText } from './share.js';
 
@@ -149,25 +149,28 @@ export function renderRosary(view) {
       <div class="section" style="padding-top:0"><div class="section-title">${esc(m.name)} · ${m.days}</div>
         <div class="list">${m.list.map((my, i) => `<a class="list-item" href="#/biblia/${my.ref[0]}/${my.ref[1]}/${my.ref[2]}"><div class="ico" style="background:${m.color};color:#fff;font-weight:800">${i + 1}</div><div class="grow"><div class="title">${esc(my.t)}</div><div class="sub">${esc(refString(my.ref[0], my.ref[1], my.ref[2], my.ref[3]))} · fruto: ${esc(my.fruit)}</div></div><span class="chev">${icon('chevR')}</span></a>`).join('')}</div>
       </div>
+      <div class="section" style="padding-top:0"><a class="card row between" href="#/rosario" data-act="chaplet"><div><h3>🤍 Terço da Divina Misericórdia</h3><div class="small muted">Guiado, com as orações de Santa Faustina · ideal às 15h</div></div>${icon('chevR')}</a></div>
       <div class="section" style="padding-top:0"><div class="card"><h3>Como rezar</h3><p class="small muted" style="margin-top:6px">Sinal da Cruz, Creio, Pai Nosso, três Ave Marias e Glória. Em cada mistério: anuncia-se o mistério, reza-se um Pai Nosso, dez Ave Marias, o Glória e a oração de Fátima. Ao final, Salve Rainha. Terços rezados neste app: <b>${store.rosaryCount}</b>.</p></div></div>`;
     $$('[data-k]', view).forEach((b) => b.onclick = () => { kind = b.dataset.k; render(); });
     $('[data-act=pray]', view).onclick = () => guidedRosary(kind);
+    $('[data-act=chaplet]', view).onclick = (e) => { e.preventDefault(); guidedRosary('misericordia'); };
   };
   render();
 }
 
 function guidedRosary(kind) {
-  const steps = rosarySteps(kind);
+  const chaplet = kind === 'misericordia';
+  const steps = chaplet ? chapletSteps() : rosarySteps(kind);
   let i = 0;
-  const m = MYSTERIES[kind];
-  const { el, close } = openModal(`<div id="ros"></div>`);
+  const m = chaplet ? { name: 'Terço da Divina Misericórdia', color: '#B3264A' } : MYSTERIES[kind];
   let wake = null;
+  const { el, close } = openModal(`<div id="ros"></div>`, { onClose: () => { if (wake) { try { wake.release(); } catch { /* */ } wake = null; } } });
   if (navigator.wakeLock) navigator.wakeLock.request('screen').then((w) => { wake = w; }).catch(() => {});
   const render = () => {
     const s = steps[i];
     const pct = Math.round(i * 100 / (steps.length - 1));
     const beads = s.mystery ? `<div class="beads">${Array.from({ length: 10 }, (_, k) => `<span class="bead ${s.n && k + 1 < s.n ? 'on' : ''} ${s.n === k + 1 ? 'cur' : ''}"></span>`).join('')}</div>` : '';
-    $('#ros', el).innerHTML = `${topbar({ title: m.name, right: `<button class="icon-btn" data-act="x">${icon('close')}</button>` })}
+    $('#ros', el).innerHTML = `${topbar({ title: m.name, right: `<button class="icon-btn" data-act="x" aria-label="Fechar">${icon('close')}</button>` })}
       <div class="rosary-step">
         <div class="ring" style="--p:${pct}%"><div>${pct}%</div></div>
         <div class="kind">${esc(s.kind)}</div>
@@ -183,15 +186,49 @@ function guidedRosary(kind) {
       </div>`;
     $('[data-act=x]', el).onclick = () => close();
     $('[data-act=prev]', el).onclick = () => { if (i > 0) { i--; render(); } };
-    $('[data-act=next]', el).onclick = () => { if (s.last) { store.rosaryDone(); toast('Terço concluído. Deus te abençoe! 🙏'); close(); } else { i++; render(); window.scrollTo(0, 0); } };
+    $('[data-act=next]', el).onclick = () => { if (s.last) { store.rosaryDone(); toast(chaplet ? 'Jesus, eu confio em vós! 🙏' : 'Terço concluído. Deus te abençoe! 🙏'); close(); } else { i++; render(); window.scrollTo(0, 0); } };
     const ref = $('[data-act=ref]', el); if (ref) ref.onclick = () => close();
   };
   render();
-  const origClose = close;
-  el.addEventListener('remove', () => { if (wake) wake.release(); });
 }
 
 // ---------- Liturgia ----------
+// referência de versículos -> segmentos [{c, a, b}] (b = Infinity: até o fim do capítulo)
+// aceita "1-2, 6-7", "13-18b", "23—3:9", "2-3; 2:2-4", "8 and 10" (formato da API) e "1-5.9-11", "23–3,6" (formato brasileiro)
+function parseSpec(c0, spec) {
+  const segs = [];
+  let c = c0;
+  const s = String(spec || '')
+    .replace(/(\d),(\d)/g, '$1:$2')       // "3,6" -> "3:6" (capítulo,versículo)
+    .replace(/(\d[a-d]*)\.(\d)/g, '$1, $2') // "1-5.9-11" -> "1-5, 9-11"
+    .replace(/\s+(?:and|e)\s+/g, ', ');
+  for (const raw of s.split(/[;,]/)) {
+    const p = raw.trim().replace(/(\d)[a-d]{1,2}\b/g, '$1');
+    if (!p) continue;
+    const m = p.match(/^(?:(\d+):)?(\d+)(?:\s*[-–—]\s*(?:(\d+):)?(\d+))?$/);
+    if (!m) continue;
+    if (m[1]) c = +m[1];
+    const a = +m[2];
+    if (m[3]) { segs.push({ c, a, b: Infinity }); c = +m[3]; segs.push({ c, a: 1, b: +m[4] }); }
+    else segs.push({ c, a, b: m[4] ? Math.max(a, +m[4]) : a });
+  }
+  return segs;
+}
+// texto de uma leitura na versão escolhida: [{c, v, t}]
+async function readingVerses(r) {
+  const { getChapter } = await import('./data.js');
+  const ver = store.settings.version;
+  const segs = r.v ? parseSpec(r.c, r.v) : [{ c: r.c, a: 1, b: 60 }];
+  const out = [];
+  const cache = new Map();
+  for (const sg of segs) {
+    if (!cache.has(sg.c)) cache.set(sg.c, await getChapter(ver, r.b, sg.c));
+    const ch = cache.get(sg.c);
+    if (!ch) continue;
+    ch.verses.forEach((t, i) => { const v = i + 1; if (t && v >= sg.a && v <= sg.b && !out.some((x) => x.c === sg.c && x.v === v)) out.push({ c: sg.c, v, t }); });
+  }
+  return out;
+}
 export async function renderLiturgy(view, dateISO) {
   const date = dateISO ? parseISO(dateISO) : new Date();
   const iso = todayISO(date);
@@ -223,8 +260,18 @@ export async function renderLiturgy(view, dateISO) {
     box.innerHTML = parts.map(([k, label]) => {
       const r = readings[k];
       const link = r.b ? `#/biblia/${r.b}/${r.c}${r.v1 ? '/' + r.v1 : ''}` : '';
-      return `<a class="reading row" ${link ? `href="${link}"` : ''}><div class="grow"><div class="kind">${label}</div><div class="ref">${esc(r.disp || r.raw)}</div></div>${link ? `<span class="chev">${icon('chevR')}</span>` : ''}</a>`;
-    }).join('') + (readings.note ? `<p class="small muted" style="margin-top:8px">${esc(readings.note)}</p>` : '') + `<p class="small muted" style="margin-top:10px">Numeração dos Salmos conforme a Vulgata (entre parênteses, a numeração hebraica).</p>`;
+      return `<div class="reading"><a class="row" ${link ? `href="${link}"` : ''}><div class="grow"><div class="kind">${label}</div><div class="ref">${esc(r.disp || r.raw)}</div></div>${link ? `<span class="chev">${icon('chevR')}</span>` : ''}</a><div class="reading-text" data-k="${k}"></div></div>`;
+    }).join('') + (readings.note ? `<p class="small muted" style="margin-top:8px">${esc(readings.note)}</p>` : '') + `<p class="small muted" style="margin-top:10px">Salmos numerados conforme a Vulgata (entre parênteses, a numeração hebraica); o título do Salmo conta como versículo. Texto: ${esc(version(store.settings.version).name)}.</p>`;
+    // texto das leituras
+    for (const [k] of parts) {
+      const r = readings[k];
+      const holder = box.querySelector(`.reading-text[data-k="${k}"]`);
+      if (!r.b || !holder) continue;
+      try {
+        const vs = await readingVerses(r);
+        if (vs.length) holder.innerHTML = vs.map((x) => `<span class="rv"><sup>${x.c !== r.c ? x.c + ',' : ''}${x.v}</sup>${esc(x.t)}</span>`).join(' ');
+      } catch { /* sem texto */ }
+    }
   }
   const up = upcoming(addDays(date, 1), 10);
   $('#upc', view).innerHTML = up.map((u) => `<a class="list-item" href="#/liturgia/${todayISO(u.date)}"><div class="date"><b>${u.date.getDate()}</b><span>${esc(fmtDate(u.date, { month: 'short' })).replace('.', '')}</span></div><div class="grow"><div class="title">${esc(u.name)}</div><div class="sub">${u.rank === 'S' ? 'Solenidade' : u.rank === 'F' ? 'Festa' : 'Memória'} · ${esc(u.season)}</div></div><span class="chev">${icon('chevR')}</span></a>`).join('');

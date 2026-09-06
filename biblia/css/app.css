@@ -235,6 +235,7 @@ hr.sep { border: 0; border-top: 1px solid var(--border); margin: 12px 0; }
 .fab-nav {
   position: fixed; bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + 14px); left: 0; right: 0; pointer-events: none; z-index: 15;
 }
+.fab-nav { transition: opacity .2s; }
 .fab-nav .inner { max-width: 720px; margin: 0 auto; display: flex; justify-content: space-between; padding: 0 14px; }
 .fab-nav button { pointer-events: auto; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow); cursor: pointer; display: grid; place-items: center; }
 .fab-nav button svg { width: 22px; height: 22px; }
@@ -315,6 +316,9 @@ hr.sep { border: 0; border-top: 1px solid var(--border); margin: 12px 0; }
 .reading { padding: 12px 0; border-bottom: 1px solid var(--border); }
 .reading .kind { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
 .reading .ref { font-weight: 700; color: var(--accent); font-size: 16px; }
+.reading-text { font-family: var(--font-serif); font-size: 16px; line-height: 1.55; margin-top: 6px; }
+.reading-text:empty { display: none; }
+.reading-text sup { font-family: var(--font-ui); font-size: 10px; color: var(--accent); margin-right: 2px; }
 .cal-list .list-item .date { width: 48px; text-align: center; flex: none; }
 .cal-list .date b { display: block; font-size: 18px; line-height: 1; }
 .cal-list .date span { font-size: 11px; text-transform: uppercase; color: var(--muted); }

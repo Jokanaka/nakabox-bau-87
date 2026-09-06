@@ -31,7 +31,7 @@ def work(vol):
     doc = pymupdf.open(f'vols/vol{vol}.pdf')
     out = []
     for bid, c, lo, hi in byvol[vol]:
-        pages = list(range(max(0, lo), min(len(doc) - 1, hi + 1) + 1))
+        pages = list(range(max(0, lo - 1), min(len(doc) - 1, hi + 2) + 1))   # +1 página: capítulos cortados no fim
         try:
             r = extract_chapter(doc, c, lex, expected_count=vc[byid[bid]['bolls']].get(c), pages=pages)
         except Exception as e:

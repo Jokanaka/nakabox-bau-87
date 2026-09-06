@@ -7,7 +7,7 @@ Returns {'ok':bool,'title':str,'verses':{n:text},'heading':str|None,'warnings':[
 import re, statistics, unicodedata
 import pymupdf
 
-CAP_RE = re.compile(r'(?:c\s*a\s*p\s*[íiìl1!|frtj]?\s*t\s*u\s*l\s*[o0]|salmo)\s*[^0-9a-zA-ZÀ-ÿ]{0,3}\s*([0-9lIOoSB]{1,3})\b', re.I)
+CAP_RE = re.compile(r'(?:c\s*a\s*p\s*[íiìl1!|frtj]?\s*t\s*u\s*l\s*[o0]|c\s*a\s*p\s*[^\s\d]{2,8}|salmo)\s*[^0-9a-zA-ZÀ-ÿ]{0,3}\s*([0-9lIOoSB]{1,3})\b', re.I)
 CAPWORD_RE = re.compile(r'^\s*c\s*a\s*p\s*.{0,2}\s*t\s*u\s*l\s*[o0]', re.I)
 PAGENUM_RE = re.compile(r'^[\s\-—–_.·•]*\d{1,4}[\s\-—–_.·•]*$')
 FN_LABEL_RE = re.compile(r'^\s*[(\[]\s*[\d*]{1,3}\s*[)\]jJ}]\s*')
@@ -100,8 +100,11 @@ def doc_rows(pdf_path, page_subset=None):
             r['is_header'] = r['y'] < HEADER_MAX_Y
             r['is_pagenum'] = bool(PAGENUM_RE.match(t))
             r['cap'] = None
-            m = CAP_RE.search(t)
-            if m and len(t) < 30:
+            tcap = t
+            if len(t) < 40 and sum(1 for tok in t.split() if len(tok) == 1) >= 5:
+                tcap = re.sub(r'(?<=\S) (?=\S)', '', t)   # "C a p í t u l o 1 9" -> "Capítulo19"
+            m = CAP_RE.search(tcap)
+            if m and len(tcap) < 30 and re.match(r'^\s*(c\s*a\s*p|salmo)', tcap, re.I):
                 r['cap'] = norm_int(m.group(1))
             r['caps'] = caps_ratio(t) >= 0.8
             r['big'] = r['size'] >= big_min
@@ -189,6 +192,9 @@ def parse_verse_start(t, exp):
     m = re.match(r'^(\d{1,3})([A-Za-zÀ-ÿ].*)$', t)
     if m:
         cands.append((m.group(1), m.group(2)))
+    m = re.match(r'^\d\s+(' + DIGC + r'{1,3})\s+(.*)$', t)   # stray footnote digit before the verse number: "1 40 Kebon"
+    if m:
+        cands.append((m.group(1), m.group(2)))
     for tok, rest in cands:
         n = norm_int(tok)
         if n is None or n not in accept:
@@ -252,11 +258,14 @@ def extract_chapter(pdf_path, chapter, lex, expected_count=None, pages=None):
             if r['caps'] and len(t) < 40 and not re.match(r'^\s*\d', t):
                 continue  # stray title fragment
             seen_big = True
-            body.append(t)
+            body.append((t, r['x'], r['page']))
     # hyphenation & verse split
-    lines = []
-    for t in body:
-        lines.append(t)
+    lines = body
+    # left margin per page (continuation lines); verse starts are indented ~15-20pt
+    margin = {}
+    for t, x, pg in body:
+        margin.setdefault(pg, []).append(x)
+    margin = {pg: (sorted(xs)[max(0, int(len(xs) * 0.2) - 1)] if len(xs) >= 3 else min(xs)) for pg, xs in margin.items()}
     # merge lines into verse buffers
     verses = {}
     order = []
@@ -272,9 +281,22 @@ def extract_chapter(pdf_path, chapter, lex, expected_count=None, pages=None):
             verses[cur] = clean_text(buf)
         buf = ''
 
-    for t in lines:
+    for t, x, pg in lines:
         t = re.sub(r'^[^0-9A-Za-zÀ-ÿ"“«(\[]+', '', t)
         num, rest = parse_verse_start(t, exp)
+        indented = (x - margin.get(pg, x)) >= 10
+        if num is None and indented and cur is not None and (expected_count is None or exp <= expected_count):
+            # verse number lost by the OCR: an indented line starts the next verse
+            m2 = re.match(r'^(\S{1,2})\s+(.*)$', t)
+            tok = m2.group(1) if m2 else ''
+            if m2 and not lex.known(tok) and not tok.isalpha() and re.search(r'[A-Za-z0-9]', tok) and not re.search(r'["“”«»\'‘’]', tok) and len(m2.group(2)) > 3:
+                rest = m2.group(2)   # e.g. "-f Esta ..." where "-f" is a misread "4"
+            else:
+                rest = None
+            if rest is not None:
+                rest = rest[:1].upper() + rest[1:]
+                num = exp
+                warnings.append(f'indent:{exp}')
         if num is not None:
             if num != exp:
                 warnings.append(f'skip:{exp}->{num}')
@@ -293,6 +315,10 @@ def extract_chapter(pdf_path, chapter, lex, expected_count=None, pages=None):
         else:
             buf = buf.rstrip() + ' ' + t.lstrip()
     flush()
+    if heading and 1 not in verses and 2 in verses and len(heading.split()) >= 3:
+        verses[1] = clean_text(heading)   # verse 1 whose number the OCR lost
+        heading = None
+        warnings.append('heading->v1')
     tj = ''
     for tp in title_parts:
         if tj.rstrip().endswith(('-', '\u00ad')):
@@ -318,10 +344,11 @@ def extract_chapter(pdf_path, chapter, lex, expected_count=None, pages=None):
 
 
 class Lexicon:
-    def __init__(self, uni, freq, spell=None):
+    def __init__(self, uni, freq, spell=None, min_freq=5):
         self.uni = uni
         self.freq = freq
         self.spell = spell
+        self.min_freq = min_freq
         self.cache = {}
         self.lower_uni = {}
         for w, c in uni.items():
@@ -335,7 +362,7 @@ class Lexicon:
         r = False
         if w in self.uni or w.lower() in self.lower_uni:
             r = True
-        elif w.lower() in self.freq and self.freq[w.lower()] >= 5:
+        elif w.lower() in self.freq and self.freq[w.lower()] >= self.min_freq:
             r = True
         elif self.spell is not None:
             try:

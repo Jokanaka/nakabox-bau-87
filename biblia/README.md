@@ -7,7 +7,7 @@ Funciona como site e como aplicativo instalável (PWA) no celular, sem internet 
 
 ## Como usar
 
-- Publicado com o GitHub Pages: `https://<usuario>.github.io/<repositorio>/biblia/`
+- No ar: **https://jokanaka.github.io/nakabox-bau-87/biblia/** (GitHub Pages) e também no Vercel (projeto `biblia`, pasta raiz `biblia`).
 - No celular: abra o endereço, toque em **Compartilhar → Adicionar à Tela de Início** (iPhone) ou aceite o aviso **Instalar** (Android).
 - Localmente: `cd biblia && python3 -m http.server 8080` e abra `http://localhost:8080/`.
 
@@ -18,9 +18,10 @@ Não há etapa de build: é HTML, CSS e JavaScript puro (módulos ES).
 - **Leitor**: livro/capítulo, três versões (Figueiredo em português, Vulgata Clementina em latim, Douay-Rheims em inglês),
   tamanho de fonte, serifa/sem serifa, temas claro/sépia/escuro, deslizar para mudar de capítulo, áudio (voz do sistema).
 - **Versículos**: destaques em 6 cores, notas, favoritos, copiar, compartilhar como texto ou imagem, comparar versões.
-- **Busca** em toda a Bíblia (sem acentos), frases entre aspas e referências (`Jo 3,16`, `Sl 22`).
+- **Busca** em toda a Bíblia ou em um só livro (sem acentos), frases entre aspas e referências (`Jo 3,16`, `Sl 22`).
+- Salmos com a numeração da Vulgata e, no cabeçalho, a numeração hebraica das Bíblias modernas.
 - **Planos de leitura**: Bíblia em 1 e 2 anos, Novo Testamento, Evangelhos, Salmos, Deuterocanônicos, Advento, Quaresma, Semana Santa, novenas etc.
-- **Orações** tradicionais (com latim quando existe) e **Santo Rosário** guiado com os mistérios do dia.
+- **Orações** tradicionais (com latim quando existe), **Santo Rosário** guiado com os mistérios do dia e **Terço da Divina Misericórdia** guiado.
 - **Liturgia**: calendário litúrgico (tempos, ciclos A/B/C e I/II, cores, solenidades e festas, calendário do Brasil) e leituras da Missa.
 - **Início**: versículo do dia, continuar lendo, plano de hoje, leituras de hoje, sequência de dias.
 - Tudo é guardado só no aparelho (localStorage), com exportação/importação de backup.
@@ -62,7 +63,7 @@ Os scripts em `tools/` documentam como o texto foi produzido:
 2. `dl_vols.sh` — baixa os volumes da edição de 1950 (archive.org, PDFs com camada de texto OCR).
 3. `volmap2.py` + `run_vols.py` (ou `dl_pdf.sh` + `run_all.py`) — localiza cada capítulo e extrai os versículos (`ocr_extract.py`),
    validando a contagem de versículos pela Vulgata.
-4. `ocr_fix.py` — corrige erros típicos de OCR com léxico e bigramas; `modernize.py` — atualiza a ortografia de 1950 (êle → ele, tôda → toda).
+4. `ocr_fix.py` — corrige erros típicos de OCR com léxico, bigramas, dicionário hunspell (`pt_BR`), confusões aprendidas por alinhamento (`learn_conf.py` → `learned_conf.json`) e junção de palavras partidas por espaços espúrios ("anunciar ás" → "anunciarás"); `modernize.py` — atualiza a ortografia de 1950 (êle → ele, tôda → toda).
 5. `assemble.py` — junta transcrição e OCR, gera `data/figueiredo/*.json` e `data/books.json`.
 6. `build_versions.py` — Vulgata e Douay-Rheims; `build_lectionary.py` — leituras da Missa.
 7. `validate.py` — mede a taxa de erro do OCR contra capítulos transcritos (referência); `e2e.mjs` — testes de navegador (Playwright).

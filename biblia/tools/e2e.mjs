@@ -91,6 +91,12 @@ await step('09-search', async () => {
   const n = await page.$$eval('.result', (els) => els.length);
   if (n < 20) throw new Error('poucos resultados: ' + n);
 });
+await step('09b-search-book', async () => {
+  await page.click('[data-act=pickbook]');
+  await page.waitForSelector('#bl [data-b="sl"]', { timeout: 5000 });
+  await page.click('#bl [data-b="sl"]');
+  await page.waitForFunction(() => document.querySelectorAll('.result').length > 0 && [...document.querySelectorAll('.result .ref')].every((r) => r.textContent.startsWith('Sl ')), null, { timeout: 30000 });
+});
 await step('10-search-ref', async () => {
   await page.fill('#q', 'Jo 3,16');
   await page.press('#q', 'Enter');
@@ -126,11 +132,23 @@ await step('14-rosary', async () => {
   await page.click('[data-act=pray]');
   await page.waitForSelector('.rosary-step', { timeout: 5000 });
   for (let i = 0; i < 9; i++) { await page.click('[data-act=next]'); await page.waitForTimeout(60); }
+  await page.click('[data-act=x]');
+});
+await step('14b-chaplet', async () => {
+  await page.goto(BASE + '#/rosario');
+  await page.waitForSelector('[data-act=chaplet]', { timeout: 5000 });
+  await page.click('[data-act=chaplet]');
+  await page.waitForFunction(() => document.body.textContent.includes('Terço da Divina Misericórdia') && document.querySelector('.rosary-step'), null, { timeout: 5000 });
+  for (let i = 0; i < 6; i++) { await page.click('[data-act=next]'); await page.waitForTimeout(50); }
+  await page.click('[data-act=x]');
+  await page.goto(BASE + '#/oracoes/nsa-aparecida');
+  await page.waitForSelector('.prayer-text', { timeout: 5000 });
 });
 await step('15-liturgy', async () => {
   await page.goto(BASE + '#/liturgia');
   await page.waitForSelector('#readings .reading, #readings p', { timeout: 15000 });
   await page.waitForSelector('#upc .list-item', { timeout: 5000 });
+  await page.waitForFunction(() => document.querySelector('#readings .reading-text .rv'), null, { timeout: 20000 });
 });
 await step('16-liturgy-christmas', async () => {
   await page.goto(BASE + '#/liturgia/2026-12-25');
