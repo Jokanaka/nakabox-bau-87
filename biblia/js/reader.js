@@ -239,11 +239,11 @@ function setupProgress(view, cont, b, chapter) {
       bar.style.width = pct + '%';
       pctEl.textContent = pct >= 99 ? '✓ fim do capítulo' : `faltam ${100 - pct}% do capítulo`;
     }
-    // guarda onde parou (pouco depois de a rolagem parar); no fim do capítulo, o capítulo reabre do início
+    // guarda onde parou (pouco depois de a rolagem parar); concluir o capítulo apaga a posição
     clearTimeout(view._posT);
     view._posT = setTimeout(() => {
       if (current.book !== b.id || current.chapter !== chapter || !cont.isConnected) return;
-      store.setReadPos(b.id, chapter, pct >= 99 ? 0 : topVisibleVerse(view, cont));
+      store.setReadPos(b.id, chapter, topVisibleVerse(view, cont));
     }, 400);
   };
   const h = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };

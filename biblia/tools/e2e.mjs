@@ -649,12 +649,13 @@ await step('27-resume-position', async () => {
   const topV = await page.evaluate(() => { const tb = document.querySelector('.topbar'); const off = (tb ? tb.getBoundingClientRect().height : 0) + 6; for (const p of document.querySelectorAll('#chapter .verse')) { if (p.getBoundingClientRect().bottom > off) return +p.dataset.v; } return 1; });
   if (Math.abs(topV - 20) > 2) throw new Error('retomou no versículo ' + topV);
   await page.screenshot({ path: `${SHOT}/27-resume.png` });
-  // chegar ao fim do capítulo limpa a posição: o capítulo reabre do início
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  // concluir o capítulo apaga a posição (o capítulo reabre do início) e o próximo abre do início
+  await page.evaluate(() => import('./js/store.js').then((m) => m.store.setReadPos('gn', 2, 0)));
+  await page.click('.ch-nav [data-act=done]');
   await page.waitForFunction(() => import('./js/store.js').then((m) => m.store.readPos('gn', 1) === 0), null, { timeout: 5000 });
-  await page.goto(BASE + '#/biblia/gn/2');
-  await page.waitForSelector('#chapter .verse', { timeout: 15000 });
+  await page.waitForFunction(() => location.hash === '#/biblia/gn/2' && document.querySelector('#chapter .verse'), null, { timeout: 15000 });
   if (await page.evaluate(() => window.scrollY) > 50) throw new Error('capítulo sem posição salva devia abrir do início');
+  await page.evaluate(() => import('./js/store.js').then((m) => m.store.markRead('gn', 1, false)));
 });
 await step('21-desktop', async () => {
   await page.setViewportSize({ width: 1200, height: 800 });

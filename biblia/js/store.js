@@ -166,6 +166,7 @@ export const store = {
   markRead(book, chapter, on = true) {
     const k = `${book}.${chapter}`;
     if (on) state.readChapters[k] = todayISO(); else delete state.readChapters[k];
+    if (on && state.readPos) delete state.readPos[k];   // capítulo concluído reabre do início
     if (on) this.markRoutineItemEverywhere('leitura');
     save();
   },
