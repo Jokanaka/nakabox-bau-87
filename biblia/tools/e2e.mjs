@@ -638,7 +638,10 @@ await step('27-resume-position', async () => {
   await page.goto(BASE + '#/biblia/gn/1');
   await page.waitForSelector('#chapter .verse', { timeout: 15000 });
   await page.evaluate(() => document.querySelector('#v20').scrollIntoView());
-  await page.waitForFunction(() => import('./js/store.js').then((m) => m.store.readPos('gn', 1) >= 18), null, { timeout: 5000 });
+  // (waitForFunction não espera promessas: consulta a store em laço)
+  const readPos = () => page.evaluate(() => import('./js/store.js').then((m) => m.store.readPos('gn', 1)));
+  const until = async (fn, ms = 5000) => { const t0 = Date.now(); for (;;) { if (await fn()) return; if (Date.now() - t0 > ms) throw new Error('tempo esgotado à espera da posição'); await page.waitForTimeout(150); } };
+  await until(async () => (await readPos()) >= 18);
   await page.goto(BASE + '#/inicio');
   await page.waitForSelector('#home-daily', { timeout: 5000 });
   const card = await page.$eval('a[href="#/biblia/gn/1"]', (el) => el.textContent);
@@ -652,7 +655,7 @@ await step('27-resume-position', async () => {
   // concluir o capítulo apaga a posição (o capítulo reabre do início) e o próximo abre do início
   await page.evaluate(() => import('./js/store.js').then((m) => m.store.setReadPos('gn', 2, 0)));
   await page.click('.ch-nav [data-act=done]');
-  await page.waitForFunction(() => import('./js/store.js').then((m) => m.store.readPos('gn', 1) === 0), null, { timeout: 5000 });
+  await until(async () => (await readPos()) === 0);
   await page.waitForFunction(() => location.hash === '#/biblia/gn/2' && document.querySelector('#chapter .verse'), null, { timeout: 15000 });
   if (await page.evaluate(() => window.scrollY) > 50) throw new Error('capítulo sem posição salva devia abrir do início');
   await page.evaluate(() => import('./js/store.js').then((m) => m.store.markRead('gn', 1, false)));
