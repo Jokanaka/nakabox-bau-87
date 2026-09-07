@@ -2,7 +2,8 @@
 """Gera a narração de cada capítulo (vozes Kokoro pt-br) como MP3 + JSON com o tempo de cada versículo. Retomável.
 Saída: $GEN_OUT/<voz>/<livro>/<cap>.mp3|json e $GEN_OUT/<voz>/sample.mp3.
 Uso: python3 gen_audio.py [voz:livro,voz:livro,...]   (sem argumentos: plano padrão, Alex na Bíblia inteira primeiro)
-Variáveis: GEN_APP (pasta biblia), GEN_OUT (saída), GEN_MODELS (pasta com kokoro-v1.0.onnx e voices-v1.0.bin)."""
+Variáveis: GEN_APP (pasta biblia), GEN_OUT (saída), GEN_MODELS (pasta com kokoro-v1.0.onnx e voices-v1.0.bin),
+GEN_REVERSE=1 (capítulos do último para o primeiro: para duas máquinas trabalharem no mesmo livro sem se repetirem)."""
 import json, os, sys, time, re, numpy as np, lameenc
 from kokoro_onnx import Kokoro
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -95,7 +96,8 @@ for voice, bid in plan:
     b = byid[bid]
     data = json.load(open(f'{APP}/data/figueiredo/{bid}.json'))
     os.makedirs(f'{OUT}/{voice}/{bid}', exist_ok=True)
-    for ch in data['chapters']:
+    chapters = list(reversed(data['chapters'])) if os.environ.get('GEN_REVERSE') == '1' else data['chapters']
+    for ch in chapters:
         n = ch['n']
         if os.path.exists(f'{OUT}/{voice}/{bid}/{n}.json'): continue
         t0 = time.time()
