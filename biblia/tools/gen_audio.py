@@ -30,6 +30,14 @@ if len(sys.argv) > 1:
         p = x.split(':')
         if len(p) not in (2, 3) or (len(p) == 3 and not re.fullmatch(r'\d+-\d+', p[2])): sys.exit(f'plano inválido: {x}')
         plan.append((p[0], p[1], tuple(int(n) for n in p[2].split('-')) if len(p) == 3 else None))
+# GEN_ONLY=lista.json ([["lv",7],...]): gera só esses capítulos (voz GEN_VOICE, padrão alex); para regravar capítulos escolhidos
+ONLY = None
+if os.environ.get('GEN_ONLY'):
+    ONLY = {(b, int(n)) for b, n in json.load(open(os.environ['GEN_ONLY']))}
+    vo = os.environ.get('GEN_VOICE', 'alex')
+    plan = []
+    for b, n in sorted(ONLY, key=lambda x: (order.index(x[0]) if x[0] in order else 999, x[1])):
+        if (vo, b, None) not in plan: plan.append((vo, b, None))
 for v, b, _ in plan:
     if v not in VOICES or b not in byid: sys.exit(f'plano inválido: {v}:{b}')
 os.makedirs(OUT, exist_ok=True)
@@ -106,6 +114,7 @@ for voice, bid, rng in plan:
     if os.environ.get('GEN_REVERSE') == '1': chapters = list(reversed(chapters))
     for ch in chapters:
         n = ch['n']
+        if ONLY is not None and (bid, n) not in ONLY: continue
         if os.path.exists(f'{OUT}/{voice}/{bid}/{n}.json'): continue
         t0 = time.time()
         head = f"Salmo {n}" if bid == 'sl' else f"{b['name']}, capítulo {n}"
