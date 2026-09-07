@@ -1,6 +1,6 @@
 /* Service worker — Bíblia Católica
    Shell: precache. Data (data/*.json): cache-first, immutable per version. */
-const SHELL_CACHE = 'bc-v18-shell';   // casca do app: mude a cada versão do código
+const SHELL_CACHE = 'bc-v19-shell';   // casca do app: mude a cada versão do código
 const DATA_CACHE = 'bc-v5-data';     // textos: mude só quando os dados forem regenerados
 const VOICE_CACHE = 'bc-voice-v1';   // runtime do narrador offline (wasm de terceiros)
 const AUDIO_CACHE = 'bc-audio-v1';   // narração gravada (últimos capítulos ouvidos)

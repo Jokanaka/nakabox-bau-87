@@ -29,11 +29,14 @@ export function currentRef() { return current; }
 
 // ---------- Leitor ----------
 export async function renderReader(view, { book: bid, chapter, verse, verseEnd, plan, day }) {
-  stopTTS();
   const s = store.settings;
   const ver = s.version;
   const b = book(bid) || book('gn');
   chapter = Math.min(Math.max(+chapter || 1, 1), b.chapters);
+  // a leitura em voz continua quando é deste mesmo capítulo (ela emenda capítulos sozinha)
+  const playing = audio.isActive() ? audio.currentRef() : null;
+  const keepAudio = !!(playing && playing.book === b.id && playing.chapter === chapter);
+  if (!keepAudio) stopTTS();
   current = { book: b.id, chapter };
   selected = new Set();
   store.setLast(b.id, chapter);
@@ -115,7 +118,7 @@ export async function renderReader(view, { book: bid, chapter, verse, verseEnd, 
   setupProgress(view, cont, b, chapter);
   fillTodayChips(view);
   store.pushHistory(b.id, chapter);
-  if (audio.consumeAutoplay(`${b.id}.${chapter}`)) setTimeout(() => startTTS(1).catch(() => {}), 400);   // continuação automática da leitura em voz
+  if (keepAudio) { audio.attach({ onItem: ttsOnItem, onEnd: ttsOnEnd }); setTtsButton(true); }
   cont.addEventListener('click', (e) => {
     const p = e.target.closest('.verse');
     if (!p || p.classList.contains('empty-v')) return;
@@ -468,6 +471,31 @@ function markChapterRead(bid, chapter) {
     const d = $('[data-act=done]'); if (d) d.innerHTML = `${icon('check')} Lido · próximo capítulo`;
   }
 }
+// destaque do versículo e fim da leitura: usados ao começar e ao reatar a leitura em andamento
+function ttsOnItem(i, it) {
+  clearSpeaking();
+  if (!it.v) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+  const p = $(`#v${it.v}`);
+  if (p) { p.classList.add('speaking'); p.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+}
+function ttsOnEnd(completed, ref) {
+  clearSpeaking(); setTtsButton(false);
+  if (completed) { const r = ref || current; markChapterRead(r.book, r.chapter); }
+}
+// a troca de capítulo é feita pelo motor de áudio (funciona com a tela desligada);
+// a página acompanha quando estiver à frente
+let pendingChapter = null;
+function followAudio() {
+  const r = pendingChapter;
+  if (!r || document.visibilityState !== 'visible') return;
+  if (!location.hash.startsWith('#/biblia/')) return;   // fora do leitor, não puxa a pessoa para lá
+  pendingChapter = null;
+  if (current.book === r.book && current.chapter === r.chapter) return;
+  go(r.book, r.chapter);
+}
+window.addEventListener('bc:chapter', (e) => { pendingChapter = e.detail; followAudio(); });
+document.addEventListener('visibilitychange', () => followAudio());
+
 let noticedKey = '';
 async function startTTS(fromVerse) {
   audio.unlock();   // ainda dentro do toque: no iPhone o áudio só inicia num gesto (antes de qualquer await)
@@ -478,15 +506,7 @@ async function startTTS(fromVerse) {
   const introText = `${head}.${current.title ? ' ' + current.title : ''}`;
   const common = {
     title: `${bookName(b, store.settings.version)} ${chapter}`, lang: ttsLang(), ref: { book: b.id, chapter },
-    onItem: (i, it) => { clearSpeaking(); if (!it.v) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; } const p = $(`#v${it.v}`); if (p) { p.classList.add('speaking'); p.scrollIntoView({ block: 'center', behavior: 'smooth' }); } },
-    onEnd: (completed) => {
-      clearSpeaking(); setTtsButton(false);
-      if (completed) markChapterRead(current.book, current.chapter);
-      if (completed && store.settings.ttsContinue) {
-        const next = nextChapter(current.book, current.chapter);
-        if (next) { audio.requestAutoplay(`${next.book}.${next.chapter}`); go(next.book, next.chapter); }
-      }
-    },
+    onItem: ttsOnItem, onEnd: ttsOnEnd,
   };
   // narração gravada (voz neural) quando existir para este capítulo e na versão em português
   if (store.settings.recordedOn !== false && store.settings.version === 'figueiredo') {
@@ -513,6 +533,13 @@ async function startTTS(fromVerse) {
   if (audio.play({ ...common, items, from })) setTtsButton(true);
 }
 export function stopTTS() { audio.stop(); }
+// ao trocar de tela: não para a leitura quando ela é do capítulo que está sendo aberto
+export function stopTTSForRoute() {
+  const r = audio.isActive() ? audio.currentRef() : null;
+  const m = /^#\/biblia\/([^/?]+)\/(\d+)/.exec(location.hash || '');
+  if (r && m && r.book === m[1] && r.chapter === +m[2]) return;
+  audio.stop();
+}
 
 // ---------- Busca ----------
 export function renderSearch(view, { q = '' } = {}) {
