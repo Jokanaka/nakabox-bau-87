@@ -134,7 +134,13 @@ export async function renderReader(view, { book: bid, chapter, verse, verseEnd, 
       if (verseEnd) for (let v = +verse + 1; v <= +verseEnd; v++) { const x = cont.querySelector(`#v${v}`); if (x) { x.classList.add('sel'); selected.add(v); } }
       setTimeout(() => { selected.clear(); $$('.verse.sel', cont).forEach((x) => x.classList.remove('sel')); }, 3500);
     }
-  } else window.scrollTo(0, 0);
+  } else {
+    // volta ao versículo onde a pessoa parou de ler neste capítulo
+    const rv = store.readPos(b.id, chapter);
+    const el = rv > 1 ? cont.querySelector(`#v${rv}`) : null;
+    if (el) { scrollToVerseTop(view, el); toast(`Continuando do versículo ${rv}`); }
+    else window.scrollTo(0, 0);
+  }
   // gesto de deslizar (remove os ouvintes do capítulo anterior antes de registrar os novos)
   let sx = 0, sy = 0;
   if (view._swipe) { view.removeEventListener('touchstart', view._swipe[0]); view.removeEventListener('touchend', view._swipe[1]); }
@@ -207,20 +213,38 @@ async function fillTodayChips(view) {
     if (readings && readings.gospel && c.isConnected) c.innerHTML = `🕊 Evangelho: ${esc(readings.gospel.disp || readings.gospel.raw)}`;
   } catch { /* sem leituras na base local */ }
 }
+// altura do que fica fixo no alto (barra do leitor), para alinhar um versículo logo abaixo
+function topOffset(view) { const tb = $('.topbar', view); return (tb ? tb.getBoundingClientRect().height : 0) + 6; }
+function scrollToVerseTop(view, el) { window.scrollTo(0, Math.max(0, el.getBoundingClientRect().top + window.scrollY - topOffset(view))); }
+// primeiro versículo visível na tela (o que a pessoa está lendo)
+function topVisibleVerse(view, cont) {
+  const off = topOffset(view);
+  for (const p of $$('.verse', cont)) { if (p.getBoundingClientRect().bottom > off) return +p.dataset.v; }
+  return 1;
+}
+
 function setupProgress(view, cont, b, chapter) {
   const pctEl = $('#tp-pct', view), bar = $('#tp-bar', view);
-  if (!pctEl || !bar) return;
-  if (view._progH) window.removeEventListener('scroll', view._progH);
-  let ticking = false;
+  if (view._progH) { window.removeEventListener('scroll', view._progH); window.removeEventListener('resize', view._progH); }
+  clearTimeout(view._posT);
+  let ticking = false, pct = 0;
   const update = () => {
     ticking = false;
     if (current.book !== b.id || current.chapter !== chapter || !cont.isConnected) return;
     const rect = cont.getBoundingClientRect();
     const total = rect.height || 1;
     const seen = Math.min(total, Math.max(0, window.innerHeight - rect.top));
-    const pct = Math.max(0, Math.min(100, Math.round(seen * 100 / total)));
-    bar.style.width = pct + '%';
-    pctEl.textContent = pct >= 99 ? '✓ fim do capítulo' : `faltam ${100 - pct}% do capítulo`;
+    pct = Math.max(0, Math.min(100, Math.round(seen * 100 / total)));
+    if (pctEl && bar) {
+      bar.style.width = pct + '%';
+      pctEl.textContent = pct >= 99 ? '✓ fim do capítulo' : `faltam ${100 - pct}% do capítulo`;
+    }
+    // guarda onde parou (pouco depois de a rolagem parar); no fim do capítulo, o capítulo reabre do início
+    clearTimeout(view._posT);
+    view._posT = setTimeout(() => {
+      if (current.book !== b.id || current.chapter !== chapter || !cont.isConnected) return;
+      store.setReadPos(b.id, chapter, pct >= 99 ? 0 : topVisibleVerse(view, cont));
+    }, 400);
   };
   const h = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
   view._progH = h;
@@ -431,7 +455,8 @@ export function openFontSheet() {
 
 // ---------- Áudio (leitura em voz alta, motor em audio.js) ----------
 function ttsLang() { const l = version(store.settings.version).lang; return l === 'la' ? 'it-IT' : l; }
-function toggleTTS() { if (audio.isActive()) stopTTS(); else startTTS(1).catch(() => {}); }
+// ouvir a partir do versículo que está na tela (do início, se a página estiver no alto)
+function toggleTTS(view) { if (audio.isActive()) stopTTS(); else { const cont = view && $('#chapter', view); startTTS(cont ? topVisibleVerse(view, cont) : 1).catch(() => {}); } }
 function setTtsButton(on) { const btn = $('[data-act=tts]'); if (btn) { btn.innerHTML = on ? icon('stop') : icon('play'); btn.classList.toggle('active', on); } }
 function clearSpeaking() { $$('#chapter .verse.speaking').forEach((x) => x.classList.remove('speaking')); }
 function markChapterRead(bid, chapter) {

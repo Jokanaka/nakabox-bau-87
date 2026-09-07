@@ -634,6 +634,28 @@ await step('26-reader-today', async () => {
   if (!(await page.$('#tp-pct'))) throw new Error('o progresso do capítulo deve continuar');
   await page.evaluate(() => import('./js/store.js').then((m) => m.store.setSetting('todayStrip', true)));
 });
+await step('27-resume-position', async () => {
+  await page.goto(BASE + '#/biblia/gn/1');
+  await page.waitForSelector('#chapter .verse', { timeout: 15000 });
+  await page.evaluate(() => document.querySelector('#v20').scrollIntoView());
+  await page.waitForFunction(() => import('./js/store.js').then((m) => m.store.readPos('gn', 1) >= 18), null, { timeout: 5000 });
+  await page.goto(BASE + '#/inicio');
+  await page.waitForSelector('#home-daily', { timeout: 5000 });
+  const card = await page.$eval('a[href="#/biblia/gn/1"]', (el) => el.textContent);
+  if (!/versículo \d+/.test(card)) throw new Error('cartão continuar lendo: ' + card);
+  await page.goto(BASE + '#/biblia/gn/1');
+  await page.waitForSelector('#chapter .verse', { timeout: 15000 });
+  await page.waitForFunction(() => window.scrollY > 100, null, { timeout: 5000 });
+  const topV = await page.evaluate(() => { const tb = document.querySelector('.topbar'); const off = (tb ? tb.getBoundingClientRect().height : 0) + 6; for (const p of document.querySelectorAll('#chapter .verse')) { if (p.getBoundingClientRect().bottom > off) return +p.dataset.v; } return 1; });
+  if (Math.abs(topV - 20) > 2) throw new Error('retomou no versículo ' + topV);
+  await page.screenshot({ path: `${SHOT}/27-resume.png` });
+  // chegar ao fim do capítulo limpa a posição: o capítulo reabre do início
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await page.waitForFunction(() => import('./js/store.js').then((m) => m.store.readPos('gn', 1) === 0), null, { timeout: 5000 });
+  await page.goto(BASE + '#/biblia/gn/2');
+  await page.waitForSelector('#chapter .verse', { timeout: 15000 });
+  if (await page.evaluate(() => window.scrollY) > 50) throw new Error('capítulo sem posição salva devia abrir do início');
+});
 await step('21-desktop', async () => {
   await page.setViewportSize({ width: 1200, height: 800 });
   await page.goto(BASE + '#/biblia/jo/1');

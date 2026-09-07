@@ -34,6 +34,7 @@ const DEFAULTS = {
   notes: {},        // "gn.1.1" -> { text, at }
   bookmarks: {},    // "gn.1.1" -> at
   history: [],      // [{book, chapter, at}] (últimos 40)
+  readPos: {},      // "gn.2" -> { v, at }  (versículo onde parou de ler o capítulo)
   readChapters: {}, // "gn.1" -> date  (capítulos concluídos)
   plans: {},        // planId -> { started: iso, done: { dayIndex: true } }
   favPrayers: {},   // prayerId -> true
@@ -84,6 +85,15 @@ export const store = {
   setSetting(k, v) { state.settings[k] = v; save(); },
   get last() { return state.last; },
   setLast(book, chapter) { state.last = { book, chapter }; save(); },
+  // onde a pessoa parou de ler no capítulo (0 = do início)
+  readPos(book, chapter) { const p = (state.readPos || {})[`${book}.${chapter}`]; return p ? p.v : 0; },
+  setReadPos(book, chapter, v) {
+    if (!state.readPos) state.readPos = {};
+    const k = `${book}.${chapter}`, cur = state.readPos[k];
+    if (v > 1) { if (cur && cur.v === v) return; state.readPos[k] = { v, at: Date.now() }; }
+    else { if (!cur) return; delete state.readPos[k]; }
+    save();
+  },
 
   // perfis
   get profiles() { return profiles.list; },
