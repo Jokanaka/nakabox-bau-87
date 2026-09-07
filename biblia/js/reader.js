@@ -5,7 +5,9 @@ import { VERSIONS, version, books, book, bookName, groups, nextChapter, prevChap
 import { openSheet, openModal, topbar, closeAll } from './ui.js';
 import { makeVerseImage, shareImage, shareText } from './share.js';
 import { ensureIndex, search, highlightText } from './search.js';
-import { plan as getPlan, planDays } from './plans.js';
+import { PLANS, plan as getPlan, planDays, nextDay } from './plans.js';
+import { liturgicalDay, readingsFor } from './liturgy.js';
+import { MYSTERIES, mysteryOfDay } from './rosary.js';
 import * as audio from './audio.js';
 
 const HL_COLORS = ['amarelo', 'verde', 'azul', 'rosa', 'laranja', 'roxo'];
@@ -45,6 +47,7 @@ export async function renderReader(view, { book: bid, chapter, verse, verseEnd, 
       <button class="icon-btn" data-act="search" aria-label="Buscar">${icon('search')}</button>
       <button class="icon-btn" data-act="tts" aria-label="Ouvir">${icon('play')}</button>`
     })}
+    ${todayStrip(b, chapter, ver)}
     ${plan ? planBar(plan, +day, b.id, chapter) : ''}
     <div id="chapter" class="reader ${s.fontFamily === 'sans' ? 'sans' : ''} ${s.showVerseNumbers ? '' : 'hide-vn'}">
       <div class="skel" style="width:40%;margin:30px auto"></div><div class="skel"></div><div class="skel"></div><div class="skel" style="width:80%"></div>
@@ -109,6 +112,8 @@ export async function renderReader(view, { book: bid, chapter, verse, verseEnd, 
   }
   cont.innerHTML = html.join('');
   current.title = ch.title || '';
+  setupProgress(view, cont, b, chapter);
+  fillTodayChips(view);
   store.pushHistory(b.id, chapter);
   if (audio.consumeAutoplay(`${b.id}.${chapter}`)) setTimeout(() => startTTS(1).catch(() => {}), 400);   // continuação automática da leitura em voz
   cont.addEventListener('click', (e) => {
@@ -167,6 +172,60 @@ export async function renderReader(view, { book: bid, chapter, verse, verseEnd, 
   }
   // pré-carrega o próximo livro
   if (next && next.book !== b.id) loadBook(ver, next.book).catch(() => {});
+}
+
+// ---------- Resumo do dia e progresso do capítulo (alto do leitor) ----------
+function todayStrip(b, chapter, ver) {
+  return `<div class="today" id="today">
+    <div class="today-prog"><span class="tp-label"><b>${esc(bookName(b, ver))} ${chapter}</b> · capítulo ${chapter} de ${b.chapters}</span><span class="tp-pct" id="tp-pct">faltam 100%</span></div>
+    <div class="progress thin"><i id="tp-bar" style="width:0%"></i></div>
+    ${store.settings.todayStrip !== false ? `<div class="today-chips" id="today-chips">${todayChips()}</div>` : ''}
+  </div>`;
+}
+function todayChips() {
+  const now = new Date();
+  const lit = liturgicalDay(now);
+  const chips = [`<a class="chip" href="#/liturgia"><span class="lit-dot" style="background:${lit.colorHex}"></span>${esc(lit.name)}</a>`];
+  for (const p of PLANS) {
+    const st = store.plan(p.id); if (!st) continue;
+    const nd = nextDay(p.id, st); if (nd < 0) continue;
+    const d = planDays(p.id)[nd]; if (!d || !d.length) continue;
+    chips.push(`<a class="chip" href="#/biblia/${d[0].book}/${d[0].chapter}?plan=${p.id}&day=${nd}">${esc(p.emoji)} ${esc(d.map((r) => refString(r.book, r.chapter)).join(' · '))}</a>`);
+  }
+  const rs = store.routinesSummary();
+  chips.push(rs.count ? `<a class="chip ${rs.all ? 'done' : ''}" href="#/oracoes/dia">🙏 Orações ${rs.done}/${rs.total}</a>` : `<a class="chip" href="#/oracoes/dia/novo">🙏 Orações do dia</a>`);
+  const my = MYSTERIES[mysteryOfDay(now, lit.season === 'triduo' ? 'quaresma' : lit.season)];
+  chips.push(`<a class="chip" href="#/rosario">📿 ${esc(my.name.replace('Mistérios ', ''))}</a>`);
+  chips.push(`<a class="chip" href="#/missa" id="chip-missa">🕊 Missa de hoje</a>`);
+  return chips.join('');
+}
+async function fillTodayChips(view) {
+  const c = $('#chip-missa', view); if (!c) return;
+  try {
+    const { readings } = await readingsFor(new Date());
+    if (readings && readings.gospel && c.isConnected) c.innerHTML = `🕊 Evangelho: ${esc(readings.gospel.disp || readings.gospel.raw)}`;
+  } catch { /* sem leituras na base local */ }
+}
+function setupProgress(view, cont, b, chapter) {
+  const pctEl = $('#tp-pct', view), bar = $('#tp-bar', view);
+  if (!pctEl || !bar) return;
+  if (view._progH) window.removeEventListener('scroll', view._progH);
+  let ticking = false;
+  const update = () => {
+    ticking = false;
+    if (current.book !== b.id || current.chapter !== chapter || !cont.isConnected) return;
+    const rect = cont.getBoundingClientRect();
+    const total = rect.height || 1;
+    const seen = Math.min(total, Math.max(0, window.innerHeight - rect.top));
+    const pct = Math.max(0, Math.min(100, Math.round(seen * 100 / total)));
+    bar.style.width = pct + '%';
+    pctEl.textContent = pct >= 99 ? '✓ fim do capítulo' : `${pct}% lido · faltam ${100 - pct}%`;
+  };
+  const h = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
+  view._progH = h;
+  window.addEventListener('scroll', h, { passive: true });
+  window.addEventListener('resize', h, { passive: true });
+  update();
 }
 
 function go(bid, chapter, plan, day) {
