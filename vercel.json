@@ -2,5 +2,9 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "git": { "deploymentEnabled": false },
   "github": { "enabled": false, "silent": true },
-  "ignoreCommand": "exit 0"
+  "ignoreCommand": "exit 0",
+  "buildCommand": "echo 'branch de áudio: nada a construir'",
+  "outputDirectory": ".",
+  "framework": null,
+  "installCommand": "echo 'sem dependências'"
 }
