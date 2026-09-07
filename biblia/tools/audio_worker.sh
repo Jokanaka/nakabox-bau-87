@@ -36,6 +36,8 @@ done
 # 3) sincronização periódica: copia arquivos novos para o branch e envia
 sync_push() {
   local n=0
+  # primeiro traz o que os outros já enviaram (assim nunca re-adiciona um capítulo que já existe no branch)
+  git -C "$WT" pull -q --rebase origin audio 2>/dev/null || { git -C "$WT" rebase --abort 2>/dev/null; git -C "$WT" reset -q --hard origin/audio; }
   for b in ${BOOKS//,/ }; do
     [ -d "$OUT/$VOICE/$b" ] || continue
     mkdir -p "$WT/$VOICE/$b"
@@ -51,8 +53,9 @@ sync_push() {
     git -C "$WT" add -A "$VOICE" >/dev/null 2>&1
     git -C "$WT" commit -qm "Narração ($VOICE): +$n capítulos ($BOOKS)" || true
     for i in 1 2 3 4 5; do
-      git -C "$WT" pull -q --rebase origin audio 2>/dev/null
       git -C "$WT" push -q origin audio && { log "enviados $n capítulos"; return 0; }
+      # alguém enviou antes: traz e tenta de novo; num conflito, fica com a versão do branch (o próximo ciclo re-adiciona o que faltar)
+      git -C "$WT" pull -q --rebase origin audio 2>/dev/null || { git -C "$WT" rebase --abort 2>/dev/null; git -C "$WT" reset -q --hard origin/audio; }
       sleep $((5*i))
     done
     log "falha ao enviar (tento no próximo ciclo)"

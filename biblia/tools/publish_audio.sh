@@ -42,7 +42,7 @@ print('novos:', n_new, 'vozes:', {k: sum(v['books'].values()) for k, v in voices
 PY
 git add -A
 if git diff --cached --quiet; then echo "nada novo"; else git commit -qm "Narração: $(python3 -c "import json;d=json.load(open('$WT/index.json'));print('; '.join(k+': '+', '.join(f'{b} {n}' for b,n in v['books'].items()) for k,v in d.items()))")"; fi
-for i in 1 2 3 4 5; do (git pull -q --rebase origin audio 2>/dev/null || true); git push -q -u origin audio && break || sleep $((2**i)); done
+for i in 1 2 3 4 5; do git push -q -u origin audio && break; (git pull -q --rebase origin audio 2>/dev/null || { git rebase --abort 2>/dev/null; git reset -q --hard origin/audio; }); sleep $((2**i)); done
 SHA=$(git rev-parse HEAD)
 python3 - "$WT" "$SHA" "$APP" <<'PY'
 import json, sys
