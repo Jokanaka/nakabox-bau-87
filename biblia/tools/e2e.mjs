@@ -22,7 +22,9 @@ page.on('pageerror', (e) => errors.push(`[pageerror] ${e.message}`));
 page.on('requestfailed', (r) => errors.push(`[requestfailed] ${r.url()} ${r.failure()?.errorText}`));
 page.on('response', (r) => { if (r.status() >= 400 && !r.url().includes('texttospeech.googleapis.com')) errors.push(`[http ${r.status()}] ${r.url()}`); });
 
+const ONLY = (process.env.E2E_ONLY || '').split(',').map((x) => x.trim()).filter(Boolean);
 const step = async (name, fn) => {
+  if (ONLY.length && !ONLY.some((x) => name.startsWith(x))) return;
   try { await fn(); console.log('OK  ', name); }
   catch (e) { const lines = e.message.split('\n').filter((l) => l.trim()).slice(0, 6); console.log('FAIL', name, '-', lines.join(' | ')); errors.push(`[step ${name}] ${lines.join(' | ')}`); }
   await page.screenshot({ path: `${SHOT}/${name}.png` }).catch(() => {});
@@ -680,12 +682,13 @@ await step('29-audio-retoma-apos-pausa-do-sistema', async () => {
   await page.waitForSelector('#chapter .verse', { timeout: 15000 });
   await page.click('[data-act=tts]');
   await page.waitForFunction(() => { const e = document.querySelector('#player-root .p-engine'); return e && !e.hidden && /gravada/.test(e.title || ''); }, null, { timeout: 20000 });
-  await page.waitForFunction(() => { const a = document.querySelector('audio'); return a && !a.paused; }, null, { timeout: 10000 });
+  await page.waitForFunction(() => { const a = document.querySelector('audio'); return a && !a.paused; }, null, { timeout: 10000, polling: 100 });
   // o sistema pausa por fora (tela de bloqueio, fone, outro app): o app precisa perceber e voltar a tocar
   await page.evaluate(() => document.querySelector('audio').pause());
-  await page.waitForFunction(() => document.querySelector('#player-root [data-act=toggle]')?.getAttribute('aria-label') === 'Continuar', null, { timeout: 5000 });
+  await page.waitForTimeout(400);   // o evento de pausa do tocador chega logo depois
+  await page.waitForFunction(() => document.querySelector('#player-root [data-act=toggle]')?.getAttribute('aria-label') === 'Continuar', null, { timeout: 5000, polling: 100 });
   await page.click('#player-root [data-act=toggle]');
-  await page.waitForFunction(() => { const a = document.querySelector('audio'); return a && !a.paused; }, null, { timeout: 5000 });
+  await page.waitForFunction(() => { const a = document.querySelector('audio'); return a && !a.paused; }, null, { timeout: 5000, polling: 100 });
   await page.screenshot({ path: `${SHOT}/29-audio-retoma.png` });
 });
 await step('21-desktop', async () => {

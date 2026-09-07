@@ -136,6 +136,8 @@ function mediaEl() {
   return audioEl;
 }
 function usesMedia() { return !!(st.engine && st.engine.media); }
+// pausar (ou trocar de trecho) cancela o pedido de tocar: o navegador avisa com AbortError, e isso não é falha da voz
+function pausaNaoEhFalha(e) { return st.paused || !!(e && (e.name === 'AbortError' || /interrupted|aborted/i.test(e.message || ''))); }
 const cloudEngine = {
   kind: 'nuvem', pausable: true, media: true, token: null, url: null,
   // no iPhone o áudio só toca depois de um toque: tocamos um silêncio no toque e depois trocamos o src
@@ -153,9 +155,9 @@ const cloudEngine = {
     const narr = store.settings.ttsStyle !== 'normal';
     a.playbackRate = clamp((+store.settings.ttsRate || 1) * (narr ? 0.95 : 1), 0.5, 2);
     a.onended = () => { if (this.token === token) cb.onend(); };
-    a.onerror = () => { if (this.token === token) cb.onerror(new Error('áudio inválido')); };
+    a.onerror = () => { if (this.token === token && !st.paused) cb.onerror(new Error('áudio inválido')); };
     try { await a.play(); if (this.token === token) cb.onstart(); }
-    catch (e) { if (this.token === token) cb.onerror(e); }
+    catch (e) { if (this.token === token && !pausaNaoEhFalha(e)) cb.onerror(e); }
   },
   cancel() { this.token = null; try { const a = mediaEl(); a.pause(); a.onended = null; a.onerror = null; } catch { /* ignora */ } },
   pause() { try { mediaEl().pause(); } catch { /* ignora */ } },
@@ -241,9 +243,9 @@ const localEngine = {
     a.src = this.url;
     this.setRate();
     a.onended = () => { if (this.token === token) cb.onend(); };
-    a.onerror = () => { if (this.token === token) cb.onerror(new Error('áudio inválido')); };
+    a.onerror = () => { if (this.token === token && !st.paused) cb.onerror(new Error('áudio inválido')); };
     try { await a.play(); if (this.token === token) cb.onstart(); }
-    catch (e) { if (this.token === token) cb.onerror(e); }
+    catch (e) { if (this.token === token && !pausaNaoEhFalha(e)) cb.onerror(e); }
   },
   cancel() { this.token = null; try { const a = mediaEl(); a.pause(); a.onended = null; a.onerror = null; } catch { /* ignora */ } },
   pause() { try { mediaEl().pause(); } catch { /* ignora */ } },
@@ -489,7 +491,7 @@ const recEngine = {
     if (!st.paused) a.play().catch(() => {});
   },
   onFail(e) {
-    if (this.token === null) return;
+    if (this.token === null || pausaNaoEhFalha(e)) return;   // pausado durante o carregamento não é falha
     const a = mediaEl();
     if (this.rec && this.rec.alt && !this.triedAlt) { this.triedAlt = true; a.src = this.rec.alt; a.play().catch((e2) => this.onFail(e2)); return; }
     const blocked = e && e.name === 'NotAllowedError';

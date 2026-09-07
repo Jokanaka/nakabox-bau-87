@@ -29,11 +29,14 @@ export function currentRef() { return current; }
 
 // ---------- Leitor ----------
 export async function renderReader(view, { book: bid, chapter, verse, verseEnd, plan, day }) {
-  stopTTS();
   const s = store.settings;
   const ver = s.version;
   const b = book(bid) || book('gn');
   chapter = Math.min(Math.max(+chapter || 1, 1), b.chapters);
+  // a leitura em voz continua quando é deste mesmo capítulo (ela emenda capítulos sozinha)
+  const playing = audio.isActive() ? audio.currentRef() : null;
+  const keepAudio = !!(playing && playing.book === b.id && playing.chapter === chapter);
+  if (!keepAudio) stopTTS();
   current = { book: b.id, chapter };
   selected = new Set();
   store.setLast(b.id, chapter);
@@ -115,8 +118,7 @@ export async function renderReader(view, { book: bid, chapter, verse, verseEnd, 
   setupProgress(view, cont, b, chapter);
   fillTodayChips(view);
   store.pushHistory(b.id, chapter);
-  const playing = audio.isActive() ? audio.currentRef() : null;
-  if (playing && playing.book === b.id && playing.chapter === chapter) { audio.attach({ onItem: ttsOnItem, onEnd: ttsOnEnd }); setTtsButton(true); }
+  if (keepAudio) { audio.attach({ onItem: ttsOnItem, onEnd: ttsOnEnd }); setTtsButton(true); }
   cont.addEventListener('click', (e) => {
     const p = e.target.closest('.verse');
     if (!p || p.classList.contains('empty-v')) return;
@@ -531,6 +533,13 @@ async function startTTS(fromVerse) {
   if (audio.play({ ...common, items, from })) setTtsButton(true);
 }
 export function stopTTS() { audio.stop(); }
+// ao trocar de tela: não para a leitura quando ela é do capítulo que está sendo aberto
+export function stopTTSForRoute() {
+  const r = audio.isActive() ? audio.currentRef() : null;
+  const m = /^#\/biblia\/([^/?]+)\/(\d+)/.exec(location.hash || '');
+  if (r && m && r.book === m[1] && r.chapter === +m[2]) return;
+  audio.stop();
+}
 
 // ---------- Busca ----------
 export function renderSearch(view, { q = '' } = {}) {

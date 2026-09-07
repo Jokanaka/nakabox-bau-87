@@ -2,7 +2,7 @@
 import { $, $$, esc, icon, toast, fmtDate, todayISO, parseISO, copyText } from './util.js';
 import { store, parseRefKey } from './store.js';
 import { loadBooks, books, book, VERSIONS, version, refString, refLong, getVerses, verseOfTheDay, dataUrls, parseRef } from './data.js';
-import { renderReader, renderSearch, applySettings, openBookPicker, openFontSheet, stopTTS } from './reader.js';
+import { renderReader, renderSearch, applySettings, openBookPicker, openFontSheet, stopTTS, stopTTSForRoute } from './reader.js';
 import { openAudioSheet } from './audio.js';
 import { renderMissa } from './missa.js';
 import { renderPlans, renderPlanDetail, renderPrayers, renderPrayer, renderRosary, renderLiturgy, renderDaily, renderRoutineEditor } from './features.js';
@@ -30,7 +30,7 @@ function parseHash() {
 
 async function route() {
   closeAll();
-  stopTTS();
+  stopTTSForRoute();
   const { parts, query } = parseHash();
   const tab = parts[0] || 'inicio';
   $$('#tabbar a').forEach((a) => a.classList.toggle('on', a.dataset.tab === (['biblia', 'busca'].includes(tab) ? 'biblia' : ['oracoes', 'rosario'].includes(tab) ? 'oracoes' : tab)));
