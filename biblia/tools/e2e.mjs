@@ -62,15 +62,16 @@ await step('00-simple-mode', async () => {
   if (await page.$('#au-key') || await page.$('#au-pitch') || await page.$('#au-voice')) throw new Error('modo simples não deveria mostrar nuvem/tom/seletor antigo');
   await page.waitForFunction(() => /ainda não tem narração gravada/.test(document.querySelector('#au-now')?.textContent || '') && /Lendo agora/.test(document.querySelector('#au-now')?.textContent || ''), null, { timeout: 5000 });
   await page.screenshot({ path: `${SHOT}/00-simple-sheet.png` });
-  // botão único "Voz": vozes gravadas + vozes do celular
+  // tela "Voz da leitura": três vozes gravadas + voz do celular, versão do app, capítulo aberto sem gravação
   await page.click('.sheet [data-act=voice]');
-  await page.waitForSelector('.voice-row[data-kind=rec][data-id=alex]', { timeout: 5000 });
-  await page.waitForFunction(() => document.querySelectorAll('.voice-row[data-kind=rec]').length === 3 && document.querySelector('.voice-row[data-kind=dev][data-id=""]') && document.querySelector('.voice-row[data-kind=rec][data-id=alex].on'), null, { timeout: 5000 });
-  if (!/ainda não tem Gênesis 1/.test(await page.$eval('.voice-row[data-id=alex] .vdesc', (el) => el.textContent))) throw new Error('descrição do Alex: ' + await page.$eval('.voice-row[data-id=alex] .vdesc', (el) => el.textContent));
-  await page.waitForTimeout(350);   // fim da animação da folha
+  await page.waitForSelector('#voz .voz-card[data-kind=rec][data-id=alex]', { timeout: 5000 });
+  await page.waitForFunction(() => document.querySelectorAll('#voz .voz-card[data-kind=rec]').length === 3 && document.querySelector('#voz .voz-card[data-kind=dev]') && document.querySelector('#voz .voz-card[data-id=alex].on') && /Versão do app \d+/.test(document.querySelector('#voz .voz-status')?.textContent || ''), null, { timeout: 5000 });
+  if (!/Ainda não gravou Gênesis 1/.test(await page.$eval('#voz .voz-card[data-id=alex] .voz-note', (el) => el.textContent))) throw new Error('nota do Alex: ' + await page.$eval('#voz .voz-card[data-id=alex] .voz-note', (el) => el.textContent));
+  if (await page.$('#voz-dev')) throw new Error('modo simples não deveria listar as vozes do celular');
+  await page.waitForTimeout(350);
   await page.screenshot({ path: `${SHOT}/00-voice-picker.png` });
-  await page.click('.sheet [data-act=ok]');
-  await page.waitForFunction(() => !document.querySelector('.sheet'), null, { timeout: 3000 });
+  await page.click('#voz [data-act=x]');
+  await page.waitForFunction(() => !document.querySelector('.modal'), null, { timeout: 3000 });
   // em Gênesis 1 (sem gravação) quem lê é a voz do celular: o botão mostra a voz que está lendo de fato
   if (!/Celular|teste/.test(await page.$eval('#player-root .p-voice', (el) => el.textContent))) throw new Error('botão Voz na barra: ' + await page.$eval('#player-root .p-voice', (el) => el.textContent));
   await page.click('#player-root [data-act=cfg]');
@@ -279,7 +280,18 @@ await step('20b-audio-player', async () => {
   await page.click('[data-act=faster]');
   const rv = await page.$eval('#au-rate-v', (el) => el.textContent);
   if (rv !== '1,2×') throw new Error('velocidade: ' + rv);
-  await page.selectOption('#au-voice', 'teste-pt-br');
+  // qual voz do celular (modo avançado, na tela de voz): só define a voz do celular, sem mudar a escolha principal
+  await page.click('.sheet [data-act=voice]');
+  await page.waitForSelector('#voz-dev', { timeout: 5000 });
+  await page.selectOption('#voz-dev', 'teste-pt-br');
+  await page.waitForFunction(() => /Voz do celular: Voz de teste/.test(document.querySelector('#toast')?.textContent || ''), null, { timeout: 5000 });
+  await page.click('#voz [data-act=x]');
+  await page.waitForFunction(() => !document.querySelector('.modal'), null, { timeout: 3000 });
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem('bibliaCatolica.v1')).settings.ttsVoice === 'teste-pt-br', null, { timeout: 3000 });   // o salvamento tem um pequeno atraso
+  const stored2 = await page.evaluate(() => JSON.parse(localStorage.getItem('bibliaCatolica.v1')).settings);
+  if (stored2.ttsVoice !== 'teste-pt-br' || stored2.recordedOn === false) throw new Error('voz do celular não guardada (ou a escolha principal mudou): ' + JSON.stringify(stored2));
+  await page.click('#player-root [data-act=cfg]');
+  await page.waitForSelector('#au-timer-chips', { timeout: 5000 });
   await page.click('#au-timer-chips [data-min="5"]');
   await page.waitForFunction(() => document.querySelector('#au-timer-state')?.textContent.includes('A leitura para em'), null, { timeout: 3000 });
   await page.click('[data-act=attime]');
@@ -291,7 +303,7 @@ await step('20b-audio-player', async () => {
   await page.click('#au-timer-chips [data-min="0"]');
   await page.click('[data-act=ok]');
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('bibliaCatolica.v1')).settings);
-  if (stored.ttsVoice !== 'teste-pt-br' || Math.abs(stored.ttsRate - 1.2) > 0.001 || stored.ttsTimerTime !== '23:45') throw new Error('configurações não salvas: ' + JSON.stringify(stored));
+  if (Math.abs(stored.ttsRate - 1.2) > 0.001 || stored.ttsTimerTime !== '23:45') throw new Error('configurações não salvas: ' + JSON.stringify(stored));
   await page.click('#player-root [data-act=stop]');
   await page.waitForFunction(() => !document.querySelector('#player-root .player') && !document.querySelector('#chapter .verse.speaking'), null, { timeout: 3000 });
 });
@@ -316,8 +328,11 @@ await step('20e-audio-prayer-and-settings', async () => {
   await page.goto(BASE + '#/mais/config');
   await page.waitForSelector('[data-act=audio]', { timeout: 5000 });
   await page.click('[data-act=audio]');
-  await page.waitForSelector('#au-voice', { timeout: 5000 });
+  await page.waitForSelector('.sheet [data-act=voice]', { timeout: 5000 });
   await page.click('[data-act=ok]');
+  await page.click('[data-act=voz]');
+  await page.waitForSelector('#voz .voz-card[data-id=dora]', { timeout: 5000 });
+  await page.click('#voz [data-act=x]');
   await page.goto(BASE + '#/oracoes/salve-rainha');
   await page.waitForSelector('[data-act=listen]', { timeout: 5000 });
   await page.click('[data-act=listen]');
@@ -336,7 +351,7 @@ await step('20f-audio-cloud', async () => {
   await page.waitForSelector('#player-root .player', { timeout: 5000 });
   await page.click('#player-root [data-act=cfg]');
   await page.waitForSelector('#au-key', { timeout: 5000 });
-  if (!(await page.$eval('[data-act=male]', (el) => el.classList.contains('on')))) throw new Error('preferência por voz masculina deveria estar ligada');
+  if (!(await page.evaluate(() => JSON.parse(localStorage.getItem('bibliaCatolica.v1')).settings.ttsMale))) throw new Error('preferência por voz masculina deveria estar ligada');
   await page.fill('#au-key', 'CHAVE-ERRADA');
   await page.click('[data-act=cloud-check]');
   await page.waitForFunction(() => document.querySelector('#au-cloud-state')?.textContent.includes('API key not valid'), null, { timeout: 5000 });
@@ -446,31 +461,34 @@ await step('20i-audio-recorded', async () => {
   if (!title.includes('Alex')) throw new Error('nome da voz na barra: ' + title);
   if (!/Mateus 1 tem narração gravada \(Alex, Santa\)/.test(await page.$eval('#au-now', (el) => el.textContent))) throw new Error('lendo agora: ' + await page.$eval('#au-now', (el) => el.textContent));
   await page.click('[data-act=ok]');
-  // botão Voz na barra: troca para Santa no meio da leitura (recomeça no versículo atual)
-  await page.click('#player-root [data-act=voice]');
-  await page.waitForSelector('.voice-row[data-id=santa] [data-act=pick]', { timeout: 5000 });
-  if (!/lê Mateus 1/.test(await page.$eval('.voice-row[data-id=santa] .vdesc', (el) => el.textContent))) throw new Error('descrição da Santa: ' + await page.$eval('.voice-row[data-id=santa] .vdesc', (el) => el.textContent));
-  await page.click('.voice-row[data-id=santa] [data-act=pick]');
-  await page.waitForFunction(() => (document.querySelector('#player-root .p-engine')?.title || '').includes('Santa') && /Santa/.test(document.querySelector('#player-root .p-voice')?.textContent || ''), null, { timeout: 8000 });
+  // botão Voz na barra abre a tela de voz: troca para Santa no meio da leitura (recomeça no versículo atual)
+  const openVoz = async () => { await page.click('#player-root [data-act=voice]'); await page.waitForSelector('#voz .voz-card[data-id=alex] [data-act=pick]', { timeout: 5000 }); await page.waitForTimeout(250); };
+  const closeVoz = async () => { await page.click('#voz [data-act=x]'); await page.waitForFunction(() => !document.querySelector('.modal'), null, { timeout: 3000 }); };
+  await openVoz();
+  if (!/Lê Mateus 1/.test(await page.$eval('#voz .voz-card[data-id=santa] .voz-note', (el) => el.textContent))) throw new Error('nota da Santa: ' + await page.$eval('#voz .voz-card[data-id=santa] .voz-note', (el) => el.textContent));
+  await page.click('#voz .voz-card[data-id=santa] [data-act=pick]');
+  await page.waitForFunction(() => (document.querySelector('#player-root .p-engine')?.title || '').includes('Santa') && /Santa/.test(document.querySelector('#player-root .p-voice')?.textContent || '') && document.querySelector('#voz .voz-card[data-id=santa].on'), null, { timeout: 8000 });
+  await closeVoz();
   await page.waitForFunction(() => document.querySelector('#chapter .verse.speaking'), null, { timeout: 8000 });
   if (!recCalls.some((r) => r.startsWith('santa/mt/1.mp3'))) throw new Error('áudio da Santa não foi pedido: ' + recCalls.join(','));
   // Dora ainda não tem o capítulo: avisa e continua com a Santa
-  await page.click('#player-root [data-act=voice]');
-  await page.waitForSelector('.voice-row[data-id=dora] [data-act=pick]', { timeout: 5000 });
-  await page.click('.voice-row[data-id=dora] [data-act=pick]');
-  await page.waitForFunction(() => /Dora vai ler os capítulos já gravados/.test(document.querySelector('#toast')?.textContent || ''), null, { timeout: 5000 });
+  await openVoz();
+  await page.click('#voz .voz-card[data-id=dora] [data-act=pick]');
+  await page.waitForFunction(() => /Dora ainda não gravou Mateus 1/.test(document.querySelector('#toast')?.textContent || ''), null, { timeout: 5000 });
   if (!(await page.$eval('#player-root .p-engine', (el) => el.title)).includes('Santa')) throw new Error('a voz deveria continuar Santa');
+  await closeVoz();
   // voz do celular no meio da narração gravada, e volta para o Alex (gravada) a partir do versículo atual
-  await page.click('#player-root [data-act=voice]');
-  await page.waitForSelector('.voice-row[data-kind=dev][data-id=""] [data-act=pick]', { timeout: 5000 });
-  await page.click('.voice-row[data-kind=dev][data-id=""] [data-act=pick]');
-  await page.waitForFunction(() => document.querySelector('#player-root .p-engine')?.hidden === true && document.querySelector('#chapter .verse.speaking'), null, { timeout: 8000 });
-  await page.click('#player-root [data-act=voice]');
-  await page.waitForSelector('.voice-row[data-id=alex] [data-act=pick]', { timeout: 5000 });
-  await page.waitForTimeout(350);   // fim da animação da folha
+  await openVoz();
+  await page.click('#voz .voz-card[data-kind=dev] [data-act=pick]');
+  await page.waitForFunction(() => document.querySelector('#player-root .p-engine')?.hidden === true && document.querySelector('#voz .voz-card[data-kind=dev].on'), null, { timeout: 8000 });
+  await closeVoz();
+  await page.waitForFunction(() => document.querySelector('#chapter .verse.speaking'), null, { timeout: 8000 });
+  await openVoz();
   await page.screenshot({ path: `${SHOT}/20i-voice-picker.png` });
-  await page.click('.voice-row[data-id=alex] [data-act=pick]');
-  await page.waitForFunction(() => (document.querySelector('#player-root .p-engine')?.title || '').includes('Alex') && document.querySelector('#chapter .verse.speaking'), null, { timeout: 8000 });
+  await page.click('#voz .voz-card[data-id=alex] [data-act=pick]');
+  await page.waitForFunction(() => (document.querySelector('#player-root .p-engine')?.title || '').includes('Alex') && document.querySelector('#voz .voz-card[data-id=alex].on'), null, { timeout: 8000 });
+  await closeVoz();
+  await page.waitForFunction(() => document.querySelector('#chapter .verse.speaking'), null, { timeout: 8000 });
   await page.screenshot({ path: `${SHOT}/20i-voice-switch.png` });
   await page.click('#player-root [data-act=stop]');
 });

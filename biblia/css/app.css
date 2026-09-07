@@ -403,15 +403,18 @@ select.input { width: 100%; appearance: auto; -webkit-appearance: menulist; font
 .player .p-engine svg { width: 14px; height: 14px; fill: var(--accent); vertical-align: -2px; }
 .player .p-voice { display: inline-flex; align-items: center; gap: 4px; margin-left: 4px; border: 1px solid var(--border); background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 12px; line-height: 1; border-radius: 999px; padding: 3px 9px; cursor: pointer; max-width: 42vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-ui); }
 .player .p-voice svg { width: 12px; height: 12px; fill: currentColor; flex: none; }
-/* seletor único de voz */
-.voice-row { display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--border); }
-.voice-row .vmain { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 11px 6px; border: 0; background: transparent; text-align: left; cursor: pointer; color: var(--text); font-family: var(--font-ui); }
-.voice-row .vname { font-weight: 700; font-size: 16px; }
-.voice-row .vdesc { font-size: 12px; color: var(--muted); line-height: 1.35; }
-.voice-row.on .vmain { color: var(--accent); }
-.voice-row.on .vname::after { content: " ✓"; }
-.voice-row .vplay { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); display: grid; place-items: center; cursor: pointer; flex: none; }
-.voice-row .vplay svg { width: 18px; height: 18px; fill: var(--accent); }
+/* tela "Voz da leitura" */
+.voz-status { font-size: 15px; line-height: 1.45; margin: 4px 0 8px; }
+.voz-card { display: flex; align-items: stretch; gap: 8px; margin: 8px 0; }
+.voz-card .voz-main { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; padding: 14px 14px; border: 2px solid var(--border); border-radius: 16px; background: var(--surface); text-align: left; cursor: pointer; color: var(--text); font-family: var(--font-ui); }
+.voz-card.on .voz-main { border-color: var(--accent); background: var(--accent-soft); }
+.voz-card .voz-name { font-weight: 800; font-size: 19px; }
+.voz-card .voz-check { font-size: 12px; font-weight: 700; color: var(--accent); margin-left: 6px; vertical-align: middle; }
+.voz-card .voz-desc { font-size: 13px; color: var(--muted); }
+.voz-card .voz-note { font-size: 12px; color: var(--muted); font-style: italic; }
+.voz-card.on .voz-note { color: var(--text); }
+.voz-card .voz-play { width: 54px; flex: none; border-radius: 16px; border: 2px solid var(--border); background: var(--surface); display: grid; place-items: center; cursor: pointer; }
+.voz-card .voz-play svg { width: 22px; height: 22px; fill: var(--accent); }
 #au-key { flex: 1; min-width: 0; font-family: ui-monospace, monospace; font-size: 13px; }
 .au-help { padding: 20px 18px calc(24px + env(safe-area-inset-bottom)); }
 .au-help h3 { margin-bottom: 8px; }

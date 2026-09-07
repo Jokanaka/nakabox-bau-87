@@ -31,6 +31,8 @@ const SILENT_WAV = 'data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAE
 
 export function audioAvailable() { return has || cloud.cloudConfigured() || (store.settings.localVoiceOn && localSupported()); }
 export function isActive() { return st.active; }
+export function currentRef() { return st.ref || null; }
+export function currentTitle() { return st.title || ''; }
 export function isPaused() { return st.paused; }
 
 // ---------- vozes do aparelho ----------
@@ -633,7 +635,7 @@ function finish(completed) {
   if (onEnd) { try { onEnd(completed); } catch { /* ignora */ } }
 }
 // mudança de voz/velocidade/tom/estilo durante a leitura: recomeça o trecho atual com os novos valores
-function restartCurrent() {
+export function restartCurrent() {
   if (!st.active || st.paused) return;
   if (st.engine === recEngine) { recEngine.setRate(); return; }
   clearTimeout(st.restart);
@@ -743,7 +745,7 @@ function renderBar() {
   $('[data-act=next]', r).onclick = () => skip(1);
   $('[data-act=toggle]', r).onclick = () => toggle();
   $('[data-act=cfg]', r).onclick = () => openAudioSheet();
-  $('[data-act=voice]', r).onclick = () => openVoicePicker();
+  $('[data-act=voice]', r).onclick = () => import('./voz.js').then((m) => m.openVoz());
   $('[data-act=stop]', r).onclick = () => stop();
   updateBar();
 }
@@ -765,7 +767,7 @@ function updateBar() {
 
 // ---------- painel de voz e áudio ----------
 const SAMPLE = 'No princípio criou Deus o céu e a terra. E a terra era vazia e vaga, e as trevas cobriam a face do abismo. E disse Deus: Faça-se a luz. E a luz foi feita.';
-function testDeviceVoice(id) {
+export function testDeviceVoice(id) {
   if (!has) { toast('Seu navegador não tem leitura em voz'); return; }
   const wasPlaying = st.active && !st.paused;
   if (wasPlaying) pause();
@@ -808,73 +810,6 @@ function cloudHelp() {
   $('[data-act=x]', el).onclick = () => close();
 }
 
-// Seletor único de voz: vozes gravadas, vozes do celular e (no modo avançado) os outros narradores
-export function openVoicePicker() {
-  const s = store.settings;
-  const advanced = s.uiMode === 'avancado';
-  const hm = /^#\/biblia\/([a-z0-9]+)\/(\d+)/.exec(location.hash || '');
-  const cur = st.ref || (hm && book(hm[1]) ? { book: hm[1], chapter: +hm[2] } : null);
-  const curName = cur && book(cur.book) ? `${bookName(book(cur.book), s.version)} ${cur.chapter}` : '';
-  const list = voices();
-  const pt = list.filter((v) => lb(v.lang).startsWith('pt'));
-  const others = list.filter((v) => !lb(v.lang).startsWith('pt'));
-  const gtag = (v) => { const g = voiceGender(v); return g === 'M' ? ' · masculina' : g === 'F' ? ' · feminina' : ''; };
-  const row = (kind, id, name, desc, on, sample) => `<div class="voice-row ${on ? 'on' : ''}" data-kind="${kind}" data-id="${esc(id)}">
-      <button class="vmain" data-act="pick"><span class="vname">${esc(name)}</span><span class="vdesc">${desc}</span></button>
-      ${sample ? `<button class="vplay" data-act="sample" aria-label="Ouvir amostra de ${esc(name)}">${icon('play')}</button>` : ''}
-    </div>`;
-  const recRows = () => {
-    const c = voiceChoice();
-    const vs = recordedVoices();
-    const items = vs.length ? vs : Object.entries(VOICE_INFO).map(([id, v]) => ({ id, name: v.name, desc: v.desc, count: 0, books: {} }));
-    return items.map((v) => {
-      const here = cur ? voiceHas(v, cur.book, cur.chapter) : false;
-      const desc = `${esc(v.desc)} · ${v.count ? `${v.count} ${v.count === 1 ? 'capítulo' : 'capítulos'}` : 'em preparação'}${cur ? (here ? ` · <b>lê ${esc(curName)}</b>` : (v.count ? ` · ainda não tem ${esc(curName)}` : '')) : ''}`;
-      return row('rec', v.id, v.name, desc, c.kind === 'rec' && c.id === v.id, !!recordedSampleUrl(v.id));
-    }).join('');
-  };
-  const c = voiceChoice();
-  const devRows = [
-    row('dev', '', 'Automática', `a melhor voz em português do celular${s.ttsMale ? ', masculina se houver' : ''}`, c.kind === 'dev' && !c.id, true),
-    ...pt.map((v) => row('dev', v.voiceURI, shortVoiceName(v), `${esc(v.lang)}${gtag(v)}${v.localService ? '' : ' · online'}`, c.kind === 'dev' && c.id === v.voiceURI, true)),
-    ...(advanced ? others.map((v) => row('dev', v.voiceURI, shortVoiceName(v), `${esc(v.lang)}${gtag(v)}`, c.kind === 'dev' && c.id === v.voiceURI, true)) : []),
-  ].join('');
-  const extra = advanced ? [
-    localSupported() ? row('local', 'faber', 'Faber (narrador offline)', 'voz masculina gerada no celular; baixa cerca de 90 MB uma vez', c.kind === 'local', false) : '',
-    cloud.cloudConfigured() ? row('cloud', '', 'Narrador na nuvem', 'Google Cloud com a sua chave', c.kind === 'cloud', false) : '',
-  ].join('') : '';
-  const { el, close } = openSheet(`<h3>Voz da leitura</h3>
-    <p class="small muted">Toque numa voz para ler com ela agora. As vozes gravadas leem os capítulos já narrados; nos outros, o app usa a voz do celular.</p>
-    <div class="section-title">Vozes gravadas (humanas)</div><div id="vp-rec">${recRows()}</div>
-    <div class="section-title" style="margin-top:14px">Vozes do celular</div><div id="vp-dev">${devRows}</div>
-    ${extra ? `<div class="section-title" style="margin-top:14px">Outros narradores</div>${extra}` : ''}
-    <div class="row" style="margin-top:14px"><span class="grow"></span><button class="btn primary" data-act="ok">Pronto</button></div>`);
-  const explain = (res) => {
-    if (res.status === 'switched') return `Lendo com a voz ${res.name}`;
-    if (res.status === 'unavailable') {
-      const done = [...new Set(recordedVoices().flatMap((v) => Object.keys(v.books).filter((b) => v.books[b] > 0)))].map((b) => (book(b) ? bookName(book(b), s.version) : b));
-      return `${res.name} vai ler os capítulos já gravados${done.length ? ` (${done.join(', ')})` : ''}. ${curName || 'Este capítulo'} ainda não tem gravação e continua com ${voiceLabel()}.`;
-    }
-    return `Voz escolhida: ${res.name}`;
-  };
-  const bind = () => {
-    $$('.voice-row', el).forEach((r) => {
-      $('[data-act=pick]', r).onclick = async () => {
-        $$('.voice-row', el).forEach((x) => x.classList.toggle('on', x === r));
-        unlock();
-        const res = await chooseVoice(r.dataset.kind, r.dataset.id);
-        toast(explain(res), res.status === 'unavailable' ? 5000 : 2500);
-        close();
-      };
-      const sp = $('[data-act=sample]', r);
-      if (sp) sp.onclick = () => { unlock(); if (r.dataset.kind === 'rec') playRecordedSample(r.dataset.id); else testDeviceVoice(r.dataset.id); };
-    });
-  };
-  bind();
-  loadAudioManifest().then(() => { const x = $('#vp-rec', el); if (x) { x.innerHTML = recRows(); bind(); } });
-  $('[data-act=ok]', el).onclick = () => close();
-}
-
 export function openAudioSheet() {
   const s = store.settings;
   const simple = s.uiMode !== 'avancado';
@@ -893,19 +828,10 @@ export function openAudioSheet() {
   const mins = [0, 5, 10, 15, 30, 45, 60];
   const voiceRowHtml = `<div class="setting"><span>Voz</span><button class="btn sm primary" data-act="voice" id="au-voice-btn">${I.mic} <span>${esc(voiceLabel())}</span> ▾</button></div>
     <p class="small muted" style="margin:-4px 0 8px">Toque em Voz para escolher entre as vozes gravadas (Alex, Santa, Dora) e as vozes do celular. A troca vale na hora.</p>`;
-  const voiceSelect = `<select id="au-voice" class="input" aria-label="Voz do aparelho">
-      <option value="">Automática (${s.ttsMale ? 'masculina em português, se houver' : 'português'})</option>
-      ${pt.length ? `<optgroup label="Português">${pt.map(opt).join('')}</optgroup>` : ''}
-      ${others.length ? `<optgroup label="Outras línguas">${others.map(opt).join('')}</optgroup>` : ''}
-    </select>`;
   const nowHtml = `<p class="small" id="au-now" style="margin:0 0 6px;line-height:1.45"></p><p class="small muted" id="au-diag" style="margin:0 0 10px;font-family:ui-monospace,monospace;font-size:11px;word-break:break-all" hidden></p>`;
   const deviceHtml = `
-    <div class="setting"><span>Preferir voz masculina</span><button class="switch ${s.ttsMale ? 'on' : ''}" data-act="male" aria-label="Preferir voz masculina"></button></div>
     <div class="setting"><span>Estilo</span><div class="seg" id="au-style"><button data-v="normal" class="${s.ttsStyle === 'normal' ? 'on' : ''}">Normal</button><button data-v="narracao" class="${s.ttsStyle !== 'normal' ? 'on' : ''}">Narração</button></div></div>
-    <p class="small muted" style="margin:-4px 0 8px">Narração: fala mais pausada, com respiro entre as frases e os versículos, e apresenta o capítulo como quem conta uma história.</p>
-    <label class="au-label" for="au-voice">Voz do aparelho</label>
-    ${voiceSelect}
-    <p class="small muted" style="margin-top:6px">${list.length ? 'Para uma voz masculina melhor no aparelho: no Android, em Configurações › Sistema › Idiomas › Saída de conversão de texto em voz, instale as vozes em português do Google e escolha uma masculina; no iPhone, em Ajustes › Acessibilidade › Conteúdo falado › Vozes › Português, baixe a voz "Felipe".' : 'Nenhuma voz encontrada ainda. No Android, instale o "Serviço de conversão de texto em voz do Google" e as vozes em português; no iPhone, as vozes ficam em Ajustes › Acessibilidade › Conteúdo falado.'}</p>`;
+    <p class="small muted" style="margin:-4px 0 8px">Narração: fala mais pausada, com respiro entre as frases e os versículos, e apresenta o capítulo como quem conta uma história.</p>`;
   const rateHtml = `
     <div class="setting"><span>Velocidade</span><b id="au-rate-v">${fmtRate(s.ttsRate)}</b></div>
     <div class="row au-range"><button class="btn sm" data-act="slower" aria-label="Mais devagar">−</button><input type="range" id="au-rate" min="0.5" max="2" step="0.05" value="${+s.ttsRate || 1}" aria-label="Velocidade da voz"><button class="btn sm" data-act="faster" aria-label="Mais rápido">+</button></div>`;
@@ -947,12 +873,10 @@ export function openAudioSheet() {
     const pr = $('#player-root .p-rate'); if (pr) pr.textContent = fmtRate(r);
     applyRateLive();
   };
-  on('[data-act=voice]', () => { close(); openVoicePicker(); });
+  on('[data-act=voice]', () => { close(); import('./voz.js').then((m) => m.openVoz()); });
   on('[data-act=advanced]', () => { store.setSetting('uiMode', 'avancado'); close(); openAudioSheet(); });
   on('[data-act=simple]', (e) => { e.preventDefault(); store.setSetting('uiMode', 'simples'); close(); openAudioSheet(); });
-  on('[data-act=male]', (e) => { store.setSetting('ttsMale', !store.settings.ttsMale); e.currentTarget.classList.toggle('on', store.settings.ttsMale); const o = q('#au-voice option[value=""]'); if (o) o.textContent = `Automática (${store.settings.ttsMale ? 'masculina em português, se houver' : 'português'})`; restartCurrent(); });
   $$('#au-style button', el).forEach((b) => b.onclick = () => { $$('#au-style button', el).forEach((x) => x.classList.remove('on')); b.classList.add('on'); store.setSetting('ttsStyle', b.dataset.v); restartCurrent(); });
-  if (q('#au-voice')) q('#au-voice').onchange = (e) => { store.setSetting('ttsVoice', e.target.value); restartCurrent(); };
   if (q('#au-rate')) q('#au-rate').oninput = (e) => setRate(+e.target.value);
   on('[data-act=slower]', () => setRate((+store.settings.ttsRate || 1) - 0.1));
   on('[data-act=faster]', () => setRate((+store.settings.ttsRate || 1) + 0.1));
