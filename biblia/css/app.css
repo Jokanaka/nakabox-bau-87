@@ -437,3 +437,32 @@ select.input { width: 100%; appearance: auto; -webkit-appearance: menulist; font
 .missa-step .rv.speaking { background: var(--gold-soft); }
 .missa-nav { position: sticky; bottom: 0; background: var(--bg); padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
 .missa-nav .btn.primary { font-size: 17px; padding: 14px 12px; }
+/* ---- resumo do dia e progresso do capítulo (alto do leitor) ---- */
+.today { padding: 8px 16px 0; }
+.today-prog { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--muted); }
+.today-prog b { color: var(--text); }
+.today-prog .tp-pct { font-weight: 700; color: var(--accent); white-space: nowrap; }
+.progress.thin { height: 4px; margin-top: 5px; }
+.today-chips { display: flex; gap: 8px; overflow-x: auto; padding: 8px 0 2px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.today-chips::-webkit-scrollbar { display: none; }
+.today-chips .chip { flex: none; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: var(--text); white-space: nowrap; }
+.today-chips .chip.done { opacity: .65; }
+/* ---- perfis ---- */
+.profile-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px 6px 8px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); font-weight: 700; font-size: 13px; color: var(--text); cursor: pointer; box-shadow: var(--shadow); max-width: 55%; }
+.profile-chip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profile-chip svg { width: 14px; height: 14px; flex: none; }
+.profile-row .pemoji { font-size: 24px; width: 36px; text-align: center; flex: none; }
+.profile-row.cur { background: var(--surface-2); }
+.profile-row > button.grow { background: none; border: 0; color: var(--text); font: inherit; padding: 0; cursor: pointer; }
+/* ---- orações do dia ---- */
+.routine-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.routine-item:last-child { border-bottom: 0; }
+.routine-item a { color: var(--text); text-decoration: none; min-width: 0; }
+.routine-item .title { font-weight: 600; }
+.routine-item.done .title { text-decoration: line-through; color: var(--muted); }
+.routine-item .num { width: 22px; height: 22px; border-radius: 50%; background: var(--surface-2); display: grid; place-items: center; font-size: 12px; font-weight: 700; flex: none; }
+.routine-item .icon-btn[disabled] { opacity: .3; }
+.card.routine.all { border-color: var(--gold); }
+.list-item.pick { text-align: left; width: 100%; background: none; font: inherit; color: var(--text); cursor: pointer; }
+.list-item.pick .check { margin-right: 4px; }
+.list-item.pick.on .title { color: var(--accent); }

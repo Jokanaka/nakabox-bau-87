@@ -7,7 +7,7 @@ import { openModal, topbar } from './ui.js';
 import * as audio from './audio.js';
 import * as cloud from './cloudtts.js';
 
-export const APP_BUILD = 15;
+export const APP_BUILD = 16;
 
 const REC = [
   { id: 'alex', name: 'Alex', desc: 'Voz masculina' },

@@ -541,6 +541,99 @@ await step('23-missa', async () => {
   await page.click('#missa [data-act=x]');
   await page.waitForFunction(() => !document.querySelector('.modal') && !document.body.classList.contains('modal-open'), null, { timeout: 3000 });
 });
+await step('24-profiles', async () => {
+  await page.goto(BASE + '#/inicio');
+  await page.waitForSelector('[data-act=profile]', { timeout: 5000 });
+  const chip0 = await page.$eval('[data-act=profile]', (el) => el.textContent.trim());
+  if (!chip0.includes('Eu')) throw new Error('perfil inicial: ' + chip0);
+  await page.click('[data-act=profile]');
+  await page.waitForSelector('#profiles [data-act=new]', { timeout: 5000 });
+  await page.click('#profiles [data-act=new]');
+  await page.waitForSelector('#pf-name', { timeout: 5000 });
+  await page.fill('#pf-name', 'Mãe');
+  await page.click('.pf-emoji[data-e="👩"]');
+  await page.click('[data-act=save]');
+  await page.waitForFunction(() => /Mãe/.test(document.querySelector('[data-act=profile]')?.textContent || ''), null, { timeout: 15000 });
+  const info = await page.evaluate(() => import('./js/store.js').then((m) => ({ name: m.store.profile.name, emoji: m.store.profile.emoji, n: m.store.profiles.length, read: m.store.isRead('gn', 2) })));
+  if (info.name !== 'Mãe' || info.emoji !== '👩' || info.n !== 2 || info.read) throw new Error('perfil novo: ' + JSON.stringify(info));
+  await page.screenshot({ path: `${SHOT}/24-profiles-mae.png` });
+  // volta ao primeiro perfil: os dados dele continuam lá (Gênesis 2 lido no passo 22)
+  await page.click('[data-act=profile]');
+  await page.waitForSelector('#profiles [data-switch="p1"]', { timeout: 5000 });
+  await page.click('#profiles [data-switch="p1"]');
+  await page.waitForFunction(() => /Eu/.test(document.querySelector('[data-act=profile]')?.textContent || ''), null, { timeout: 15000 });
+  const back = await page.evaluate(() => import('./js/store.js').then((m) => ({ name: m.store.profile.name, read: m.store.isRead('gn', 2), n: m.store.profiles.length })));
+  if (back.name !== 'Eu' || !back.read || back.n !== 2) throw new Error('voltar ao perfil: ' + JSON.stringify(back));
+  // a tela "Mais" mostra o perfil e abre a lista
+  await page.goto(BASE + '#/mais');
+  await page.waitForSelector('[data-act=profile]', { timeout: 5000 });
+  await page.click('[data-act=profile]');
+  await page.waitForSelector('#profiles .profile-row', { timeout: 5000 });
+  const rows = await page.$$eval('#profiles .profile-row', (els) => els.length);
+  if (rows !== 2) throw new Error('perfis listados: ' + rows);
+});
+await step('25-daily-prayers', async () => {
+  await page.goto(BASE + '#/oracoes');
+  await page.waitForSelector('[data-daily="new"]', { timeout: 5000 });
+  await page.click('[data-daily="new"]');
+  await page.waitForSelector('#rt-name', { timeout: 5000 });
+  await page.click('[data-preset="0"]');   // modelo "Manhã"
+  await page.waitForFunction(() => document.querySelectorAll('#rt-order .routine-item').length === 6, null, { timeout: 5000 });
+  await page.click('[data-pick="rosario"]');
+  await page.waitForFunction(() => document.querySelectorAll('#rt-order .routine-item').length === 7, null, { timeout: 5000 });
+  const nm = await page.$eval('#rt-name', (el) => el.value);
+  if (nm !== 'Manhã') throw new Error('nome do modelo: ' + nm);
+  await page.click('[data-act=save]');
+  await page.waitForSelector('[data-routine]', { timeout: 5000 });
+  const st0 = await page.$eval('.rt-status', (el) => el.textContent);
+  if (!/0 de 7/.test(st0)) throw new Error('status inicial: ' + st0);
+  await page.click('[data-chk][data-item="sinal-da-cruz"]');
+  await page.waitForFunction(() => /1 de 7/.test(document.querySelector('.rt-status')?.textContent || ''), null, { timeout: 5000 });
+  await page.screenshot({ path: `${SHOT}/25-daily-list.png` });
+  // "Rezar em sequência" abre a próxima oração não rezada, com o botão "Rezei"
+  await page.click('[data-act=seq]');
+  await page.waitForSelector('[data-act=prayed]', { timeout: 5000 });
+  const hash1 = await page.evaluate(() => location.hash);
+  if (!hash1.startsWith('#/oracoes/oferecimento?rotina=')) throw new Error('sequência: ' + hash1);
+  await page.click('[data-act=prayed]');
+  await page.waitForFunction(() => location.hash.startsWith('#/oracoes/pai-nosso?rotina='), null, { timeout: 5000 });
+  await page.goto(BASE + '#/oracoes/dia');
+  await page.waitForFunction(() => /2 de 7/.test(document.querySelector('.rt-status')?.textContent || ''), null, { timeout: 5000 });
+  // o Rosário rezado no app conta no grupo
+  await page.evaluate(() => import('./js/store.js').then((m) => m.store.rosaryDone('rosario')));
+  await page.goto(BASE + '#/oracoes');   // muda de tela e volta: a lista é desenhada de novo
+  await page.goto(BASE + '#/oracoes/dia');
+  await page.waitForFunction(() => /3 de 7/.test(document.querySelector('.rt-status')?.textContent || ''), null, { timeout: 5000 });
+  // início e tela de orações mostram o andamento
+  await page.goto(BASE + '#/inicio');
+  await page.waitForSelector('#home-daily', { timeout: 5000 });
+  const home = await page.$eval('#home-daily', (el) => el.textContent);
+  if (!/3 de 7/.test(home)) throw new Error('início: ' + home);
+  await page.goto(BASE + '#/oracoes');
+  await page.waitForSelector('[data-daily="list"]', { timeout: 5000 });
+});
+await step('26-reader-today', async () => {
+  await page.goto(BASE + '#/biblia/gn/1');
+  await page.waitForSelector('#chapter .verse', { timeout: 15000 });
+  await page.waitForSelector('#today', { timeout: 5000 });
+  const label = await page.$eval('#today .tp-label', (el) => el.textContent);
+  if (!label.includes('Gênesis 1') || !label.includes('capítulo 1 de 50')) throw new Error('rótulo: ' + label);
+  const pct0 = await page.$eval('#tp-pct', (el) => el.textContent);
+  if (!/faltam \d+%/.test(pct0)) throw new Error('percentual: ' + pct0);
+  const chips = await page.$$eval('#today-chips .chip', (els) => els.map((e) => e.textContent.trim()));
+  if (chips.length < 4 || !chips.some((c) => /Orações 3\/7/.test(c)) || !chips.some((c) => /Gozosos|Dolorosos|Gloriosos|Luminosos/.test(c))) throw new Error('chips: ' + chips.join(' | '));
+  await page.waitForFunction(() => /Evangelho|Missa/.test(document.querySelector('#chip-missa')?.textContent || ''), null, { timeout: 5000 });
+  await page.screenshot({ path: `${SHOT}/26-reader-today-top.png` });
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await page.waitForFunction(() => /fim do capítulo/.test(document.querySelector('#tp-pct')?.textContent || ''), null, { timeout: 5000 });
+  // a configuração esconde só os atalhos do dia; o progresso do capítulo continua
+  await page.evaluate(() => import('./js/store.js').then((m) => m.store.setSetting('todayStrip', false)));
+  await page.goto(BASE + '#/biblia/gn/3');
+  await page.waitForSelector('#chapter .verse', { timeout: 15000 });
+  if (await page.$('#today-chips')) throw new Error('atalhos do dia deviam estar escondidos');
+  if (!(await page.$('#tp-pct'))) throw new Error('o progresso do capítulo deve continuar');
+  await page.evaluate(() => import('./js/store.js').then((m) => m.store.setSetting('todayStrip', true)));
+});
 await step('21-desktop', async () => {
   await page.setViewportSize({ width: 1200, height: 800 });
   await page.goto(BASE + '#/biblia/jo/1');

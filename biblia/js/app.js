@@ -5,7 +5,8 @@ import { loadBooks, books, book, VERSIONS, version, refString, refLong, getVerse
 import { renderReader, renderSearch, applySettings, openBookPicker, openFontSheet, stopTTS } from './reader.js';
 import { openAudioSheet } from './audio.js';
 import { renderMissa } from './missa.js';
-import { renderPlans, renderPlanDetail, renderPrayers, renderPrayer, renderRosary, renderLiturgy } from './features.js';
+import { renderPlans, renderPlanDetail, renderPrayers, renderPrayer, renderRosary, renderLiturgy, renderDaily, renderRoutineEditor } from './features.js';
+import { profileChip, openProfiles } from './profiles.js';
 import { PLANS, planDays, nextDay, planProgress } from './plans.js';
 import { liturgicalDay, readingsFor } from './liturgy.js';
 import { MYSTERIES, mysteryOfDay } from './rosary.js';
@@ -47,7 +48,10 @@ async function route() {
       }
       case 'busca': return renderSearch(view, { q: query.q || '' });
       case 'planos': return parts[1] ? renderPlanDetail(view, parts[1]) : renderPlans(view);
-      case 'oracoes': return parts[1] ? renderPrayer(view, parts[1]) : renderPrayers(view);
+      case 'oracoes': {
+        if (parts[1] === 'dia') { if (parts[2] === 'novo') return renderRoutineEditor(view, null); if (parts[2] === 'editar') return renderRoutineEditor(view, parts[3]); return renderDaily(view); }
+        return parts[1] ? renderPrayer(view, parts[1], query) : renderPrayers(view);
+      }
       case 'rosario': return renderRosary(view);
       case 'liturgia': return renderLiturgy(view, parts[1]);
       case 'missa': return renderMissa(view, parts[1]);
@@ -75,7 +79,7 @@ async function renderHome(v) {
   const prog = readProgress();
   v.innerHTML = `
     <div class="hero">
-      <div class="date">${esc(cap(fmtDate(now)))}</div>
+      <div class="row between"><div class="date">${esc(cap(fmtDate(now)))}</div>${profileChip()}</div>
       <h1>${greet}! ✝</h1>
       <a class="lit" href="#/liturgia"><span class="lit-dot" style="background:${lit.colorHex}"></span>${esc(lit.name)} · Ano ${lit.cycle}</a>
       ${lit.memorial ? `<div class="small muted" style="margin-top:2px">🕯️ ${esc(lit.memorial.n)}</div>` : ''}
@@ -100,19 +104,22 @@ async function renderHome(v) {
     <div class="section" style="padding-top:0"><div class="stack">
       ${lb ? `<a class="card row" href="#/biblia/${last.book}/${last.chapter}"><div class="ico">${icon('history')}</div><div class="grow"><div class="small muted">Continuar lendo</div><b>${esc(lb.name)} ${last.chapter}</b></div>${icon('chevR')}</a>` : ''}
       ${mine.map((p) => { const st = store.plan(p.id); const nd = nextDay(p.id, st); const d = planDays(p.id)[nd]; const pr = planProgress(p.id, st); return `<a class="card row" href="#/biblia/${d[0].book}/${d[0].chapter}?plan=${p.id}&day=${nd}"><div class="plan-cover" style="background:${p.color};width:44px;height:44px;font-size:20px">${p.emoji}</div><div class="grow"><div class="small muted">${esc(p.name)} · dia ${nd + 1} de ${pr.total}</div><b>${esc(d.map((r) => refString(r.book, r.chapter)).join(' · '))}</b><div class="progress" style="margin-top:6px"><i style="width:${pr.pct}%"></i></div></div>${icon('chevR')}</a>`; }).join('')}
+      ${(() => { const rs = store.routinesSummary(); return rs.count ? `<a class="card row" href="#/oracoes/dia" id="home-daily"><div class="plan-cover" style="background:var(--gold);width:44px;height:44px;font-size:20px">🙏</div><div class="grow"><div class="small muted">Orações de hoje</div><b>${rs.all ? 'Tudo rezado hoje ✓' : `${rs.done} de ${rs.total} rezadas`}</b><div class="progress" style="margin-top:6px"><i style="width:${rs.total ? Math.round(rs.done * 100 / rs.total) : 0}%"></i></div></div>${icon('chevR')}</a>` : `<a class="card row" href="#/oracoes/dia/novo" id="home-daily"><div class="plan-cover" style="background:var(--gold);width:44px;height:44px;font-size:20px">🙏</div><div class="grow"><div class="small muted">Orações do dia</div><b>Monte o seu grupo de orações e marque ao terminar</b></div>${icon('chevR')}</a>`; })()}
       <div class="card" id="home-readings"><div class="small muted">Leituras da Missa de hoje</div><div class="skel" style="width:60%"></div></div>
       <a class="card row" href="#/missa"><div class="plan-cover" style="background:var(--accent);width:44px;height:44px;font-size:20px">🕊</div><div class="grow"><div class="small muted">Modo Missa</div><b>Siga a Missa passo a passo, com as leituras de hoje</b></div>${icon('chevR')}</a>
       <a class="card row" href="#/rosario"><div class="plan-cover" style="background:${myst.color};width:44px;height:44px;font-size:20px">📿</div><div class="grow"><div class="small muted">Rosário de hoje</div><b>${esc(myst.name)}</b></div>${icon('chevR')}</a>
       <div class="card streak"><div class="num">${streak.count}</div><div class="grow"><b>${streak.count === 1 ? 'dia seguido' : 'dias seguidos'} com a Palavra</b><div class="small muted">${streak.today ? 'Você já leu hoje. Continue assim!' : 'Leia um capítulo hoje para manter a sequência.'}</div></div>${icon('flame')}</div>
       <a class="card row" href="#/mais/progresso"><div class="ico">${icon('check')}</div><div class="grow"><div class="small muted">Progresso de leitura</div><b>${prog.read} de ${prog.total} capítulos · ${prog.pct}%</b><div class="progress" style="margin-top:6px"><i style="width:${prog.pct}%"></i></div></div>${icon('chevR')}</a>
     </div></div>`;
+  $('[data-act=profile]', v).onclick = () => openProfiles();
   // versículo do dia
   try {
     const vs = await getVerses(store.settings.version, bid, ch, v1, v2);
     const text = vs.map((x) => x.t).join(' ');
-    $('#votd .votd', v).textContent = text;
+    const votd = $('#votd .votd', v); if (!votd) return;   // a pessoa já saiu do início
+    votd.textContent = text;
     $('[data-act=share-votd]', v).onclick = async () => { const c = makeVerseImage(text, refString(bid, ch, v1, v2), { palette: now.getDate() % 6 }); const r = await shareImage(c, refString(bid, ch, v1, v2), text); if (r === 'downloaded') toast('Imagem baixada'); };
-  } catch { $('#votd .votd', v).textContent = '—'; }
+  } catch { const votd = $('#votd .votd', v); if (votd) votd.textContent = '—'; }
   // leituras
   try {
     const { readings } = await readingsFor(now);
@@ -137,7 +144,10 @@ function renderMore(v, sub) {
   const hl = Object.keys(store.allHighlights()).length, nt = Object.keys(store.allNotes()).length, bm = Object.keys(store.allBookmarks()).length;
   const item = (href, ic, title, sub) => `<a class="list-item" href="${href}"><div class="ico">${icon(ic)}</div><div class="grow"><div class="title">${title}</div>${sub ? `<div class="sub">${sub}</div>` : ''}</div><span class="chev">${icon('chevR')}</span></a>`;
   v.innerHTML = `${topbar({ title: 'Mais' })}
-    <div class="section"><div class="section-title">Minha Bíblia</div><div class="list">
+    <div class="section"><div class="section-title">Perfil</div><div class="list">
+      <button class="list-item" data-act="profile"><div class="ico" style="font-size:22px">${esc(store.profile.emoji)}</div><div class="grow"><div class="title">${esc(store.profile.name)}</div><div class="sub">${store.profiles.length > 1 ? `${store.profiles.length} perfis · trocar` : 'Trocar de perfil ou criar um para cada pessoa da família'}</div></div><span class="chev">${icon('chevR')}</span></button>
+    </div></div>
+    <div class="section" style="padding-top:0"><div class="section-title">Minha Bíblia</div><div class="list">
       ${item('#/mais/destaques', 'highlight', 'Destaques', `${hl} versículo${hl === 1 ? '' : 's'}`)}
       ${item('#/mais/notas', 'note', 'Notas', `${nt} nota${nt === 1 ? '' : 's'}`)}
       ${item('#/mais/favoritos', 'bookmark', 'Favoritos', `${bm} versículo${bm === 1 ? '' : 's'}`)}
@@ -150,6 +160,7 @@ function renderMore(v, sub) {
       ${item('#/mais/sobre', 'info', 'Sobre este app', 'Fontes dos textos e licenças')}
     </div></div>
     <div class="section" id="install-box"></div>`;
+  $('[data-act=profile]', v).onclick = () => openProfiles();
   const box = $('#install-box', v);
   const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
   if (!standalone) {
@@ -212,6 +223,7 @@ function renderSettings(v) {
       <div class="setting"><span>Fonte da leitura</span><div class="seg" data-k="fontFamily"><button data-v="serif" class="${s.fontFamily === 'serif' ? 'on' : ''}">Serifa</button><button data-v="sans" class="${s.fontFamily === 'sans' ? 'on' : ''}">Sem serifa</button></div></div>
       <div class="setting"><span>Tamanho do texto</span><div class="row"><button class="btn sm" data-act="minus">A−</button><b id="fs">${s.fontSize}</b><button class="btn sm" data-act="plus">A+</button></div></div>
       <div class="setting"><span>Números dos versículos</span><button class="switch ${s.showVerseNumbers ? 'on' : ''}" data-act="vn"></button></div>
+      <div class="setting"><span>Resumo do dia no alto do leitor</span><button class="switch ${s.todayStrip !== false ? 'on' : ''}" data-act="strip" aria-label="Resumo do dia no leitor"></button></div>
       <div class="setting"><span>Voz da leitura</span><button class="btn sm primary" data-act="voz">Escolher a voz</button></div>
       <div class="setting"><span>Leitura em voz alta</span><button class="btn sm" data-act="audio">Velocidade e temporizador</button></div>
     </div></div>
@@ -222,6 +234,7 @@ function renderSettings(v) {
   $('[data-act=minus]', v).onclick = () => { store.setSetting('fontSize', Math.max(13, s.fontSize - 1)); $('#fs', v).textContent = s.fontSize; applySettings(); };
   $('[data-act=plus]', v).onclick = () => { store.setSetting('fontSize', Math.min(32, s.fontSize + 1)); $('#fs', v).textContent = s.fontSize; applySettings(); };
   $('[data-act=vn]', v).onclick = (e) => { store.setSetting('showVerseNumbers', !s.showVerseNumbers); e.currentTarget.classList.toggle('on', s.showVerseNumbers); };
+  $('[data-act=strip]', v).onclick = (e) => { store.setSetting('todayStrip', s.todayStrip === false); e.currentTarget.classList.toggle('on', s.todayStrip !== false); };
   $('[data-act=audio]', v).onclick = () => openAudioSheet();
   $('[data-act=voz]', v).onclick = () => import('./voz.js').then((m) => m.openVoz());
   $$('[data-ver]', v).forEach((b) => b.onclick = () => { store.setSetting('version', b.dataset.ver); renderSettings(v); });
@@ -238,7 +251,7 @@ function renderData(v) {
     </div></div>
     <div class="section" style="padding-top:0"><div class="card">
       <h3>💾 Backup dos seus dados</h3>
-      <p class="small muted" style="margin:6px 0 12px">Destaques, notas, favoritos, planos e configurações ficam apenas neste aparelho. Exporte um arquivo para guardar ou levar para outro celular.</p>
+      <p class="small muted" style="margin:6px 0 12px">Destaques, notas, favoritos, planos, orações do dia e configurações do perfil <b>${esc(store.profile.name)}</b> ficam apenas neste aparelho. Exporte um arquivo para guardar ou levar para outro celular.</p>
       <div class="row" style="flex-wrap:wrap"><button class="btn" data-act="export">${icon('export')} Exportar</button><button class="btn" data-act="import">${icon('download')} Importar</button><input type="file" id="imp-file" accept="application/json" hidden></div>
     </div></div>
     <div class="section" style="padding-top:0"><div class="card"><h3>🧹 Apagar dados</h3><p class="small muted" style="margin:6px 0 12px">Remove destaques, notas, favoritos e progresso dos planos deste aparelho.</p><button class="btn danger" data-act="reset">${icon('trash')} Apagar tudo</button></div></div>`;
