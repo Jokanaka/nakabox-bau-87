@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Gera a narração de cada capítulo (vozes Kokoro pt-br) como MP3 + JSON com o tempo de cada versículo. Retomável.
 Saída: $GEN_OUT/<voz>/<livro>/<cap>.mp3|json e $GEN_OUT/<voz>/sample.mp3.
-Uso: python3 gen_audio.py [voz:livro,voz:livro,...]   (sem argumentos: plano padrão, Alex na Bíblia inteira primeiro)
+Uso: python3 gen_audio.py [voz:livro,voz:livro:de-até,...]   (sem argumentos: plano padrão, Alex na Bíblia inteira primeiro;
+     "voz:livro:de-até" limita a uma faixa de capítulos, por exemplo alex:sl:1-36)
 Variáveis: GEN_APP (pasta biblia), GEN_OUT (saída), GEN_MODELS (pasta com kokoro-v1.0.onnx e voices-v1.0.bin),
 GEN_REVERSE=1 (capítulos do último para o primeiro: para duas máquinas trabalharem no mesmo livro sem se repetirem)."""
 import json, os, sys, time, re, numpy as np, lameenc
@@ -22,9 +23,14 @@ ids = [b['id'] for b in books]
 # só depois Santa e Dora na mesma ordem
 NT = ['mt', 'mc', 'lc', 'jo', 'at', 'rm', '1cor', '2cor', 'gl', 'ef', 'fl', 'cl', '1ts', '2ts', '1tm', '2tm', 'tt', 'fm', 'hb', 'tg', '1pd', '2pd', '1jo', '2jo', '3jo', 'jd', 'ap']
 order = NT + ['gn', 'sl'] + [b for b in ids if b not in NT and b not in ('gn', 'sl')]
-plan = [(v, b) for v in VOICES for b in order]
-if len(sys.argv) > 1: plan = [tuple(x.split(':')) for x in sys.argv[1].split(',')]
-for v, b in plan:
+plan = [(v, b, None) for v in VOICES for b in order]
+if len(sys.argv) > 1:
+    plan = []
+    for x in sys.argv[1].split(','):
+        p = x.split(':')
+        if len(p) not in (2, 3) or (len(p) == 3 and not re.fullmatch(r'\d+-\d+', p[2])): sys.exit(f'plano inválido: {x}')
+        plan.append((p[0], p[1], tuple(int(n) for n in p[2].split('-')) if len(p) == 3 else None))
+for v, b, _ in plan:
     if v not in VOICES or b not in byid: sys.exit(f'plano inválido: {v}:{b}')
 os.makedirs(OUT, exist_ok=True)
 k = Kokoro(os.path.join(MODELS, 'kokoro-v1.0.onnx'), os.path.join(MODELS, 'voices-v1.0.bin'))
@@ -92,11 +98,12 @@ for v in VOICES:
     if not os.path.exists(f'{OUT}/{v}/sample.mp3'):
         open(f'{OUT}/{v}/sample.mp3', 'wb').write(encode(synth(SAMPLE, v)))
         log.write(f"{time.strftime('%H:%M:%S')} sample [{v}]\n"); log.flush()
-for voice, bid in plan:
+for voice, bid, rng in plan:
     b = byid[bid]
     data = json.load(open(f'{APP}/data/figueiredo/{bid}.json'))
     os.makedirs(f'{OUT}/{voice}/{bid}', exist_ok=True)
-    chapters = list(reversed(data['chapters'])) if os.environ.get('GEN_REVERSE') == '1' else data['chapters']
+    chapters = [ch for ch in data['chapters'] if not rng or rng[0] <= ch['n'] <= rng[1]]
+    if os.environ.get('GEN_REVERSE') == '1': chapters = list(reversed(chapters))
     for ch in chapters:
         n = ch['n']
         if os.path.exists(f'{OUT}/{voice}/{bid}/{n}.json'): continue
