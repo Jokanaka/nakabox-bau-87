@@ -601,6 +601,7 @@ await step('25-daily-prayers', async () => {
   await page.waitForFunction(() => /2 de 7/.test(document.querySelector('.rt-status')?.textContent || ''), null, { timeout: 5000 });
   // o Rosário rezado no app conta no grupo
   await page.evaluate(() => import('./js/store.js').then((m) => m.store.rosaryDone('rosario')));
+  await page.goto(BASE + '#/oracoes');   // muda de tela e volta: a lista é desenhada de novo
   await page.goto(BASE + '#/oracoes/dia');
   await page.waitForFunction(() => /3 de 7/.test(document.querySelector('.rt-status')?.textContent || ''), null, { timeout: 5000 });
   // início e tela de orações mostram o andamento

@@ -116,9 +116,10 @@ async function renderHome(v) {
   try {
     const vs = await getVerses(store.settings.version, bid, ch, v1, v2);
     const text = vs.map((x) => x.t).join(' ');
-    $('#votd .votd', v).textContent = text;
+    const votd = $('#votd .votd', v); if (!votd) return;   // a pessoa já saiu do início
+    votd.textContent = text;
     $('[data-act=share-votd]', v).onclick = async () => { const c = makeVerseImage(text, refString(bid, ch, v1, v2), { palette: now.getDate() % 6 }); const r = await shareImage(c, refString(bid, ch, v1, v2), text); if (r === 'downloaded') toast('Imagem baixada'); };
-  } catch { $('#votd .votd', v).textContent = '—'; }
+  } catch { const votd = $('#votd .votd', v); if (votd) votd.textContent = '—'; }
   // leituras
   try {
     const { readings } = await readingsFor(now);

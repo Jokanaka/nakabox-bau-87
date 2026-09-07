@@ -185,7 +185,7 @@ function todayStrip(b, chapter, ver) {
 function todayChips() {
   const now = new Date();
   const lit = liturgicalDay(now);
-  const chips = [`<a class="chip" href="#/liturgia"><span class="lit-dot" style="background:${lit.colorHex}"></span>${esc(lit.name)}</a>`];
+  const chips = [];
   for (const p of PLANS) {
     const st = store.plan(p.id); if (!st) continue;
     const nd = nextDay(p.id, st); if (nd < 0) continue;
@@ -197,6 +197,7 @@ function todayChips() {
   const my = MYSTERIES[mysteryOfDay(now, lit.season === 'triduo' ? 'quaresma' : lit.season)];
   chips.push(`<a class="chip" href="#/rosario">📿 ${esc(my.name.replace('Mistérios ', ''))}</a>`);
   chips.push(`<a class="chip" href="#/missa" id="chip-missa">🕊 Missa de hoje</a>`);
+  chips.push(`<a class="chip" href="#/liturgia"><span class="lit-dot" style="background:${lit.colorHex}"></span>${esc(lit.name)}</a>`);
   return chips.join('');
 }
 async function fillTodayChips(view) {
