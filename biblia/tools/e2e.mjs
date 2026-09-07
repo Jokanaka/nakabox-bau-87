@@ -660,6 +660,34 @@ await step('27-resume-position', async () => {
   if (await page.evaluate(() => window.scrollY) > 50) throw new Error('capítulo sem posição salva devia abrir do início');
   await page.evaluate(() => import('./js/store.js').then((m) => m.store.markRead('gn', 1, false)));
 });
+await step('28-audio-emenda-capitulo', async () => {
+  await page.goto(BASE + '#/biblia/2jo/1');
+  await page.waitForSelector('#chapter .verse', { timeout: 15000 });
+  await page.evaluate(() => import('./js/store.js').then((m) => { m.store.markRead('2jo', 1, false); m.store.setSetting('ttsContinue', true); }));
+  await page.click('[data-act=tts]');
+  // ao terminar o capítulo a leitura emenda o próximo sozinha e a página acompanha
+  await page.waitForFunction(() => location.hash === '#/biblia/3jo/1', null, { timeout: 60000 });
+  await page.waitForSelector('#chapter .verse', { timeout: 15000 });
+  const at = await page.evaluate(() => import('./js/audio.js').then((a) => ({ active: a.isActive(), ref: a.currentRef() })));
+  if (!at.active || !at.ref || at.ref.book !== '3jo') throw new Error('não emendou o próximo capítulo: ' + JSON.stringify(at));
+  const lido = await page.evaluate(() => import('./js/store.js').then((m) => m.store.isRead('2jo', 1)));
+  if (!lido) throw new Error('o capítulo terminado devia ficar marcado como lido');
+  const botao = await page.$eval('[data-act=tts]', (el) => el.classList.contains('active'));
+  if (!botao) throw new Error('o botão de ouvir devia continuar ligado no capítulo novo');
+});
+await step('29-audio-retoma-apos-pausa-do-sistema', async () => {
+  await page.goto(BASE + '#/biblia/mt/1');
+  await page.waitForSelector('#chapter .verse', { timeout: 15000 });
+  await page.click('[data-act=tts]');
+  await page.waitForFunction(() => { const e = document.querySelector('#player-root .p-engine'); return e && !e.hidden && /gravada/.test(e.title || ''); }, null, { timeout: 20000 });
+  await page.waitForFunction(() => { const a = document.querySelector('audio'); return a && !a.paused; }, null, { timeout: 10000 });
+  // o sistema pausa por fora (tela de bloqueio, fone, outro app): o app precisa perceber e voltar a tocar
+  await page.evaluate(() => document.querySelector('audio').pause());
+  await page.waitForFunction(() => document.querySelector('#player-root [data-act=toggle]')?.getAttribute('aria-label') === 'Continuar', null, { timeout: 5000 });
+  await page.click('#player-root [data-act=toggle]');
+  await page.waitForFunction(() => { const a = document.querySelector('audio'); return a && !a.paused; }, null, { timeout: 5000 });
+  await page.screenshot({ path: `${SHOT}/29-audio-retoma.png` });
+});
 await step('21-desktop', async () => {
   await page.setViewportSize({ width: 1200, height: 800 });
   await page.goto(BASE + '#/biblia/jo/1');

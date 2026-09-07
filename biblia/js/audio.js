@@ -4,14 +4,14 @@ import { $, $$, h, esc, icon, toast } from './util.js';
 import { store } from './store.js';
 import { openSheet, openModal } from './ui.js';
 import * as cloud from './cloudtts.js';
-import { book, bookName } from './data.js';
+import { book, bookName, nextChapter, prevChapter, getChapter } from './data.js';
 
 const has = typeof window !== 'undefined' && 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
 const CHUNK = 180; // caracteres por trecho falado (o Chrome corta falas longas)
 const st = {
   active: false, paused: false, pausedInPlace: false, items: [], idx: 0, chunks: [], chunk: 0, title: '', lang: 'pt-BR',
   engine: null, onItem: null, onEnd: null, utter: null, watchdog: null, restart: null, nudge: null, gap: null, errors: 0,
-  timerEnd: null, timerTick: null, timerMode: null, timerValue: null, autoplay: null,
+  timerEnd: null, timerTick: null, timerMode: null, timerValue: null, advancing: false,
 };
 const I = {
   pause: '<svg viewBox="0 0 24 24"><path d="M7 5h4v14H7zm6 0h4v14h-4z"/></svg>',
@@ -118,11 +118,26 @@ const sysEngine = {
 };
 let audioEl = null;
 function mediaEl() {
-  if (!audioEl) { audioEl = new Audio(); audioEl.preload = 'auto'; audioEl.setAttribute('playsinline', ''); }
+  if (!audioEl) {
+    audioEl = new Audio(); audioEl.preload = 'auto'; audioEl.setAttribute('playsinline', '');
+    // no documento: alguns navegadores só tratam como mídia do app (tela de bloqueio, segundo plano) assim
+    try { document.body.append(audioEl); } catch { /* ignora */ }
+    // o sistema pode pausar/continuar por fora (tela de bloqueio, fone, outro app):
+    // acompanhamos o próprio elemento para o botão de continuar sempre funcionar
+    audioEl.addEventListener('pause', () => {
+      if (!st.active || !usesMedia() || audioEl.ended || st.paused) return;
+      st.paused = true; st.pausedInPlace = true; updateBar();
+    });
+    audioEl.addEventListener('play', () => {
+      if (!st.active || !usesMedia() || !st.paused) return;
+      st.paused = false; st.pausedInPlace = false; updateBar();
+    });
+  }
   return audioEl;
 }
+function usesMedia() { return !!(st.engine && st.engine.media); }
 const cloudEngine = {
-  kind: 'nuvem', pausable: true, token: null, url: null,
+  kind: 'nuvem', pausable: true, media: true, token: null, url: null,
   // no iPhone o áudio só toca depois de um toque: tocamos um silêncio no toque e depois trocamos o src
   unlock() { try { const a = mediaEl(); if (a.dataset.unlocked) return; a.src = SILENT_WAV; a.play().then(() => { a.dataset.unlocked = '1'; }).catch(() => {}); } catch { /* ignora */ } },
   async speak(text, cb) {
@@ -166,7 +181,7 @@ function setStatus(msg) {
   if (el && st.active) { const it = st.items[st.idx] || {}; el.textContent = `${st.status || (it.label ? it.label : `${st.idx + 1} de ${st.items.length}`)} · `; }
 }
 const localEngine = {
-  kind: 'offline', pausable: true, token: null, url: null, worker: null, ready: false, failed: null, progress: null, pending: new Map(), cache: new Map(), seq: 0, listeners: new Set(),
+  kind: 'offline', pausable: true, media: true, token: null, url: null, worker: null, ready: false, failed: null, progress: null, pending: new Map(), cache: new Map(), seq: 0, listeners: new Set(),
   ensure() {
     if (this.worker || this.failed) return;
     if (!localSupported()) { this.failed = 'este navegador não suporta o narrador offline'; return; }
@@ -424,10 +439,10 @@ export async function chooseVoice(kind, id = '') {
   return { status: 'switched', name };
 }
 const recEngine = {
-  kind: 'gravado', pausable: true, rec: null, token: null, triedAlt: false,
+  kind: 'gravado', pausable: true, media: true, rec: null, token: null, triedAlt: false, pre: false,
   unlock() { cloudEngine.unlock(); },
   start(rec, fromIdx) {
-    const token = {}; this.token = token; this.rec = rec; this.triedAlt = false;
+    const token = {}; this.token = token; this.rec = rec; this.triedAlt = false; this.pre = false;
     const a = mediaEl();
     a.onended = null; a.onerror = null; a.ontimeupdate = null; a.onloadedmetadata = null;
     a.src = rec.url;
@@ -450,7 +465,9 @@ const recEngine = {
   },
   sync() {
     if (!this.rec) return;
-    const t = mediaEl().currentTime;
+    const a = mediaEl();
+    const t = a.currentTime;
+    if (!this.pre && a.duration && a.duration - t < 25) { this.pre = true; prefetchNext(); }
     const v = this.rec.marks.v;
     let mi = -1;
     for (let i = 0; i < v.length; i++) { if (t >= v[i][1] - 0.05) mi = i; else break; }
@@ -487,6 +504,15 @@ const recEngine = {
   resume() { try { mediaEl().play().catch(() => {}); } catch { /* ignora */ } },
   setRate() { try { mediaEl().playbackRate = clamp(+store.settings.ttsRate || 1, 0.5, 2); } catch { /* ignora */ } },
 };
+// deixa o próximo capítulo pronto no cache antes de a leitura chegar ao fim
+function prefetchNext() {
+  try {
+    if (!st.ref || st.until != null || !store.settings.ttsContinue) return;
+    const n = nextChapter(st.ref.book, st.ref.chapter);
+    if (!n || !recordedAvailable(n.book, n.chapter)) return;
+    recordedChapter(n.book, n.chapter).then((r) => { if (r) fetch(r.url).catch(() => {}); }).catch(() => {});
+  } catch { /* ignora */ }
+}
 function chooseEngine(lang) {
   if (cloud.cloudReady(lang)) return cloudEngine;
   if (store.settings.localVoiceOn && String(lang).toLowerCase().startsWith('pt') && localSupported() && !localEngine.failed) return localEngine;
@@ -597,13 +623,21 @@ export function pause() {
   updateBar();
 }
 export function resume() {
-  if (!st.active || !st.paused) return;
+  if (!st.active) return;
+  const wasPaused = st.paused;
   st.paused = false;
   updateBar();
+  // motores que tocam pelo elemento de áudio: mandar tocar de novo sempre funciona
+  if (usesMedia()) { st.pausedInPlace = false; st.engine.resume(); return; }
+  if (!wasPaused) return;
   if (st.pausedInPlace) { st.pausedInPlace = false; st.engine.resume(); }
   else speakChunk();                       // recomeça o trecho atual
 }
-export function toggle() { if (!st.active) return; if (st.paused) resume(); else pause(); }
+export function toggle() {
+  if (!st.active) return;
+  const parado = usesMedia() && audioEl ? audioEl.paused : st.paused;
+  if (parado) resume(); else pause();
+}
 export function skip(delta) {
   if (!st.active) return;
   if (st.engine === recEngine) { st.paused = false; st.pausedInPlace = false; recEngine.seek(clamp(st.idx + delta, 0, st.items.length - 1)); return; }
@@ -616,7 +650,7 @@ export function skip(delta) {
 function teardown() {
   const onEnd = st.onEnd;
   const engine = st.engine;
-  st.active = false; st.paused = false; st.pausedInPlace = false; st.onEnd = null; st.onItem = null; st.items = []; st.status = ''; st.fallback = null; st.voiceName = ''; st.recInfo = null; st.until = null; st.ref = null; st.base = null;
+  st.active = false; st.paused = false; st.pausedInPlace = false; st.advancing = false; st.onEnd = null; st.onItem = null; st.items = []; st.status = ''; st.fallback = null; st.voiceName = ''; st.recInfo = null; st.until = null; st.ref = null; st.base = null;
   clearTimeout(st.watchdog); clearTimeout(st.restart); clearTimeout(st.gap);
   stopNudge();
   if (engine) engine.cancel(); else sysEngine.cancel();
@@ -631,8 +665,83 @@ export function stop({ silent = false } = {}) {
   if (was && onEnd && !silent) { try { onEnd(false); } catch { /* ignora */ } }
 }
 function finish(completed) {
+  const ref = st.ref;
+  if (completed && advance()) return;      // emendou o próximo capítulo; a leitura continua
   const onEnd = teardown();
-  if (onEnd) { try { onEnd(completed); } catch { /* ignora */ } }
+  if (onEnd) { try { onEnd(completed, ref); } catch { /* ignora */ } }
+}
+
+// ---------- trocar de capítulo sem depender da tela ligada ----------
+// A troca é feita aqui, no mesmo elemento de áudio, para a leitura seguir com o
+// aparelho bloqueado ou o app fechado; a página se acerta quando voltar à frente.
+function switchChapter(target, { markPrev = false, label = 'Próximo capítulo…' } = {}) {
+  const from = st.ref, onItem = st.onItem, onEnd = st.onEnd;
+  st.advancing = true;
+  setStatus(label);
+  (async () => {
+    try {
+      if (markPrev && from) store.markRead(from.book, from.chapter, true);
+      const opts = await chapterPlay(target.book, target.chapter);
+      if (!opts || !st.advancing) return;
+      st.advancing = false;
+      play({ ...opts, onItem, onEnd });
+      try { window.dispatchEvent(new CustomEvent('bc:chapter', { detail: { book: target.book, chapter: target.chapter } })); } catch { /* ignora */ }
+    } catch {
+      if (!st.advancing) return;
+      st.advancing = false;
+      const end = teardown();
+      if (end) { try { end(true, from); } catch { /* ignora */ } }
+    }
+  })();
+}
+function chapterMode() { return !!(st.active && st.ref && st.until == null); }
+function advance() {
+  if (!chapterMode() || !store.settings.ttsContinue) return false;
+  const next = nextChapter(st.ref.book, st.ref.chapter);
+  if (!next) return false;
+  switchChapter(next, { markPrev: true });
+  return true;
+}
+// botões da tela de bloqueio e do fone: pulam de capítulo (dentro do app eles pulam de versículo)
+export function skipChapter(delta) {
+  if (!chapterMode()) { skip(delta); return; }
+  const t = delta > 0 ? nextChapter(st.ref.book, st.ref.chapter) : prevChapter(st.ref.book, st.ref.chapter);
+  if (!t) { skip(delta); return; }
+  switchChapter(t, { label: delta > 0 ? 'Próximo capítulo…' : 'Capítulo anterior…' });
+}
+// monta a leitura de um capítulo inteiro (narração gravada quando houver)
+export async function chapterPlay(bid, chapter, fromV = 1) {
+  const b = book(bid);
+  if (!b) return null;
+  const ver = store.settings.version;
+  const ch = await getChapter(ver, bid, chapter);
+  if (!ch || !ch.verses || !ch.verses.length) return null;
+  const head = bid === 'sl' ? `Salmo ${chapter}` : `${bookName(b, ver)}, capítulo ${chapter}`;
+  const intro = { kind: 'intro', label: 'Introdução', text: `${head}.${ch.title ? ' ' + ch.title : ''}` };
+  const common = { title: `${bookName(b, ver)} ${chapter}`, lang: 'pt-BR', ref: { book: bid, chapter } };
+  const texts = new Map(ch.verses.map((t, i) => [i + 1, t]).filter(([, t]) => t));
+  if (store.settings.recordedOn !== false && ver === 'figueiredo' && recordedAvailable(bid, chapter)) {
+    try {
+      const rec = await recordedChapter(bid, chapter);
+      if (rec) {
+        const items = [intro, ...rec.marks.v.map(([v]) => ({ v, label: `Versículo ${v}`, text: texts.get(v) || '' }))];
+        const at = fromV <= 1 ? 0 : Math.max(0, items.findIndex((x) => x.v && x.v >= fromV));
+        return { ...common, items, from: at, recorded: rec };
+      }
+    } catch { /* segue com as outras vozes */ }
+  }
+  const items = [...texts].map(([v, t]) => ({ v, label: `Versículo ${v}`, text: t }));
+  const at = Math.max(0, items.findIndex((x) => x.v >= fromV));
+  if (at === 0 && fromV <= 1 && store.settings.ttsStyle !== 'normal') items.unshift(intro);
+  return { ...common, items, from: at };
+}
+// liga a página que está à frente à leitura que já está tocando
+export function attach({ onItem = null, onEnd = null } = {}) {
+  if (!st.active) return false;
+  st.onItem = onItem; st.onEnd = onEnd;
+  const it = st.items[st.idx];
+  if (it && onItem) { try { onItem(st.idx, it); } catch { /* ignora */ } }
+  return true;
 }
 // mudança de voz/velocidade/tom/estilo durante a leitura: recomeça o trecho atual com os novos valores
 export function restartCurrent() {
@@ -653,13 +762,6 @@ export function restartCurrent() {
 function applyRateLive() {
   if (st.active && st.engine.setRate) st.engine.setRate();
   else restartCurrent();
-}
-
-// ---------- continuar no próximo capítulo ----------
-export function requestAutoplay(key) { st.autoplay = { key, at: Date.now() }; }
-export function consumeAutoplay(key) {
-  const a = st.autoplay; st.autoplay = null;
-  return !!(a && a.key === key && Date.now() - a.at < 20000);
 }
 
 // ---------- temporizador ----------
@@ -717,8 +819,8 @@ function mediaSession() {
     navigator.mediaSession.setActionHandler('play', () => resume());
     navigator.mediaSession.setActionHandler('pause', () => pause());
     navigator.mediaSession.setActionHandler('stop', () => stop());
-    navigator.mediaSession.setActionHandler('previoustrack', () => skip(-1));
-    navigator.mediaSession.setActionHandler('nexttrack', () => skip(1));
+    navigator.mediaSession.setActionHandler('previoustrack', () => skipChapter(-1));
+    navigator.mediaSession.setActionHandler('nexttrack', () => skipChapter(1));
     navigator.mediaSession.playbackState = st.paused ? 'paused' : 'playing';
   } catch { /* ignora */ }
 }
