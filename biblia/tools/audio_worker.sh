@@ -2,6 +2,7 @@
 # Trabalhador de narração: gera capítulos com a voz indicada e envia os arquivos para o branch "audio" a cada 10 minutos.
 # Uso: bash biblia/tools/audio_worker.sh <voz> <livro,livro,...> [minutos máximos, padrão 55] [desc]
 # Exemplo: bash biblia/tools/audio_worker.sh alex gn,ex,lv
+# Um livro pode vir com faixa de capítulos: sl:1-36 (só os Salmos 1 a 36).
 # "desc" gera os capítulos de cada livro do último para o primeiro: assim outra máquina pode fazer a mesma lista
 # na ordem inversa (livros e capítulos) e as duas se encontram no meio sem repetir trabalho.
 # Retomável: capítulos já existentes na saída ou já publicados no branch "audio" são pulados (a cada sincronização,
@@ -33,7 +34,9 @@ git -C "$WT" config user.email "$(git -C "$REPO" config user.email || echo bot@e
 git -C "$WT" pull -q --rebase origin audio 2>/dev/null || true
 # copia do branch para a saída local os capítulos já existentes (para o gerador pular)
 pull_done() {
+  local b
   for b in ${BOOKS//,/ }; do
+    b="${b%%:*}"
     if [ -d "$WT/$VOICE/$b" ]; then mkdir -p "$OUT/$VOICE/$b"; cp -n "$WT/$VOICE/$b/"* "$OUT/$VOICE/$b/" 2>/dev/null || true; fi
   done
 }
@@ -45,7 +48,9 @@ sync_push() {
   # primeiro traz o que os outros já enviaram (assim nunca re-adiciona um capítulo que já existe no branch)
   git -C "$WT" pull -q --rebase origin audio 2>/dev/null || { git -C "$WT" rebase --abort 2>/dev/null; git -C "$WT" reset -q --hard origin/audio; }
   pull_done
+  local b
   for b in ${BOOKS//,/ }; do
+    b="${b%%:*}"
     [ -d "$OUT/$VOICE/$b" ] || continue
     mkdir -p "$WT/$VOICE/$b"
     for f in "$OUT/$VOICE/$b"/*.json; do
