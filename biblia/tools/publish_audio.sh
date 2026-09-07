@@ -10,6 +10,16 @@ import json, os, shutil, sys
 out, wt = sys.argv[1], sys.argv[2]
 books = json.load(open('/home/user/nakabox-bau-87/biblia/data/books.json'))
 NAMES = {'alex': ('Alex', 'masculina'), 'santa': ('Santa', 'masculina, mais grave'), 'dora': ('Dora', 'feminina')}
+# 0) traz para a saída local o que as outras máquinas já enviaram (o gerador local pula esses capítulos)
+for vid in NAMES:
+    if not os.path.isdir(f"{wt}/{vid}"): continue
+    for b in books:
+        d = f"{wt}/{vid}/{b['id']}"
+        if not os.path.isdir(d): continue
+        os.makedirs(f"{out}/{vid}/{b['id']}", exist_ok=True)
+        for c in range(1, b['chapters'] + 1):
+            if os.path.exists(f"{d}/{c}.json") and os.path.exists(f"{d}/{c}.mp3") and not os.path.exists(f"{out}/{vid}/{b['id']}/{c}.json"):
+                shutil.copyfile(f"{d}/{c}.mp3", f"{out}/{vid}/{b['id']}/{c}.mp3"); shutil.copyfile(f"{d}/{c}.json", f"{out}/{vid}/{b['id']}/{c}.json")
 # 1) copia os capítulos locais que ainda não estão no branch
 n_new = 0
 for vid in sorted(os.listdir(out)):

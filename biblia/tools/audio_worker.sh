@@ -1,11 +1,14 @@
 #!/bin/bash
 # Trabalhador de narração: gera capítulos com a voz indicada e envia os arquivos para o branch "audio" a cada 10 minutos.
-# Uso: bash biblia/tools/audio_worker.sh <voz> <livro,livro,...> [minutos máximos, padrão 55]
+# Uso: bash biblia/tools/audio_worker.sh <voz> <livro,livro,...> [minutos máximos, padrão 55] [desc]
 # Exemplo: bash biblia/tools/audio_worker.sh alex gn,ex,lv
-# Retomável: capítulos já existentes na saída ou já publicados no branch "audio" são pulados.
+# "desc" gera os capítulos de cada livro do último para o primeiro: assim outra máquina pode fazer a mesma lista
+# na ordem inversa (livros e capítulos) e as duas se encontram no meio sem repetir trabalho.
+# Retomável: capítulos já existentes na saída ou já publicados no branch "audio" são pulados (a cada sincronização,
+# o que as outras máquinas já enviaram é copiado para a saída local, e o gerador pula esses capítulos).
 # Termina com "WORKER_DONE" quando todos os capítulos do plano existem, ou "WORKER_PAUSE" ao esgotar o tempo (rode de novo).
 set -u
-VOICE="${1:?voz (alex|santa|dora)}"; BOOKS="${2:?livros separados por vírgula}"; MAXMIN="${3:-55}"
+VOICE="${1:?voz (alex|santa|dora)}"; BOOKS="${2:?livros separados por vírgula}"; MAXMIN="${3:-55}"; ORDER="${4:-asc}"
 REPO="$(cd "$(dirname "$0")/../.." && pwd)"; APP="$REPO/biblia"
 WORK="${AUDIO_WORK:-$HOME/audio-work}"; OUT="$WORK/out"; MODELS="$WORK/models"; WT="$WORK/audio-branch"
 mkdir -p "$OUT" "$MODELS"
@@ -29,15 +32,19 @@ fi
 git -C "$WT" config user.email "$(git -C "$REPO" config user.email || echo bot@example.com)"; git -C "$WT" config user.name "$(git -C "$REPO" config user.name || echo audio-worker)"
 git -C "$WT" pull -q --rebase origin audio 2>/dev/null || true
 # copia do branch para a saída local os capítulos já existentes (para o gerador pular)
-for b in ${BOOKS//,/ }; do
-  if [ -d "$WT/$VOICE/$b" ]; then mkdir -p "$OUT/$VOICE/$b"; cp -n "$WT/$VOICE/$b/"* "$OUT/$VOICE/$b/" 2>/dev/null || true; fi
-done
+pull_done() {
+  for b in ${BOOKS//,/ }; do
+    if [ -d "$WT/$VOICE/$b" ]; then mkdir -p "$OUT/$VOICE/$b"; cp -n "$WT/$VOICE/$b/"* "$OUT/$VOICE/$b/" 2>/dev/null || true; fi
+  done
+}
+pull_done
 
 # 3) sincronização periódica: copia arquivos novos para o branch e envia
 sync_push() {
   local n=0
   # primeiro traz o que os outros já enviaram (assim nunca re-adiciona um capítulo que já existe no branch)
   git -C "$WT" pull -q --rebase origin audio 2>/dev/null || { git -C "$WT" rebase --abort 2>/dev/null; git -C "$WT" reset -q --hard origin/audio; }
+  pull_done
   for b in ${BOOKS//,/ }; do
     [ -d "$OUT/$VOICE/$b" ] || continue
     mkdir -p "$WT/$VOICE/$b"
@@ -65,7 +72,7 @@ sync_push() {
 # 4) geração (plano só desta voz e destes livros), com sincronização a cada 10 min
 PLAN="$(for b in ${BOOKS//,/ }; do printf '%s:%s,' "$VOICE" "$b"; done)"; PLAN="${PLAN%,}"
 cd "$MODELS"
-GEN_APP="$APP" GEN_OUT="$OUT" GEN_MODELS="$MODELS" timeout "$((MAXMIN*60))" python3 "$APP/tools/gen_audio.py" "$PLAN" >> "$WORK/gen.out" 2>&1 &
+GEN_APP="$APP" GEN_OUT="$OUT" GEN_MODELS="$MODELS" GEN_REVERSE="$([ "$ORDER" = desc ] && echo 1 || echo 0)" timeout "$((MAXMIN*60))" python3 "$APP/tools/gen_audio.py" "$PLAN" >> "$WORK/gen.out" 2>&1 &
 GEN=$!
 while kill -0 "$GEN" 2>/dev/null; do
   sleep 600 & wait $! 2>/dev/null
