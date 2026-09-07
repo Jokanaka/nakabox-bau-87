@@ -29,7 +29,7 @@ json.dump(mine, open(sys.argv[3], 'w')); print(len(mine), 'capítulos nesta part
 PY
 
 # 3) branch "audio"
-if [ ! -d "$WT/.git" ]; then
+if ! git -C "$WT" rev-parse --git-dir >/dev/null 2>&1; then
   log "clonando o branch audio"
   git clone -q --branch audio --single-branch --depth 1 "$(git -C "$REPO" remote get-url origin)" "$WT" || { log "falha ao clonar o branch audio"; exit 1; }
 fi
