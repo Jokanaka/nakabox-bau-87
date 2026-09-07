@@ -177,7 +177,7 @@ export async function renderReader(view, { book: bid, chapter, verse, verseEnd, 
 // ---------- Resumo do dia e progresso do capítulo (alto do leitor) ----------
 function todayStrip(b, chapter, ver) {
   return `<div class="today" id="today">
-    <div class="today-prog"><span class="tp-label"><b>${esc(bookName(b, ver))} ${chapter}</b> · capítulo ${chapter} de ${b.chapters}</span><span class="tp-pct" id="tp-pct">faltam 100%</span></div>
+    <div class="today-prog"><span class="tp-label"><b>${esc(bookName(b, ver))} ${chapter}</b> · capítulo ${chapter} de ${b.chapters}</span><span class="tp-pct" id="tp-pct">faltam 100% do capítulo</span></div>
     <div class="progress thin"><i id="tp-bar" style="width:0%"></i></div>
     ${store.settings.todayStrip !== false ? `<div class="today-chips" id="today-chips">${todayChips()}</div>` : ''}
   </div>`;
@@ -220,7 +220,7 @@ function setupProgress(view, cont, b, chapter) {
     const seen = Math.min(total, Math.max(0, window.innerHeight - rect.top));
     const pct = Math.max(0, Math.min(100, Math.round(seen * 100 / total)));
     bar.style.width = pct + '%';
-    pctEl.textContent = pct >= 99 ? '✓ fim do capítulo' : `${pct}% lido · faltam ${100 - pct}%`;
+    pctEl.textContent = pct >= 99 ? '✓ fim do capítulo' : `faltam ${100 - pct}% do capítulo`;
   };
   const h = () => { if (!ticking) { ticking = true; requestAnimationFrame(update); } };
   view._progH = h;

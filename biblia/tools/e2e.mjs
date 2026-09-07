@@ -619,7 +619,7 @@ await step('26-reader-today', async () => {
   const label = await page.$eval('#today .tp-label', (el) => el.textContent);
   if (!label.includes('Gênesis 1') || !label.includes('capítulo 1 de 50')) throw new Error('rótulo: ' + label);
   const pct0 = await page.$eval('#tp-pct', (el) => el.textContent);
-  if (!/faltam \d+%/.test(pct0)) throw new Error('percentual: ' + pct0);
+  if (!/faltam \d+% do capítulo/.test(pct0)) throw new Error('percentual: ' + pct0);
   const chips = await page.$$eval('#today-chips .chip', (els) => els.map((e) => e.textContent.trim()));
   if (chips.length < 4 || !chips.some((c) => /Orações 3\/7/.test(c)) || !chips.some((c) => /Gozosos|Dolorosos|Gloriosos|Luminosos/.test(c))) throw new Error('chips: ' + chips.join(' | '));
   await page.waitForFunction(() => /Evangelho|Missa/.test(document.querySelector('#chip-missa')?.textContent || ''), null, { timeout: 5000 });
