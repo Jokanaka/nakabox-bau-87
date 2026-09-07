@@ -898,7 +898,7 @@ export function openAudioSheet() {
       ${pt.length ? `<optgroup label="Português">${pt.map(opt).join('')}</optgroup>` : ''}
       ${others.length ? `<optgroup label="Outras línguas">${others.map(opt).join('')}</optgroup>` : ''}
     </select>`;
-  const nowHtml = `<p class="small" id="au-now" style="margin:0 0 10px;line-height:1.45"></p>`;
+  const nowHtml = `<p class="small" id="au-now" style="margin:0 0 6px;line-height:1.45"></p><p class="small muted" id="au-diag" style="margin:0 0 10px;font-family:ui-monospace,monospace;font-size:11px;word-break:break-all" hidden></p>`;
   const deviceHtml = `
     <div class="setting"><span>Preferir voz masculina</span><button class="switch ${s.ttsMale ? 'on' : ''}" data-act="male" aria-label="Preferir voz masculina"></button></div>
     <div class="setting"><span>Estilo</span><div class="seg" id="au-style"><button data-v="normal" class="${s.ttsStyle === 'normal' ? 'on' : ''}">Normal</button><button data-v="narracao" class="${s.ttsStyle !== 'normal' ? 'on' : ''}">Narração</button></div></div>
@@ -994,6 +994,18 @@ export function openAudioSheet() {
     else if (cur && manifest) parts.push(`<b>${esc(curName)}</b> ainda não tem narração gravada, então a leitura usa a voz do aparelho.${doneIds.length ? ` Já gravado: ${esc(doneNames.join(', '))}. <a href="#" data-act="go-rec">Ouvir ${esc(doneNames[0])} 1</a>` : ' Os primeiros capítulos estão sendo produzidos.'}`);
     x.innerHTML = parts.join(' ');
     x.hidden = !parts.length;
+    // linha técnica para diagnóstico (motor, voz, arquivo tocando, estado do áudio, aparelho)
+    const d = q('#au-diag');
+    if (d) {
+      if (st.active && st.engine) {
+        const a = st.engine === sysEngine ? null : mediaEl();
+        const src = a && a.src && !a.src.startsWith('data:') ? a.src.replace(/^.*\/([^/]+\/[^/]+\/[^/]+)$/, '$1') : '';
+        const ua = /iPhone|iPad/.test(navigator.userAgent) ? 'iOS' : /Android/.test(navigator.userAgent) ? 'Android' : 'desktop';
+        const c = voiceChoice();
+        d.textContent = `motor ${st.engine.kind} · escolha ${c.kind}:${c.id || 'auto'}${src ? ` · ${src}` : ''}${a ? ` · ${a.paused ? 'pausado' : 'tocando'} ${a.readyState}/${Math.round(a.currentTime)}s` : ''} · ${ua}${navigator.serviceWorker && navigator.serviceWorker.controller ? ' · sw' : ''}`;
+        d.hidden = false;
+      } else d.hidden = true;
+    }
     const go = q('[data-act=go-rec]'); if (go) go.onclick = (e) => { e.preventDefault(); close(); location.hash = `#/biblia/${doneIds[0]}/1`; };
   };
   fillNow();
