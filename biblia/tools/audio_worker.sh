@@ -26,7 +26,7 @@ done
 [ -s "$MODELS/kokoro-v1.0.onnx" ] && [ -s "$MODELS/voices-v1.0.bin" ] || { log "modelo não baixado"; exit 1; }
 
 # 2) branch "audio" (arquivos já publicados contam como prontos)
-if [ ! -d "$WT/.git" ]; then
+if ! git -C "$WT" rev-parse --git-dir >/dev/null 2>&1; then
   log "clonando o branch audio"
   git clone -q --branch audio --single-branch --depth 1 "$(git -C "$REPO" remote get-url origin)" "$WT" || { log "falha ao clonar o branch audio"; exit 1; }
 fi
