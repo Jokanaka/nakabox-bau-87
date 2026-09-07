@@ -278,6 +278,7 @@ function renderAbout(v) {
     <div class="section"><div class="card">
       <div class="row"><img src="icons/icon-192.png" width="56" height="56" style="border-radius:14px" alt=""><div><h3>Bíblia Católica</h3><div class="small muted">Versão 1.0 · ${nb} livros · Católica Apostólica Romana</div></div></div>
       <p style="margin-top:12px">Bíblia completa com os 73 livros do cânon católico, incluindo os deuterocanônicos (Tobias, Judite, Sabedoria, Eclesiástico, Baruc, 1 e 2 Macabeus e as partes gregas de Ester e Daniel), com planos de leitura, orações, Santo Rosário e liturgia diária. Funciona sem internet depois de instalado.</p>
+      <p style="margin-top:8px">Todo o conteúdo segue a Igreja Católica Apostólica Romana: o cânon dos 73 livros definido no Concílio de Trento, traduções católicas da Vulgata, os Salmos na numeração da Vulgata, as orações na forma aprovada para o Brasil, o Rosário com os mistérios da <i>Rosarium Virginis Mariae</i>, o calendário litúrgico romano com o próprio do Brasil e as partes do povo da Missa conforme o Missal Romano (3ª edição, CNBB).</p>
     </div></div>
     <div class="section" style="padding-top:0"><div class="card">
       <h3>Textos e fontes</h3>
