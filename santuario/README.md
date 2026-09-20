@@ -56,32 +56,25 @@ No SQL Editor do Supabase, rode nesta ordem:
 
 O `seed.sql` é idempotente: pode rodar quantas vezes quiser.
 
-### 2. Fotos do acervo
+O acervo são quatro imagens fotografadas pelo dono do projeto na mesma
+igreja: **Nossa Senhora da Paz**, **São José**, **São Miguel Arcanjo** e o
+**Sagrado Coração de Jesus**. As fotos já estão em `public/seed/` e os
+avistamentos iniciais entram sem autor, como avistamentos da casa.
 
-Copie as quatro fotos da pasta `fotos/` para `public/seed/`, com os nomes
-listados em [`public/seed/LEIA-ME.md`](public/seed/LEIA-ME.md).
+> Na foto de Nossa Senhora da Paz há uma pessoa desfocada no canto inferior
+> esquerdo. **O desfoque faz parte do arquivo e precisa continuar assim.**
 
-> Na foto de Nossa Senhora há uma pessoa desfocada no canto. **Mantenha o
-> desfoque** — copie o arquivo como está, sem reprocessar.
+Antes de rodar o seed, troque o local no fim de `supabase/seed.sql` —
+hoje está `'Paróquia (definir nome), São Paulo'` — pelo nome real da igreja.
 
-Enquanto as fotos não estiverem lá, o site funciona normalmente: onde falta
-imagem aparece uma moldura com o nome do santo.
-
-### 3. Avistamentos iniciais
-
-`avistamentos.autor_id` aponta para `auth.users`, então o dono do projeto
-precisa entrar uma vez em `/entrar` (link mágico por e-mail). Depois do
-primeiro login, rode `supabase/seed.sql` de novo e os avistamentos iniciais
-são criados.
-
-### 4. Rodar local
+### 2. Rodar local
 
 ```bash
 npm install
 npm run dev
 ```
 
-### 5. Deploy na Vercel
+### 3. Deploy na Vercel
 
 O app fica na subpasta `santuario/`, então o **Root Directory** do projeto na
 Vercel precisa apontar para ela.
@@ -101,6 +94,22 @@ inclua a URL de produção em **Site URL** e em **Redirect URLs** adicione
 `https://SEU-DOMINIO/auth/callback` — sem isso o link mágico volta para
 `localhost`.
 
+## Testes
+
+As regras que não podem quebrar são verificadas contra um Postgres de
+verdade, não só por inspeção. Num banco vazio (**não** o de produção):
+
+```bash
+psql -v ON_ERROR_STOP=1 -f supabase/testes/harness.sql   # arremedo do Supabase
+psql -v ON_ERROR_STOP=1 -f supabase/schema.sql
+psql -v ON_ERROR_STOP=1 -f supabase/seed.sql
+psql -v ON_ERROR_STOP=1 -f supabase/testes/testes.sql
+```
+
+Esperado: **16 PASSOU, 0 FALHOU**. A suíte conta linhas, então só vale num
+banco recém-semeado — rodar duas vezes para na trava com um aviso, em vez de
+dar falso negativo.
+
 ## Regras que o código garante
 
 - **Publicar avistamento pede só o nome do local.** O formulário não tem outro
@@ -115,6 +124,13 @@ inclua a URL de produção em **Site URL** e em **Redirect URLs** adicione
 - **Aviso no envio:** "Publique só fotos tiradas por você. Evite rostos de
   pessoas." aparece na tela de identificação e no formulário de publicação.
 - **Identificar não exige login.** Publicar, editar e o fórum exigem.
+- **O histórico não pode ser apagado, adulterado nem forjado**, e **o ranking
+  não pode ser inflado pelo navegador**: além da RLS, `edicoes` e `scans` têm
+  `INSERT`/`UPDATE`/`DELETE` revogados de `anon` e `authenticated`. Sem policy
+  a RLS bloquearia em silêncio, afetando zero linhas; o revoke faz falhar com
+  erro e continua valendo se um dia alguém desligar a RLS por engano. Quem
+  escreve em `edicoes` é o gatilho, e em `scans` é o servidor — ambos com
+  privilégio próprio.
 - **20 identificações por IP por hora**, contadas na tabela `identificacao_ip`
   (o IP é guardado só como hash com sal). A contagem vive no banco porque cada
   chamada na Vercel roda num processo diferente.

@@ -74,7 +74,10 @@ create index if not exists edicoes_santo_idx on public.edicoes (santo_id, criado
 create table if not exists public.avistamentos (
   id         uuid primary key default gen_random_uuid(),
   santo_id   uuid not null references public.santos (id) on delete cascade,
-  autor_id   uuid not null references auth.users (id) on delete cascade,
+  -- Nulo nos avistamentos do acervo, que são da casa e não de um usuário.
+  -- A policy de insert exige autor_id = auth.uid(), e `null = auth.uid()`
+  -- não é verdadeiro, então ninguém consegue publicar sem autor.
+  autor_id   uuid references auth.users (id) on delete set null,
   foto_url   text not null,
   local_nome text not null check (char_length(trim(local_nome)) between 2 and 120),
   criado_em  timestamptz not null default now()
@@ -363,9 +366,10 @@ drop policy if exists scans_leitura on public.scans;
 create policy scans_leitura on public.scans
   for select using (true);
 
-drop policy if exists scans_criacao on public.scans;
-create policy scans_criacao on public.scans
-  for insert with check (autor_id is null or autor_id = auth.uid());
+-- Sem policy de insert: quem grava scan é só o servidor, em
+-- /api/identificar, com a service role. Se o navegador pudesse inserir
+-- direto pelo PostgREST, qualquer um inflaria o ranking sem passar pelo
+-- limite de 20 por IP por hora.
 
 -- fórum: privado de verdade. Sem login, nem o SELECT passa.
 drop policy if exists forum_topicos_leitura on public.forum_topicos;
@@ -383,6 +387,25 @@ create policy forum_respostas_leitura on public.forum_respostas
 drop policy if exists forum_respostas_criacao on public.forum_respostas;
 create policy forum_respostas_criacao on public.forum_respostas
   for insert to authenticated with check (autor_id = auth.uid());
+
+-- ---------------------------------------------------------------------
+-- Reforço além da RLS.
+--
+-- Sem policy, a RLS deixa o comando rodar e afetar zero linhas, em
+-- silêncio. O revoke faz falhar com erro, e continua valendo se um dia
+-- alguém desligar a RLS ou criar uma policy permissiva por engano.
+-- O Supabase concede tudo por padrão nas tabelas de public, então o
+-- revoke precisa vir depois da criação.
+--
+-- edicoes: só o gatilho escreve. Ele é security definer, então roda com
+-- os privilégios do dono e não é afetado por este revoke.
+revoke insert, update, delete on public.edicoes from anon, authenticated;
+
+-- scans: só a service role escreve, por /api/identificar.
+revoke insert, update, delete on public.scans from anon, authenticated;
+
+-- santos e categorias não entram aqui: editar é o ponto do projeto, e o
+-- gatilho registra a alteração venha ela de onde vier.
 
 -- identificacao_ip: nenhuma policy. Só a service role enxerga.
 
