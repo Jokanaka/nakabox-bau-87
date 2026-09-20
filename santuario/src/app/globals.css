@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+@theme {
+  /* As variáveis --fonte-* vêm do next/font, no <html> */
+  --font-titulo: var(--fonte-titulo), Georgia, "Times New Roman", serif;
+  --font-texto: var(--fonte-texto), ui-sans-serif, system-ui, sans-serif;
+
+  --color-pergaminho: #f7fafd;
+  --color-fundo: #eef3f9;
+  --color-tinta: #1c2433;
+  --color-suave: #55627a;
+  --color-azul: #2c4a72;
+  --color-azul-claro: #dde8f5;
+  --color-dourado: #97782f;
+  --color-dourado-claro: #e6d5a8;
+  --color-borda: #d5dfeb;
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  background-color: var(--color-fundo);
+}
+
+body {
+  background-color: var(--color-fundo);
+  color: var(--color-tinta);
+  font-family: var(--font-texto);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-titulo);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* Letra em versalete, usada nos rótulos de santinho */
+.versalete {
+  font-variant-caps: all-small-caps;
+  letter-spacing: 0.12em;
+}
+
+/* Filete dourado das bordas */
+.filete {
+  box-shadow: inset 0 0 0 1px #fff;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--color-azul);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
