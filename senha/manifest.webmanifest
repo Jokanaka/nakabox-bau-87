@@ -1,0 +1,16 @@
+{
+  "name": "Acerte a Senha",
+  "short_name": "Senha",
+  "description": "Jogo simples de descobrir a senha numérica. Verde, amarelo e vermelho mostram se cada número está certo, fora do lugar ou não existe na senha.",
+  "lang": "pt-BR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#FF7A00",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

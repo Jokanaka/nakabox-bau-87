@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acerte a Senha</title>
+<meta name="description" content="Jogo simples de descobrir a senha. Modo Cores: verde, amarelo e vermelho mostram se cada número está certo, fora do lugar ou não existe na senha. Modo Maior ou menor: o jogo diz se a senha é maior ou menor que o seu palpite. A cada acerto a senha cresce.">
+<meta name="theme-color" content="#FF7A00">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+  :root{
+    --topo-seguro:env(safe-area-inset-top, 0px);
+    --laranja:#FF7A00;
+    --verde:#2e9e5b;
+    --amarelo:#f2c230;
+    --vermelho:#e53935;
+    --azul:#1d6fe0;
+
+    --fundo:#f3f3f3;
+    --cartao:#ffffff;
+    --texto:#1a1a1a;
+    --cinza:#555555;
+    --suave:#f7f7f7;
+    --borda:#e5e5e5;
+    --barra:#1a1a1a;
+    --barra-texto:#ffffff;
+    --acertou-fundo:#e6f9ee;
+    --acertou-texto:#1b7a3d;
+    --erro-fundo:#fdecea;
+    --erro-texto:#c62828;
+    --maior-fundo:#fff3e6;
+    --maior-texto:#b35300;
+    --menor-fundo:#e8f1ff;
+    --menor-texto:#1d4ed8;
+    --sombra:rgba(0,0,0,.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --fundo:#121212;
+      --cartao:#1e1e1e;
+      --texto:#f2f2f2;
+      --cinza:#b0b0b0;
+      --suave:#2a2a2a;
+      --borda:#3a3a3a;
+      --barra:#000000;
+      --barra-texto:#ffffff;
+      --acertou-fundo:#173d27;
+      --acertou-texto:#8ee6ac;
+      --erro-fundo:#4a1f1d;
+      --erro-texto:#ff9a94;
+      --maior-fundo:#3d2a14;
+      --maior-texto:#ffb46a;
+      --menor-fundo:#16284a;
+      --menor-texto:#8fb8ff;
+      --sombra:rgba(0,0,0,.6);
+      color-scheme:dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --fundo:#121212;
+    --cartao:#1e1e1e;
+    --texto:#f2f2f2;
+    --cinza:#b0b0b0;
+    --suave:#2a2a2a;
+    --borda:#3a3a3a;
+    --barra:#000000;
+    --barra-texto:#ffffff;
+    --acertou-fundo:#173d27;
+    --acertou-texto:#8ee6ac;
+    --erro-fundo:#4a1f1d;
+    --erro-texto:#ff9a94;
+    --maior-fundo:#3d2a14;
+    --maior-texto:#ffb46a;
+    --menor-fundo:#16284a;
+    --menor-texto:#8fb8ff;
+    --sombra:rgba(0,0,0,.6);
+    color-scheme:dark;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box}
+  [hidden]{display:none !important}
+  html,body{min-height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+    color:var(--texto);
+    background:var(--fundo);
+    min-height:100vh;
+    line-height:1.5;
+  }
+
+  /* ---------- caixa flutuante do jogo ---------- */
+  .caixa{
+    position:fixed;
+    left:16px;top:16px;
+    z-index:10;
+    background:var(--cartao);
+    border:1px solid var(--borda);
+    border-radius:16px;
+    box-shadow:0 8px 28px var(--sombra);
+    max-width:calc(100vw - 8px);
+    max-height:calc(100vh - 8px);
+    overflow:auto;
+  }
+  .barra{
+    display:flex;align-items:center;gap:6px;
+    padding:8px 10px;
+    background:var(--barra);color:var(--barra-texto);
+    cursor:move;
+    touch-action:none;
+    user-select:none;
+    -webkit-user-select:none;
+    position:sticky;top:0;left:0;z-index:2;
+  }
+  .barra .titulo{font-weight:800;font-size:.95rem;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .barra .titulo b{color:var(--laranja)}
+  .barra label{display:flex;align-items:center;gap:4px;font-size:.7rem;opacity:.9;cursor:default}
+  .barra input[type="range"]{width:70px;accent-color:var(--laranja);cursor:pointer}
+  .barra .ico{
+    width:28px;height:28px;border-radius:8px;border:none;
+    background:rgba(255,255,255,.14);color:var(--barra-texto);
+    font-size:.95rem;font-weight:800;cursor:pointer;line-height:1;
+    display:flex;align-items:center;justify-content:center;padding:0;
+  }
+  .barra .ico:hover{background:rgba(255,255,255,.28)}
+
+  .conteudo{
+    width:360px;
+    max-width:calc(100vw - 10px);
+    padding:14px 16px 18px;
+    text-align:center;
+    zoom:1;
+  }
+
+  .modos{display:flex;gap:8px;margin-bottom:12px}
+  .modo{
+    flex:1;font-size:.9rem;padding:8px 10px;border-radius:999px;
+    background:var(--cartao);color:var(--texto);border:2px solid var(--texto);
+  }
+  .modo:hover{filter:none;background:var(--suave)}
+  .modo.on{background:var(--texto);color:var(--cartao)}
+
+  p.sub{color:var(--cinza);font-size:.9rem;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center}
+  p.sub b{color:var(--texto)}
+  select{
+    font:inherit;font-weight:800;color:var(--texto);background:var(--cartao);
+    border:2px solid var(--texto);border-radius:8px;padding:2px 6px;cursor:pointer;
+  }
+
+  .legenda{
+    display:flex;flex-direction:column;gap:4px;align-items:flex-start;
+    font-size:.78rem;color:var(--cinza);
+    background:var(--suave);border-radius:10px;padding:8px 12px;margin-bottom:14px;
+  }
+  .legenda span{display:flex;align-items:center;gap:8px}
+  .legenda .t{width:16px;height:16px;border-radius:4px;flex:none}
+  .legenda .mm{min-width:28px;height:22px;padding:0 8px;font-size:.8rem}
+
+  form{display:flex;gap:8px;margin-bottom:12px}
+  input[type="text"]{
+    flex:1;min-width:0;
+    font-size:1.4rem;font-weight:800;letter-spacing:.2em;text-align:center;
+    padding:10px;
+    color:var(--texto);background:var(--cartao);
+    border:2px solid var(--texto);border-radius:12px;outline:none;
+  }
+  input[type="text"]:focus{border-color:var(--laranja)}
+  button{
+    font:inherit;font-size:1rem;font-weight:800;
+    padding:12px 20px;border:none;border-radius:12px;
+    background:var(--laranja);color:#fff;cursor:pointer;
+  }
+  button:hover{filter:brightness(1.08)}
+  button:disabled{opacity:.5;cursor:not-allowed}
+
+  .dica{
+    min-height:52px;font-size:.95rem;font-weight:700;
+    padding:10px 12px;border-radius:12px;background:var(--suave);margin-bottom:10px;
+  }
+  .dica.acertou{background:var(--acertou-fundo);color:var(--acertou-texto)}
+  .dica.erro{background:var(--erro-fundo);color:var(--erro-texto)}
+  .dica.maior{background:var(--maior-fundo);color:var(--maior-texto)}
+  .dica.menor{background:var(--menor-fundo);color:var(--menor-texto)}
+
+  .placar{font-size:.85rem;color:var(--cinza);margin-bottom:12px}
+  .placar b{color:var(--texto)}
+
+  .historico{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+  .linha{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+  .t{
+    width:var(--tile,40px);height:var(--tile,40px);border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:calc(var(--tile,40px) * .5);color:#fff;
+  }
+  .t.v{background:var(--verde)}
+  .t.a{background:var(--amarelo);color:#1a1a1a}
+  .t.r{background:var(--vermelho)}
+
+  .mm{
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    min-width:64px;height:36px;padding:0 14px;border-radius:999px;
+    font-weight:800;font-size:1rem;color:#fff;font-style:normal;
+  }
+  .mm.maior{background:var(--laranja)}
+  .mm.menor{background:var(--azul)}
+  .mm.certo{background:var(--verde)}
+
+  .reiniciar{background:var(--verde);width:100%;display:none;margin-bottom:12px}
+  .reiniciar.on{display:block}
+
+  details{text-align:left;margin-bottom:10px}
+  summary{cursor:pointer;font-size:.85rem;font-weight:700;color:var(--cinza)}
+  table{width:100%;border-collapse:collapse;font-size:.8rem;margin-top:8px}
+  th,td{padding:5px 6px;text-align:center;border-bottom:1px solid var(--borda)}
+  th{color:var(--cinza);font-weight:700}
+  tr.atual td{font-weight:800;color:var(--laranja)}
+
+  .instalar{width:100%;background:var(--barra);color:var(--barra-texto);font-size:.9rem;padding:10px}
+
+  /* ---------- bolinha minimizada ---------- */
+  .bolinha{
+    position:fixed;left:16px;top:16px;z-index:10;
+    width:56px;height:56px;border-radius:50%;
+    background:var(--laranja);color:#fff;
+    font-size:1.4rem;font-weight:800;padding:0;
+    box-shadow:0 6px 18px var(--sombra);
+    cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;
+  }
+  .bolinha:active{cursor:grabbing}
+
+  /* ---------- quando o jogo está flutuando fora da página ---------- */
+  .pip{margin:0;background:var(--fundo)}
+  .pip .caixa{position:static;max-width:none;max-height:none;box-shadow:none;border:0;border-radius:0;min-height:100vh}
+  .pip .conteudo{width:auto;max-width:none}
+  .pip .barra{cursor:default}
+  .pip .so-pagina{display:none}
+</style>
+</head>
+<body>
+
+<div class="caixa" id="caixa">
+  <div class="barra" id="barra">
+    <span class="titulo">Acerte a <b>Senha</b></span>
+    <label title="Ajustar o tamanho do jogo"><span>Tamanho</span><input type="range" id="zoom" min="0.6" max="1.6" step="0.1" value="1"></label>
+    <button type="button" class="ico" id="tema" title="Trocar entre claro e escuro">◐</button>
+    <button type="button" class="ico so-pagina" id="flutuar" title="Flutuar em uma janelinha fora da página" hidden>⧉</button>
+    <button type="button" class="ico so-pagina" id="minimizar" title="Minimizar (vira uma bolinha)">—</button>
+  </div>
+
+  <div class="conteudo" id="conteudo">
+    <div class="modos">
+      <button type="button" class="modo on" data-modo="cores">Cores</button>
+      <button type="button" class="modo" data-modo="mm">Maior ou menor</button>
+    </div>
+
+    <p class="sub">
+      <span>Fase <select id="fase" title="Voltar para uma fase que você já passou"></select></span>
+      <span>•</span>
+      <span id="descricao">senha de 1 número (0 a 9)</span>
+    </p>
+
+    <div class="legenda" id="legenda-cores">
+      <span><i class="t v"></i> Verde: número certo, no lugar certo</span>
+      <span><i class="t a"></i> Amarelo: o número existe, mas em outro lugar</span>
+      <span><i class="t r"></i> Vermelho: o número não está na senha</span>
+    </div>
+    <div class="legenda" id="legenda-mm" hidden>
+      <span><i class="mm maior">▲</i> A senha é maior que o seu palpite</span>
+      <span><i class="mm menor">▼</i> A senha é menor que o seu palpite</span>
+    </div>
+
+    <form id="form" autocomplete="off" novalidate>
+      <input type="text" id="palpite" inputmode="numeric" pattern="[0-9]*" placeholder="_" aria-label="Seu palpite">
+      <button type="submit" id="btn">Tentar</button>
+    </form>
+
+    <div class="dica" id="dica">Digite 1 número e clique em Tentar.</div>
+
+    <div class="placar">
+      Tentativas nesta rodada: <b id="contador">0</b> &nbsp;•&nbsp; Melhor da fase: <b id="melhor">–</b><br>
+      Acertos nesta fase: <b id="acertos-fase">0</b> &nbsp;•&nbsp; Acertos no modo: <b id="acertos">0</b>
+    </div>
+
+    <div class="historico" id="historico"></div>
+
+    <button type="button" class="reiniciar" id="reiniciar">Próxima senha</button>
+
+    <details>
+      <summary>Contagem por fase</summary>
+      <table>
+        <thead><tr><th>Fase</th><th>Senha</th><th>Acertos</th><th>Melhor</th><th>Tentativas</th></tr></thead>
+        <tbody id="tabela"></tbody>
+      </table>
+    </details>
+
+    <button type="button" class="instalar" id="instalar" hidden>Instalar como aplicativo</button>
+  </div>
+</div>
+
+<button type="button" class="bolinha" id="bolinha" title="Abrir o jogo" hidden>?</button>
+
+<script>
+  // ---------- estado salvo ----------
+  var CHAVE = 'acerteASenha';
+  function modoVazio(){ return { fase: 1, faseMax: 1, fases: {} }; }
+  var estado = {
+    modo: 'cores',   // 'cores' ou 'mm' (maior ou menor)
+    zoom: 1,
+    min: false,      // minimizado na bolinha?
+    x: null, y: null,
+    tema: '',        // '' = segue o sistema, 'light' ou 'dark'
+    modos: { cores: modoVazio(), mm: modoVazio() }
+    // em cada modo: fase atual, maior fase liberada (só avança acertando)
+    // e fases = { "1": {acertos, melhor, tentativas}, ... }
+  };
+
+  function salvar(){
+    try { localStorage.setItem(CHAVE, JSON.stringify(estado)); } catch (e) {}
+  }
+  function carregar(){
+    try {
+      var s = JSON.parse(localStorage.getItem(CHAVE));
+      if (s && typeof s === 'object'){
+        for (var k in estado) if (Object.prototype.hasOwnProperty.call(s, k)) estado[k] = s[k];
+      }
+    } catch (e) {}
+    if (estado.modo !== 'mm') estado.modo = 'cores';
+    estado.zoom = Math.min(1.6, Math.max(0.6, parseFloat(estado.zoom) || 1));
+    if (!estado.modos || typeof estado.modos !== 'object') estado.modos = {};
+    ['cores', 'mm'].forEach(function(k){
+      var m = estado.modos[k];
+      if (!m || typeof m !== 'object') m = estado.modos[k] = modoVazio();
+      m.faseMax = Math.max(1, parseInt(m.faseMax, 10) || 1);
+      m.fase = Math.min(m.faseMax, Math.max(1, parseInt(m.fase, 10) || 1));
+      if (!m.fases || typeof m.fases !== 'object') m.fases = {};
+    });
+  }
+  function modo(){ return estado.modos[estado.modo]; }
+  function dadosFase(f){
+    var fs = modo().fases;
+    if (!fs[f]) fs[f] = { acertos: 0, melhor: null, tentativas: 0 };
+    return fs[f];
+  }
+
+  // ---------- elementos ----------
+  var caixa = document.getElementById('caixa');
+  var barra = document.getElementById('barra');
+  var conteudo = document.getElementById('conteudo');
+  var bolinha = document.getElementById('bolinha');
+  var form = document.getElementById('form');
+  var input = document.getElementById('palpite');
+  var btn = document.getElementById('btn');
+  var dica = document.getElementById('dica');
+  var contador = document.getElementById('contador');
+  var melhorEl = document.getElementById('melhor');
+  var acertosFaseEl = document.getElementById('acertos-fase');
+  var acertosEl = document.getElementById('acertos');
+  var descricao = document.getElementById('descricao');
+  var legendaCores = document.getElementById('legenda-cores');
+  var legendaMM = document.getElementById('legenda-mm');
+  var faseSel = document.getElementById('fase');
+  var historico = document.getElementById('historico');
+  var reiniciar = document.getElementById('reiniciar');
+  var tabela = document.getElementById('tabela');
+  var zoomEl = document.getElementById('zoom');
+  var btnTema = document.getElementById('tema');
+  var btnFlutuar = document.getElementById('flutuar');
+  var btnMin = document.getElementById('minimizar');
+  var btnInstalar = document.getElementById('instalar');
+  var modoBtns = [].slice.call(document.querySelectorAll('.modo'));
+
+  var senha = '';      // modo cores: texto com N dígitos; modo mm: o número em texto
+  var tentativas = 0;  // tentativas da rodada atual
+  var pipWin = null;
+
+  // ---------- utilidades ----------
+  function plural(n, um, varios){ return n === 1 ? um : varios; }
+  function fmt(x){ return Number(x).toLocaleString('pt-BR'); }
+  function maximoMM(n){ return Math.pow(10, n) - 1; }
+  function descricaoFase(f){
+    return estado.modo === 'cores'
+      ? f + ' ' + plural(f, 'número', 'números') + ' (0 a 9)'
+      : '0 a ' + fmt(maximoMM(f));
+  }
+  function gerarSenha(n){
+    if (estado.modo === 'mm') return String(Math.floor(Math.random() * (maximoMM(n) + 1)));
+    var s = '';
+    for (var i = 0; i < n; i++) s += Math.floor(Math.random() * 10);
+    return s;
+  }
+
+  // v = verde (certo no lugar), a = amarelo (existe em outro lugar), r = vermelho (não existe)
+  function colorir(palpite){
+    var cores = [];
+    var sobra = {};
+    var i, d;
+    for (i = 0; i < senha.length; i++){
+      if (palpite[i] === senha[i]){
+        cores[i] = 'v';
+      } else {
+        cores[i] = '';
+        sobra[senha[i]] = (sobra[senha[i]] || 0) + 1;
+      }
+    }
+    for (i = 0; i < senha.length; i++){
+      if (cores[i]) continue;
+      d = palpite[i];
+      if (sobra[d] > 0){
+        cores[i] = 'a';
+        sobra[d]--;
+      } else {
+        cores[i] = 'r';
+      }
+    }
+    return cores;
+  }
+
+  function totalAcertos(){
+    var t = 0, fs = modo().fases;
+    for (var f in fs) t += fs[f].acertos || 0;
+    return t;
+  }
+
+  function atualizarPlacar(fase){
+    var d = dadosFase(fase);
+    contador.textContent = tentativas;
+    melhorEl.textContent = d.melhor === null ? '–' : d.melhor;
+    acertosFaseEl.textContent = d.acertos;
+    acertosEl.textContent = totalAcertos();
+  }
+
+  function atualizarTabela(){
+    var m = modo();
+    tabela.innerHTML = '';
+    for (var f = 1; f <= m.faseMax; f++){
+      var d = dadosFase(f);
+      var tr = document.createElement('tr');
+      if (f === m.fase) tr.className = 'atual';
+      var cels = [f, descricaoFase(f), d.acertos, d.melhor === null ? '–' : d.melhor, d.tentativas];
+      for (var i = 0; i < cels.length; i++){
+        var td = document.createElement('td');
+        td.textContent = cels[i];
+        tr.appendChild(td);
+      }
+      tabela.appendChild(tr);
+    }
+  }
+
+  function atualizarSeletor(){
+    var m = modo();
+    faseSel.innerHTML = '';
+    for (var f = 1; f <= m.faseMax; f++){
+      var o = document.createElement('option');
+      o.value = f;
+      o.textContent = f;
+      faseSel.appendChild(o);
+    }
+    faseSel.value = m.fase;
+  }
+
+  function ajustarTiles(){
+    var n = modo().fase;
+    var larg = conteudo.clientWidth ? conteudo.clientWidth - 32 : 328;
+    var tile = Math.floor((larg - 6 * (n - 1)) / n);
+    tile = Math.max(22, Math.min(40, tile));
+    conteudo.style.setProperty('--tile', tile + 'px');
+  }
+
+  // ---------- jogo ----------
+  function novoJogo(semFoco){
+    var n = modo().fase;
+    senha = gerarSenha(n);
+    tentativas = 0;
+    modoBtns.forEach(function(b){ b.classList.toggle('on', b.dataset.modo === estado.modo); });
+    legendaCores.hidden = estado.modo !== 'cores';
+    legendaMM.hidden = estado.modo !== 'mm';
+    descricao.textContent = 'senha de ' + descricaoFase(n);
+    input.maxLength = n;
+    input.placeholder = estado.modo === 'cores' ? new Array(n + 1).join('_') : '?';
+    historico.innerHTML = '';
+    dica.className = 'dica';
+    dica.textContent = estado.modo === 'cores'
+      ? 'Digite ' + n + ' ' + plural(n, 'número', 'números') + ' e clique em Tentar.'
+      : 'Digite um número de 0 a ' + fmt(maximoMM(n)) + ' e clique em Tentar.';
+    input.value = '';
+    input.disabled = false;
+    btn.disabled = false;
+    reiniciar.classList.remove('on');
+    bolinha.textContent = n;
+    atualizarSeletor();
+    atualizarPlacar(n);
+    atualizarTabela();
+    ajustarTiles();
+    salvar();
+    if (!estado.min && !semFoco) input.focus();
+  }
+
+  input.addEventListener('input', function(){
+    input.value = input.value.replace(/\D/g, '').slice(0, modo().fase);
+  });
+
+  function tentar(){
+    var m = modo();
+    var n = m.fase;
+    var palpite = input.value.replace(/\D/g, '');
+
+    if (estado.modo === 'cores' ? palpite.length !== n : palpite.length === 0){
+      dica.className = 'dica erro';
+      dica.textContent = estado.modo === 'cores'
+        ? 'A senha tem ' + n + ' ' + plural(n, 'número', 'números') + '. Digite exatamente ' + n + '.'
+        : 'Digite um número de 0 a ' + fmt(maximoMM(n)) + '.';
+      input.focus();
+      return;
+    }
+
+    var d = dadosFase(n);
+    tentativas++;
+    d.tentativas++;
+
+    var linha = document.createElement('div');
+    linha.className = 'linha';
+    var acertou = false;
+
+    if (estado.modo === 'cores'){
+      var cores = colorir(palpite);
+      var verdes = 0, amarelos = 0, vermelhos = 0;
+      for (var i = 0; i < n; i++){
+        var t = document.createElement('span');
+        t.className = 't ' + cores[i];
+        t.textContent = palpite[i];
+        if (cores[i] === 'v'){ verdes++; t.title = 'Certo, no lugar certo'; }
+        else if (cores[i] === 'a'){ amarelos++; t.title = 'Existe, mas em outro lugar'; }
+        else { vermelhos++; t.title = 'Não está na senha'; }
+        linha.appendChild(t);
+      }
+      acertou = verdes === n;
+      if (!acertou){
+        dica.className = 'dica';
+        dica.textContent = verdes + ' no lugar certo • ' + amarelos + ' fora do lugar • ' +
+          vermelhos + ' não ' + plural(vermelhos, 'está', 'estão') + ' na senha';
+      }
+    } else {
+      var num = parseInt(palpite, 10);
+      var alvo = parseInt(senha, 10);
+      var chip = document.createElement('span');
+      if (num === alvo){
+        acertou = true;
+        chip.className = 'mm certo';
+        chip.textContent = fmt(num) + ' ✓';
+      } else if (num < alvo){
+        chip.className = 'mm maior';
+        chip.textContent = fmt(num) + ' ▲';
+        dica.className = 'dica maior';
+        dica.textContent = 'A senha é MAIOR que ' + fmt(num) + '.';
+      } else {
+        chip.className = 'mm menor';
+        chip.textContent = fmt(num) + ' ▼';
+        dica.className = 'dica menor';
+        dica.textContent = 'A senha é MENOR que ' + fmt(num) + '.';
+      }
+      linha.appendChild(chip);
+    }
+    historico.appendChild(linha);
+
+    if (acertou){
+      d.acertos++;
+      if (d.melhor === null || tentativas < d.melhor) d.melhor = tentativas;
+      m.fase = n + 1;
+      if (m.fase > m.faseMax) m.faseMax = m.fase;
+      dica.className = 'dica acertou';
+      dica.textContent = 'Acertou! A senha era ' + (estado.modo === 'cores' ? senha : fmt(senha)) +
+        '. Você usou ' + tentativas + ' ' + plural(tentativas, 'tentativa', 'tentativas') +
+        '. A próxima senha (fase ' + m.fase + ') ' +
+        (estado.modo === 'cores' ? 'terá ' + m.fase + ' números.' : 'vai de 0 a ' + fmt(maximoMM(m.fase)) + '.');
+      input.disabled = true;
+      btn.disabled = true;
+      reiniciar.classList.add('on');
+      atualizarPlacar(n);     // o placar continua mostrando a fase que acabou de ser vencida
+      atualizarSeletor();     // a fase recém-liberada já aparece no seletor
+      atualizarTabela();
+      reiniciar.focus();
+    } else {
+      atualizarPlacar(n);
+      atualizarTabela();
+      input.focus();
+    }
+    input.value = '';
+    salvar();
+  }
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    tentar();
+  });
+
+  reiniciar.addEventListener('click', function(){ novoJogo(); });
+
+  faseSel.addEventListener('change', function(){
+    var m = modo();
+    var f = parseInt(faseSel.value, 10);
+    if (isNaN(f) || f < 1 || f > m.faseMax) f = m.fase;   // nunca pula para uma fase não liberada
+    m.fase = f;
+    novoJogo();
+  });
+
+  modoBtns.forEach(function(b){
+    b.addEventListener('click', function(){
+      if (estado.modo === b.dataset.modo) return;
+      estado.modo = b.dataset.modo;
+      novoJogo();
+    });
+  });
+
+  // ---------- tema claro / escuro ----------
+  function temaAtual(){
+    if (estado.tema) return estado.tema;
+    return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  }
+  function aplicarTema(){
+    var raizes = [document.documentElement];
+    if (pipWin) raizes.push(pipWin.document.documentElement);
+    raizes.forEach(function(r){
+      if (estado.tema) r.setAttribute('data-theme', estado.tema);
+      else r.removeAttribute('data-theme');
+    });
+    var escuro = temaAtual() === 'dark';
+    btnTema.textContent = escuro ? '☀' : '☾';
+    btnTema.title = escuro ? 'Mudar para claro' : 'Mudar para escuro';
+  }
+  btnTema.addEventListener('click', function(){
+    estado.tema = temaAtual() === 'dark' ? 'light' : 'dark';
+    aplicarTema();
+    salvar();
+  });
+
+  // ---------- tamanho ----------
+  function aplicarZoom(){
+    zoomEl.value = estado.zoom;
+    conteudo.style.zoom = estado.zoom;
+    ajustarTiles();
+    aplicarPosicao();
+  }
+  zoomEl.addEventListener('input', function(){
+    estado.zoom = parseFloat(zoomEl.value) || 1;
+    aplicarZoom();
+    salvar();
+  });
+
+  // ---------- posição, arrastar, minimizar ----------
+  function aplicarPosicao(){
+    var el = estado.min ? bolinha : caixa;
+    if (el.ownerDocument !== document) return; // está flutuando fora da página
+    var r = el.getBoundingClientRect();
+    var w = Math.ceil(r.width), h = Math.ceil(r.height);
+    var x = estado.x, y = estado.y;
+    if (x === null || y === null || isNaN(x) || isNaN(y)){
+      x = Math.round((window.innerWidth - w) / 2);
+      y = 16;
+    }
+    var topo = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--topo-seguro')) || 0;
+    x = Math.max(0, Math.min(x, window.innerWidth - w));
+    y = Math.max(topo, Math.min(y, window.innerHeight - h));
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    estado.x = x;
+    estado.y = y;
+  }
+
+  function arrastavel(el, alca, aoClicar){
+    alca.addEventListener('pointerdown', function(e){
+      if (e.button !== 0) return;
+      if (el.ownerDocument !== document) return;
+      if (e.target !== alca && e.target.closest('button, input, select, label')) return;
+      var px = e.clientX, py = e.clientY;
+      var r = el.getBoundingClientRect();
+      var ox = r.left, oy = r.top;
+      var moveu = false;
+      function mover(ev){
+        var dx = ev.clientX - px, dy = ev.clientY - py;
+        if (Math.abs(dx) + Math.abs(dy) > 4) moveu = true;
+        estado.x = ox + dx;
+        estado.y = oy + dy;
+        aplicarPosicao();
+      }
+      function soltar(){
+        alca.removeEventListener('pointermove', mover);
+        alca.removeEventListener('pointerup', soltar);
+        alca.removeEventListener('pointercancel', soltar);
+        try { alca.releasePointerCapture(e.pointerId); } catch (x) {}
+        salvar();
+        if (!moveu && aoClicar) aoClicar();
+      }
+      try { alca.setPointerCapture(e.pointerId); } catch (x) {}
+      alca.addEventListener('pointermove', mover);
+      alca.addEventListener('pointerup', soltar);
+      alca.addEventListener('pointercancel', soltar);
+      e.preventDefault();
+    });
+  }
+
+  function minimizar(){
+    estado.min = true;
+    caixa.hidden = true;
+    bolinha.hidden = false;
+    aplicarPosicao();
+    salvar();
+  }
+  function expandir(){
+    estado.min = false;
+    bolinha.hidden = true;
+    caixa.hidden = false;
+    aplicarPosicao();
+    salvar();
+    input.focus();
+  }
+  btnMin.addEventListener('click', minimizar);
+  arrastavel(caixa, barra, null);
+  arrastavel(bolinha, bolinha, expandir);
+  window.addEventListener('resize', aplicarPosicao);
+
+  // ---------- flutuar fora da página (Chrome / Edge no computador) ----------
+  if (window.documentPictureInPicture) btnFlutuar.hidden = false;
+  btnFlutuar.addEventListener('click', function(){
+    window.documentPictureInPicture.requestWindow({ width: 400, height: 680 }).then(function(pip){
+      pipWin = pip;
+      var css = '';
+      for (var i = 0; i < document.styleSheets.length; i++){
+        try {
+          var regras = document.styleSheets[i].cssRules;
+          for (var j = 0; j < regras.length; j++) css += regras[j].cssText + '\n';
+        } catch (e) {}
+      }
+      var st = pip.document.createElement('style');
+      st.textContent = css;
+      pip.document.head.appendChild(st);
+      pip.document.title = 'Acerte a Senha';
+      pip.document.body.className = 'pip';
+      pip.document.body.appendChild(caixa);
+      aplicarTema();
+      input.focus();
+      pip.addEventListener('pagehide', function(){
+        pipWin = null;
+        document.body.appendChild(caixa);
+        aplicarPosicao();
+      });
+    }).catch(function(){});
+  });
+
+  // ---------- instalar como aplicativo ----------
+  var promptInstalar = null;
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();
+    promptInstalar = e;
+    btnInstalar.hidden = false;
+  });
+  btnInstalar.addEventListener('click', function(){
+    if (!promptInstalar) return;
+    promptInstalar.prompt();
+    promptInstalar = null;
+    btnInstalar.hidden = true;
+  });
+  window.addEventListener('appinstalled', function(){ btnInstalar.hidden = true; });
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)){
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  }
+
+  // ---------- início ----------
+  carregar();
+  aplicarTema();
+  if (estado.min){
+    caixa.hidden = true;
+    bolinha.hidden = false;
+  }
+  var toque = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+  novoJogo(toque);   // no celular, não abre o teclado sozinho ao carregar
+  aplicarZoom();
+</script>
+
+</body>
+</html>
